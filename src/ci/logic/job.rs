@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum JobOutput {
     Success(String),
@@ -62,8 +60,8 @@ impl Pipeline {
 }
 
 pub struct JobProgress {
-    job_name: String,
-    progress: Progress,
+    pub job_name: String,
+    pub progress: Progress,
 }
 
 impl JobProgress {
@@ -72,32 +70,6 @@ impl JobProgress {
             job_name: job,
             progress,
         }
-    }
-}
-
-#[derive(Debug)]
-pub struct PipelineProgress {
-    states: HashMap<String, Progress>,
-}
-
-impl PipelineProgress {
-    pub fn new() -> Self {
-        PipelineProgress {
-            states: HashMap::new(),
-        }
-    }
-    pub fn push(&mut self, job_progress: JobProgress) {
-        self.states
-            .insert(job_progress.job_name, job_progress.progress);
-    }
-
-    pub fn is_finished(&self) -> bool {
-        for progress in self.states.values() {
-            if progress.is_pending() {
-                return false;
-            }
-        }
-        true
     }
 }
 
