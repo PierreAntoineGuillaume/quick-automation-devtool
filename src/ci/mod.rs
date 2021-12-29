@@ -1,5 +1,6 @@
 pub(crate) mod logic;
 
+use logic::display::PipelineProgress;
 use logic::job::*;
 use std::process::Command;
 use std::sync::mpsc::channel;
@@ -34,7 +35,7 @@ impl JobScheduler for NThreadedJobScheduler {
                 pipeline_progress.push(state);
             }
             if pipeline_progress.is_finished() {
-                println!("{:?}", pipeline_progress);
+                println!("{}", pipeline_progress);
                 break;
             }
         }
