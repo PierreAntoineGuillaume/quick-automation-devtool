@@ -1,5 +1,6 @@
 pub(crate) mod logic;
 
+use logic::display::PipelineProgress;
 use logic::job::*;
 use std::process::Command;
 use std::sync::mpsc::channel;
@@ -34,7 +35,7 @@ impl JobScheduler for NThreadedJobScheduler {
                 pipeline_progress.push(state);
             }
             if pipeline_progress.is_finished() {
-                println!("{:?}", pipeline_progress);
+                println!("{}", pipeline_progress);
                 break;
             }
         }
@@ -47,13 +48,11 @@ impl JobRunner for CommandJobRunner {
     fn run(&self, job: String) -> JobOutput {
         match Command::new(&job).output() {
             Ok(output) => {
-                if !output.status.success() {
-                    return match std::str::from_utf8(&output.stdout) {
-                        Ok(e) => JobOutput::JobError(e.to_string()),
-                        Err(e) => JobOutput::ProcessError(format!("{}: {}", job, e)),
-                    };
-                }
-                JobOutput::Success(job)
+                return match (output.status.success(), std::str::from_utf8(&output.stdout)) {
+                    (true, Ok(output)) => JobOutput::Success(output.to_string()),
+                    (false, Ok(e)) => JobOutput::JobError(e.to_string()),
+                    (_, Err(e)) => JobOutput::ProcessError(e.to_string()),
+                };
             }
             Err(e) => JobOutput::ProcessError(format!("{}: {}", job, e)),
         }
