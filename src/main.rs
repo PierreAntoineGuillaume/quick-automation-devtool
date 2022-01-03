@@ -1,13 +1,15 @@
 mod ci;
 
+extern crate atty;
+
 use crate::ci::logic::job::{JobScheduler, Pipeline};
 use crate::ci::NThreadedJobScheduler;
 use argh::FromArgs;
 
-const VERSION: &str = "0.1";
+const VERSION: &str = "0.1.1";
 
 #[derive(FromArgs, PartialEq, Debug)]
-#[argh(description = "pcg is a tool to help with testing, and dev-related tasks")]
+#[argh(description = "dt is a tool to help with testing, and dev-related tasks")]
 struct Args {
     #[argh(switch, short = 'v', description = "show the executable version")]
     version: bool,
@@ -20,11 +22,20 @@ struct Args {
 #[argh(subcommand)]
 enum Subcommands {
     Ci(CiArgs),
+    Autocomplete(AutocompleteArgs),
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "ci", description = "play the ci")]
 struct CiArgs {}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(
+    subcommand,
+    name = "autocomplete",
+    description = "generate bash completion script"
+)]
+struct AutocompleteArgs {}
 
 fn main() {
     let args: Args = argh::from_env();
@@ -48,6 +59,12 @@ fn main() {
 
             let mut scheduler: Box<dyn JobScheduler> = Box::new(NThreadedJobScheduler {});
             pipeline.run(&mut (*scheduler))
+        }
+        Subcommands::Autocomplete(_) => {
+            if atty::is(atty::Stream::Stdout) {
+                eprintln!("Pipe this into ~/.local/share/bash-completion/completions/dt");
+            }
+            println!("{}", include_str!("../assets/dt.sh"));
         }
     }
 }
