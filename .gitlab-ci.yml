@@ -1,24 +1,27 @@
-stages:
-  - build
-
 variables:
   RUSTFLAGS: "-D warnings"
 
 clippy:
-  stage: build
   image: rustlang/rust:nightly
   script:
     - cargo clippy
 
 fmt:
-  stage: build
   image: rustlang/rust:nightly
   script:
     - cargo fmt --check
 
 rust-nightly:
-  stage: build
   image: rustlang/rust:nightly
   script:
     - cargo build --verbose
     - cargo test --verbose
+
+shellcheck:
+  image: koalaman/shellcheck-alpine:stable
+  script: find -name '*.sh' -type f -exec shellcheck {} '+'
+
+test-autocomplete:
+  image: bash
+  script:
+    - tools/bash-unit-tests.sh
