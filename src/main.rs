@@ -62,9 +62,9 @@ fn main() {
         }
         Subcommands::Autocomplete(_) => {
             if atty::is(atty::Stream::Stdout) {
-                eprintln!("Pipe this into ~/.local/share/bash-completion/completions/dt");
+                eprintln!("#dt autocomplete > ~/.local/share/bash-completion/completions/dt");
             }
-            println!("{}", include_str!("../assets/dt.sh"));
+            print!("{}", include_str!("../assets/dt_bash_competion.sh"));
         }
     }
 }
