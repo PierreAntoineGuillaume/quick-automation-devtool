@@ -6,7 +6,7 @@ use crate::ci::logic::job::{JobScheduler, Pipeline};
 use crate::ci::NThreadedJobScheduler;
 use argh::FromArgs;
 
-const VERSION: &str = "0.1.1";
+const VERSION: &str = "0.1.2";
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(description = "dt is a tool to help with testing, and dev-related tasks")]
@@ -58,7 +58,9 @@ fn main() {
             pipeline.push("phpcs".into(), "vendor/bin/phpcs".into());
 
             let mut scheduler: Box<dyn JobScheduler> = Box::new(NThreadedJobScheduler {});
-            pipeline.run(&mut (*scheduler))
+            if pipeline.run(&mut (*scheduler)).is_err() {
+                std::process::exit(1);
+            }
         }
         Subcommands::Autocomplete(_) => {
             if atty::is(atty::Stream::Stdout) {
