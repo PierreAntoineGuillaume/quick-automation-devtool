@@ -5,8 +5,14 @@ pub enum JobOutput {
     ProcessError(String),
 }
 
+impl JobOutput {
+    pub fn failed(&self) -> bool {
+        !matches!(self, JobOutput::Success(_))
+    }
+}
+
 pub trait JobRunner {
-    fn run(&self, job: String) -> JobOutput;
+    fn run(&self, job: &str) -> JobOutput;
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -17,7 +23,7 @@ pub struct Job {
 
 impl Job {
     pub fn start(&self, runner: Box<dyn JobRunner>) -> JobOutput {
-        runner.run(self.instruction.clone())
+        runner.run(&self.instruction)
     }
 }
 
@@ -26,6 +32,15 @@ pub enum Progress {
     Awaiting,
     Started,
     Terminated(JobOutput),
+}
+
+impl Progress {
+    pub fn failed(&self) -> bool {
+        match self {
+            Progress::Terminated(job_output) => job_output.failed(),
+            _ => false,
+        }
+    }
 }
 
 impl Progress {
@@ -39,11 +54,11 @@ pub struct Pipeline {
 }
 
 pub trait JobScheduler {
-    fn schedule(&mut self, jobs: &[Job]);
+    fn schedule(&mut self, jobs: &[Job]) -> Result<(), ()>;
 }
 
 impl Pipeline {
-    pub fn run(&mut self, scheduler: &mut dyn JobScheduler) {
+    pub fn run(&mut self, scheduler: &mut dyn JobScheduler) -> Result<(), ()> {
         scheduler.schedule(&self.jobs)
     }
 
@@ -71,6 +86,10 @@ impl JobProgress {
             progress,
         }
     }
+
+    pub fn failed(&self) -> bool {
+        self.progress.failed()
+    }
 }
 
 #[cfg(test)]
@@ -83,18 +102,21 @@ mod tests {
     }
 
     impl JobScheduler for NaiveScheduler {
-        fn schedule(&mut self, jobs: &[Job]) {
+        fn schedule(&mut self, jobs: &[Job]) -> Result<(), ()> {
+            let mut err = false;
             for job in jobs {
                 self.states.insert(job.clone(), Progress::Awaiting);
                 self.states.insert(job.clone(), Progress::Started);
+                let res = job.start(FakeJobRunner::new(JobOutput::Success("Ok".into())));
+                err |= res.failed();
                 self.states
-                    .insert(
-                        job.clone(),
-                        Progress::Terminated(
-                            job.start(FakeJobRunner::new(JobOutput::Success("Ok".into()))),
-                        ),
-                    )
+                    .insert(job.clone(), Progress::Terminated(res))
                     .unwrap();
+            }
+            if err {
+                Err(())
+            } else {
+                Ok(())
             }
         }
     }
@@ -124,15 +146,13 @@ mod tests {
     }
 
     impl JobRunner for FakeJobRunner {
-        fn run(&self, job: String) -> JobOutput {
-            match self.out {
-                JobOutput::Success(ref item) => {
-                    JobOutput::Success(format!("{}:{}", job, item.clone()))
-                }
-                JobOutput::JobError(ref item) => {
+        fn run(&self, job: &str) -> JobOutput {
+            match &self.out {
+                JobOutput::Success(item) => JobOutput::Success(format!("{}:{}", job, item.clone())),
+                JobOutput::JobError(item) => {
                     JobOutput::JobError(format!("{}:{}", job, item.clone()))
                 }
-                JobOutput::ProcessError(ref item) => {
+                JobOutput::ProcessError(item) => {
                     JobOutput::ProcessError(format!("{}:{}", job, item.clone()))
                 }
             }
@@ -148,7 +168,7 @@ mod tests {
         pipeline.push("fourth".into(), "fourth".into());
 
         let mut scheduler = NaiveScheduler::new();
-        pipeline.run(&mut scheduler);
+        pipeline.run(&mut scheduler).unwrap();
 
         let mut job_count = 0;
         for (job, status) in scheduler.states {
