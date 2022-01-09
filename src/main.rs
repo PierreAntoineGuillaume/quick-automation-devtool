@@ -3,7 +3,7 @@ mod ci;
 extern crate atty;
 
 use crate::ci::job::Pipeline;
-use crate::ci::schedule::ParrallelJobScheduler;
+use crate::ci::schedule::{CompositeJobScheduler, ParrallelJobStarter};
 use argh::FromArgs;
 
 const VERSION: &str = "0.1.2";
@@ -57,7 +57,10 @@ fn main() {
             pipeline.push("phpstan".into(), "vendor/bin/phpstan".into());
             pipeline.push("phpcs".into(), "vendor/bin/phpcs".into());
 
-            if pipeline.run(&mut ParrallelJobScheduler {}).is_err() {
+            if pipeline
+                .run(&mut CompositeJobScheduler::new(&mut ParrallelJobStarter {}))
+                .is_err()
+            {
                 std::process::exit(1);
             }
         }
