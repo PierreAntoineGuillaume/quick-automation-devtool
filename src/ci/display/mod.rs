@@ -1,15 +1,15 @@
 use super::job::{JobOutput, JobProgress, Progress};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fmt::Formatter;
 
 pub struct PipelineProgress {
-    states: HashMap<String, Progress>,
+    states: BTreeMap<String, Progress>,
 }
 
 impl PipelineProgress {
     pub fn new() -> Self {
         PipelineProgress {
-            states: HashMap::new(),
+            states: BTreeMap::new(),
         }
     }
     pub fn push(&mut self, job_progress: JobProgress) {
