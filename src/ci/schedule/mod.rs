@@ -19,7 +19,7 @@ impl JobScheduler for ParrallelJobScheduler {
         loop {
             if let Ok(state) = rx.try_recv() {
                 is_error |= state.failed();
-                pipeline_progress.push(state);
+                pipeline_progress.record(state);
             }
             if pipeline_progress.is_finished() {
                 println!("{}", pipeline_progress);
