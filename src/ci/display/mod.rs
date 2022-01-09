@@ -1,6 +1,4 @@
-use super::job::JobOutput;
-use super::job::JobProgress;
-use super::job::Progress;
+use super::job::{JobOutput, JobProgress, Progress};
 use std::collections::HashMap;
 use std::fmt::Formatter;
 
