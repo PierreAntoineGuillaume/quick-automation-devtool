@@ -51,7 +51,7 @@ impl ParrallelJobScheduler {
             thread::spawn(move || {
                 tx.send(JobProgress::new(job.name.clone(), Progress::Started))
                     .unwrap();
-                let terminated = Progress::Terminated(job.start(Box::new(CommandJobRunner::new())));
+                let terminated = Progress::Terminated(job.start(&CommandJobRunner::new()));
                 tx.send(JobProgress::new(job.name, terminated)).unwrap();
             });
         }

@@ -22,7 +22,7 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn start(&self, runner: Box<dyn JobRunner>) -> JobOutput {
+    pub fn start(&self, runner: &dyn JobRunner) -> JobOutput {
         runner.run(&self.instruction)
     }
 }
