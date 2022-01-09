@@ -12,7 +12,7 @@ impl PipelineProgress {
             states: BTreeMap::new(),
         }
     }
-    pub fn push(&mut self, job_progress: JobProgress) {
+    pub fn record(&mut self, job_progress: JobProgress) {
         self.states
             .insert(job_progress.job_name, job_progress.progress);
     }
