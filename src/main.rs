@@ -2,8 +2,8 @@ mod ci;
 
 extern crate atty;
 
-use crate::ci::logic::job::{JobScheduler, Pipeline};
-use crate::ci::NThreadedJobScheduler;
+use crate::ci::job::Pipeline;
+use crate::ci::schedule::ParrallelJobScheduler;
 use argh::FromArgs;
 
 const VERSION: &str = "0.1.2";
@@ -57,8 +57,7 @@ fn main() {
             pipeline.push("phpstan".into(), "vendor/bin/phpstan".into());
             pipeline.push("phpcs".into(), "vendor/bin/phpcs".into());
 
-            let mut scheduler: Box<dyn JobScheduler> = Box::new(NThreadedJobScheduler {});
-            if pipeline.run(&mut (*scheduler)).is_err() {
+            if pipeline.run(&mut ParrallelJobScheduler {}).is_err() {
                 std::process::exit(1);
             }
         }
