@@ -11,6 +11,10 @@ impl JobOutput {
     }
 }
 
+pub trait JobProgressConsumer {
+    fn consume(&self, job_progress: JobProgress);
+}
+
 pub trait JobRunner {
     fn run(&self, job: &str) -> JobOutput;
 }
@@ -22,8 +26,10 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn start(&self, runner: &dyn JobRunner) -> JobOutput {
-        runner.run(&self.instruction)
+    pub fn start(&self, runner: &dyn JobRunner, consumer: &dyn JobProgressConsumer) {
+        consumer.consume(JobProgress::new(self.name.clone(), Progress::Started));
+        let terminated = Progress::Terminated(runner.run(&self.instruction));
+        consumer.consume(JobProgress::new(self.name.clone(), terminated));
     }
 }
 

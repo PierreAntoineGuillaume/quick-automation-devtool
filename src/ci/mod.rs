@@ -1,4 +1,4 @@
-use job::{Job, JobOutput, JobProgress, JobRunner, Progress};
+use job::{Job, JobOutput, JobProgress, JobProgressConsumer, JobRunner};
 use schedule::JobStarter;
 use std::sync::mpsc::Sender;
 use std::thread;
@@ -16,16 +16,19 @@ impl ParrallelJobStarter {
     }
 }
 
+impl JobProgressConsumer for Sender<JobProgress> {
+    fn consume(&self, job_progress: JobProgress) {
+        self.send(job_progress).unwrap()
+    }
+}
+
 impl JobStarter for ParrallelJobStarter {
-    fn start_all_jobs(&self, jobs: &[Job], first_tx: Sender<JobProgress>) {
+    fn start_all_jobs(&self, jobs: &[Job], tx: Sender<JobProgress>) {
         for real_job in jobs {
             let job = real_job.clone();
-            let tx = first_tx.clone();
+            let consumer = tx.clone();
             thread::spawn(move || {
-                tx.send(JobProgress::new(job.name.clone(), Progress::Started))
-                    .unwrap();
-                let terminated = Progress::Terminated(job.start(&CommandJobRunner::new()));
-                tx.send(JobProgress::new(job.name, terminated)).unwrap();
+                job.start(&CommandJobRunner::new(), &consumer);
             });
         }
     }
