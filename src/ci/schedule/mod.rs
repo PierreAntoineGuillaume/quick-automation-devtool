@@ -1,7 +1,5 @@
 use super::job::{Job, JobProgress, JobScheduler, Progress};
-use super::CommandJobRunner;
 use std::sync::mpsc::{channel, Sender};
-use std::thread;
 
 pub trait JobStarter {
     fn start_all_jobs(&self, jobs: &[Job], first_tx: Sender<JobProgress>);
@@ -11,24 +9,6 @@ pub trait CiDisplay {
     fn record(&mut self, job_progress: JobProgress);
     fn is_finished(&self) -> bool;
     fn refresh(&mut self);
-}
-
-#[derive(Clone, Copy)]
-pub struct ParrallelJobStarter {}
-
-impl JobStarter for ParrallelJobStarter {
-    fn start_all_jobs(&self, jobs: &[Job], first_tx: Sender<JobProgress>) {
-        for real_job in jobs {
-            let job = real_job.clone();
-            let tx = first_tx.clone();
-            thread::spawn(move || {
-                tx.send(JobProgress::new(job.name.clone(), Progress::Started))
-                    .unwrap();
-                let terminated = Progress::Terminated(job.start(&CommandJobRunner::new()));
-                tx.send(JobProgress::new(job.name, terminated)).unwrap();
-            });
-        }
-    }
 }
 
 pub struct CompositeJobScheduler<'a> {
