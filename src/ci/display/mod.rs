@@ -3,11 +3,11 @@ use super::schedule::CiDisplay;
 use std::collections::BTreeMap;
 use std::fmt::Formatter;
 
-pub struct PipelineProgress {
+pub struct OneOffCiDisplay {
     states: BTreeMap<String, Progress>,
 }
 
-impl CiDisplay for PipelineProgress {
+impl CiDisplay for OneOffCiDisplay {
     fn record(&mut self, job_progress: JobProgress) {
         self.states
             .insert(job_progress.job_name, job_progress.progress);
@@ -29,15 +29,15 @@ impl CiDisplay for PipelineProgress {
     }
 }
 
-impl PipelineProgress {
+impl OneOffCiDisplay {
     pub fn new() -> Self {
-        PipelineProgress {
+        OneOffCiDisplay {
             states: BTreeMap::new(),
         }
     }
 }
 
-impl std::fmt::Display for PipelineProgress {
+impl std::fmt::Display for OneOffCiDisplay {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut count = self.states.len();
         for (job_name, progress) in &self.states {
