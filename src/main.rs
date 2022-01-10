@@ -4,7 +4,8 @@ extern crate atty;
 
 use crate::ci::display::OneOffCiDisplay;
 use crate::ci::job::Pipeline;
-use crate::ci::schedule::{CompositeJobScheduler, ParrallelJobStarter};
+use crate::ci::schedule::CompositeJobScheduler;
+use crate::ci::ParrallelJobStarter;
 use argh::FromArgs;
 
 const VERSION: &str = "0.1.2";
@@ -60,7 +61,7 @@ fn main() {
 
             if pipeline
                 .run(&mut CompositeJobScheduler::new(
-                    &mut ParrallelJobStarter {},
+                    &mut ParrallelJobStarter::new(),
                     &mut OneOffCiDisplay::new(),
                 ))
                 .is_err()
