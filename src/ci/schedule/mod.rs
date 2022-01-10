@@ -1,4 +1,3 @@
-use super::display::PipelineProgress;
 use super::job::{Job, JobProgress, JobScheduler, Progress};
 use super::CommandJobRunner;
 use std::sync::mpsc::{channel, Sender};
@@ -6,6 +5,12 @@ use std::thread;
 
 pub trait JobStarter {
     fn start_all_jobs(&self, jobs: &[Job], first_tx: Sender<JobProgress>);
+}
+
+pub trait CiDisplay {
+    fn record(&mut self, job_progress: JobProgress);
+    fn is_finished(&self) -> bool;
+    fn refresh(&mut self);
 }
 
 #[derive(Clone, Copy)]
@@ -26,9 +31,9 @@ impl JobStarter for ParrallelJobStarter {
     }
 }
 
-#[derive(Clone)]
 pub struct CompositeJobScheduler<'a> {
     job_starter: &'a dyn JobStarter,
+    job_display: &'a mut dyn CiDisplay,
 }
 
 impl JobScheduler for CompositeJobScheduler<'_> {
@@ -38,15 +43,14 @@ impl JobScheduler for CompositeJobScheduler<'_> {
         Self::signal_all_existing_jobs(jobs, &first_tx);
         self.job_starter.start_all_jobs(jobs, first_tx);
 
-        let mut pipeline_progress = PipelineProgress::new();
         let mut is_error = false;
         loop {
             if let Ok(state) = rx.try_recv() {
                 is_error |= state.failed();
-                pipeline_progress.record(state);
+                self.job_display.record(state);
             }
-            if pipeline_progress.is_finished() {
-                println!("{}", pipeline_progress);
+            self.job_display.refresh();
+            if self.job_display.is_finished() {
                 break;
             }
         }
@@ -67,7 +71,13 @@ impl CompositeJobScheduler<'_> {
                 .unwrap();
         }
     }
-    pub fn new(job_starter: &mut dyn JobStarter) -> CompositeJobScheduler {
-        CompositeJobScheduler { job_starter }
+    pub fn new<'a>(
+        job_starter: &'a mut dyn JobStarter,
+        job_display: &'a mut dyn CiDisplay,
+    ) -> CompositeJobScheduler<'a> {
+        CompositeJobScheduler {
+            job_starter,
+            job_display,
+        }
     }
 }

@@ -2,6 +2,7 @@ mod ci;
 
 extern crate atty;
 
+use crate::ci::display::PipelineProgress;
 use crate::ci::job::Pipeline;
 use crate::ci::schedule::{CompositeJobScheduler, ParrallelJobStarter};
 use argh::FromArgs;
@@ -58,7 +59,10 @@ fn main() {
             pipeline.push("phpcs".into(), "vendor/bin/phpcs".into());
 
             if pipeline
-                .run(&mut CompositeJobScheduler::new(&mut ParrallelJobStarter {}))
+                .run(&mut CompositeJobScheduler::new(
+                    &mut ParrallelJobStarter {},
+                    &mut PipelineProgress::new(),
+                ))
                 .is_err()
             {
                 std::process::exit(1);
