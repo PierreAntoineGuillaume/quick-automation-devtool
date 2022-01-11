@@ -1,4 +1,4 @@
-use super::job::{Job, JobProgress, JobScheduler, Progress};
+use super::job::{Job, JobProgress, JobProgressTracker, JobScheduler, Progress};
 use std::sync::mpsc::{channel, Sender};
 
 pub trait JobStarter {
@@ -7,14 +7,13 @@ pub trait JobStarter {
 }
 
 pub trait CiDisplay {
-    fn record(&mut self, job_progress: JobProgress);
-    fn is_finished(&self) -> bool;
-    fn refresh(&mut self);
+    fn refresh(&mut self, tracker: &JobProgressTracker);
 }
 
 pub struct CompositeJobScheduler<'a> {
     job_starter: &'a mut dyn JobStarter,
     job_display: &'a mut dyn CiDisplay,
+    tracker: JobProgressTracker,
 }
 
 impl JobScheduler for CompositeJobScheduler<'_> {
@@ -28,15 +27,19 @@ impl JobScheduler for CompositeJobScheduler<'_> {
         loop {
             if let Ok(state) = rx.try_recv() {
                 is_error |= state.failed();
-                self.job_display.record(state);
+                self.tracker.record(state);
             }
-            self.job_display.refresh();
-            if self.job_display.is_finished() {
+
+            if self.tracker.is_finished() {
                 break;
             }
+
+            self.job_display.refresh(&self.tracker);
         }
 
         self.job_starter.join();
+
+        self.job_display.refresh(&self.tracker);
 
         if is_error {
             return Err(());
@@ -61,6 +64,7 @@ impl CompositeJobScheduler<'_> {
         CompositeJobScheduler {
             job_starter,
             job_display,
+            tracker: JobProgressTracker::new(),
         }
     }
 }
