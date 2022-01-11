@@ -24,17 +24,22 @@ pub trait JobRunner {
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Job {
     pub name: String,
-    instruction: String,
+    instructions: Vec<String>,
 }
 
 impl Job {
-    pub fn new(name: String, instruction: String) -> Self {
-        Job { name, instruction }
+    pub fn new(name: String, instruction: Vec<String>) -> Self {
+        Job {
+            name,
+            instructions: instruction,
+        }
     }
     pub fn start(&self, runner: &dyn JobRunner, consumer: &dyn JobProgressConsumer) {
         consumer.consume(JobProgress::new(self.name.clone(), Progress::Started));
-        let terminated = Progress::Terminated(runner.run(&self.instruction));
-        consumer.consume(JobProgress::new(self.name.clone(), terminated));
+        for instruction in &self.instructions {
+            let terminated = Progress::Terminated(runner.run(instruction));
+            consumer.consume(JobProgress::new(self.name.clone(), terminated));
+        }
     }
 }
 
@@ -77,7 +82,7 @@ impl Pipeline {
     }
 
     pub fn push(&mut self, key: String, instruction: String) {
-        self.jobs.push(Job::new(key, instruction));
+        self.jobs.push(Job::new(key, vec![instruction]));
     }
 
     pub fn new() -> Pipeline {

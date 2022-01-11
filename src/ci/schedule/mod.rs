@@ -117,7 +117,7 @@ mod tests {
     #[test]
     pub fn every_job_is_initialisated() {
         test_that(|scheduler| {
-            let result = scheduler.schedule(&[Job::new("a".into(), "ok: result".into())]);
+            let result = scheduler.schedule(&[Job::new("a".into(), vec!["ok: result".into()])]);
             assert!(result.is_ok());
         })
     }
@@ -125,7 +125,7 @@ mod tests {
     #[test]
     pub fn one_job_failure_fails_scheduling() {
         test_that(|scheduler| {
-            let result = scheduler.schedule(&[Job::new("c".into(), "ko: result".into())]);
+            let result = scheduler.schedule(&[Job::new("c".into(), vec!["ko: result".into()])]);
             assert!(result.is_err());
         })
     }
@@ -133,7 +133,7 @@ mod tests {
     #[test]
     pub fn one_job_crash_fails_scheduling() {
         test_that(|scheduler| {
-            let result = scheduler.schedule(&[Job::new("c".into(), "crash: result".into())]);
+            let result = scheduler.schedule(&[Job::new("c".into(), vec!["crash: result".into()])]);
             assert!(result.is_err());
         })
     }
