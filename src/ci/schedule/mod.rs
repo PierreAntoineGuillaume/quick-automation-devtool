@@ -67,3 +67,74 @@ impl CompositeJobScheduler<'_> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ci::job::{JobOutput, JobRunner};
+
+    struct TestJobRunner {}
+
+    impl JobRunner for TestJobRunner {
+        fn run(&self, job: &str) -> JobOutput {
+            if let Some(stripped) = job.strip_prefix("ok:") {
+                JobOutput::Success(stripped.into())
+            } else if let Some(stripped) = job.strip_prefix("ko:") {
+                JobOutput::JobError(stripped.into())
+            } else if let Some(stripped) = job.strip_prefix("crash:") {
+                JobOutput::ProcessError(stripped.into())
+            } else {
+                panic!("Job should begin with ok:, ko, or crash:")
+            }
+        }
+    }
+
+    struct TestJobStarter {}
+
+    impl JobStarter for TestJobStarter {
+        fn start_all_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
+            for job in jobs {
+                job.start(&TestJobRunner {}, &tx.clone());
+            }
+        }
+
+        fn join(&mut self) {}
+    }
+
+    struct NullCiDisplay {}
+
+    impl CiDisplay for NullCiDisplay {
+        fn refresh(&mut self, _: &JobProgressTracker) {}
+    }
+
+    fn test_that(callback: fn(&mut dyn JobScheduler)) {
+        let mut job_start = TestJobStarter {};
+        let mut job_display = NullCiDisplay {};
+        let mut scheduler = CompositeJobScheduler::new(&mut job_start, &mut job_display);
+        callback(&mut scheduler)
+    }
+
+    #[test]
+    pub fn every_job_is_initialisated() {
+        test_that(|scheduler| {
+            let result = scheduler.schedule(&[Job::new("a".into(), "ok: result".into())]);
+            assert!(result.is_ok());
+        })
+    }
+
+    #[test]
+    pub fn one_job_failure_fails_scheduling() {
+        test_that(|scheduler| {
+            let result = scheduler.schedule(&[Job::new("c".into(), "ko: result".into())]);
+            assert!(result.is_err());
+        })
+    }
+
+    #[test]
+    pub fn one_job_crash_fails_scheduling() {
+        test_that(|scheduler| {
+            let result = scheduler.schedule(&[Job::new("c".into(), "crash: result".into())]);
+            assert!(result.is_err());
+        })
+    }
+}
