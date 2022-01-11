@@ -1,39 +1,27 @@
-use super::job::{JobOutput, JobProgress, JobProgressTracker, Progress};
+use super::job::{JobOutput, JobProgressTracker, Progress};
 use super::schedule::CiDisplay;
 use std::fmt::Formatter;
 
-pub struct OneOffCiDisplay {
-    tracker: JobProgressTracker,
-}
+pub struct OneOffCiDisplay {}
 
 impl CiDisplay for OneOffCiDisplay {
-    fn record(&mut self, job_progress: JobProgress) {
-        self.tracker.record(job_progress);
-    }
-
-    fn is_finished(&self) -> bool {
-        self.tracker.is_finished()
-    }
-
-    fn refresh(&mut self) {
-        if self.is_finished() {
-            println!("{}", self)
+    fn refresh(&mut self, tracker: &JobProgressTracker) {
+        if tracker.is_finished() {
+            println!("{}", tracker)
         }
     }
 }
 
 impl OneOffCiDisplay {
     pub fn new() -> Self {
-        OneOffCiDisplay {
-            tracker: JobProgressTracker::new(),
-        }
+        OneOffCiDisplay {}
     }
 }
 
-impl std::fmt::Display for OneOffCiDisplay {
+impl std::fmt::Display for JobProgressTracker {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut count = self.tracker.states.len();
-        for (job_name, progress) in &self.tracker.states {
+        let mut count = self.states.len();
+        for (job_name, progress) in &self.states {
             if let Progress::Terminated(job_output) = progress {
                 match job_output {
                     JobOutput::Success(string) => {
