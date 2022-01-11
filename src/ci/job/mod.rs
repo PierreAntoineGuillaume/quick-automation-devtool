@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum JobOutput {
     Success(String),
@@ -95,5 +97,30 @@ impl JobProgress {
 
     pub fn failed(&self) -> bool {
         self.progress.failed()
+    }
+}
+
+pub struct JobProgressTracker {
+    pub states: BTreeMap<String, Progress>,
+}
+
+impl JobProgressTracker {
+    pub fn new() -> Self {
+        JobProgressTracker {
+            states: BTreeMap::new(),
+        }
+    }
+    pub fn record(&mut self, job_progress: JobProgress) {
+        self.states
+            .insert(job_progress.job_name, job_progress.progress);
+    }
+
+    pub fn is_finished(&self) -> bool {
+        for progress in self.states.values() {
+            if progress.is_pending() {
+                return false;
+            }
+        }
+        true
     }
 }
