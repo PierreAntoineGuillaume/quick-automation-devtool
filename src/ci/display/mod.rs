@@ -22,7 +22,7 @@ impl std::fmt::Display for JobProgressTracker {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut count = self.states.len();
         for (job_name, progress) in &self.states {
-            if let Progress::Terminated(job_output) = progress {
+            if let Some(Progress::Terminated(job_output)) = progress.last() {
                 match job_output {
                     JobOutput::Success(string) => {
                         write!(f, "✅ {}\n{}", job_name, string)?;
