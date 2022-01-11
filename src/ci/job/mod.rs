@@ -28,6 +28,9 @@ pub struct Job {
 }
 
 impl Job {
+    pub fn new(name: String, instruction: String) -> Self {
+        Job { name, instruction }
+    }
     pub fn start(&self, runner: &dyn JobRunner, consumer: &dyn JobProgressConsumer) {
         consumer.consume(JobProgress::new(self.name.clone(), Progress::Started));
         let terminated = Progress::Terminated(runner.run(&self.instruction));
@@ -71,10 +74,7 @@ impl Pipeline {
     }
 
     pub fn push(&mut self, key: String, instruction: String) {
-        self.jobs.push(Job {
-            name: key,
-            instruction,
-        });
+        self.jobs.push(Job::new(key, instruction));
     }
 
     pub fn new() -> Pipeline {
