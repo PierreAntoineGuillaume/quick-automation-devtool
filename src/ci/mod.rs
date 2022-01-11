@@ -1,5 +1,6 @@
 use job::{Job, JobOutput, JobProgress, JobProgressConsumer, JobRunner};
 use schedule::JobStarter;
+use std::process::Command;
 use std::sync::mpsc::Sender;
 use std::thread;
 use std::thread::JoinHandle;
@@ -52,15 +53,21 @@ impl CommandJobRunner {
 
 impl JobRunner for CommandJobRunner {
     fn run(&self, job: &str) -> JobOutput {
-        match std::process::Command::new(&job).output() {
-            Ok(output) => {
-                return match (output.status.success(), std::str::from_utf8(&output.stdout)) {
-                    (true, Ok(output)) => JobOutput::Success(output.to_string()),
-                    (false, Ok(e)) => JobOutput::JobError(e.to_string()),
-                    (_, Err(e)) => JobOutput::ProcessError(e.to_string()),
-                };
+        let mut parts = job.split(' ');
+        if let Some(program) = parts.next() {
+            let args: Vec<&str> = parts.into_iter().collect();
+            match Command::new(&program).args(&args).output() {
+                Ok(output) => {
+                    return match (output.status.success(), std::str::from_utf8(&output.stdout)) {
+                        (true, Ok(output)) => JobOutput::Success(output.to_string()),
+                        (false, Ok(e)) => JobOutput::JobError(e.to_string()),
+                        (_, Err(e)) => JobOutput::ProcessError(e.to_string()),
+                    };
+                }
+                Err(e) => JobOutput::ProcessError(format!("{}: {}", job, e)),
             }
-            Err(e) => JobOutput::ProcessError(format!("{}: {}", job, e)),
+        } else {
+            JobOutput::ProcessError(String::from("No jobs to be ran"))
         }
     }
 }
