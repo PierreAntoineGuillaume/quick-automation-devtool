@@ -5,6 +5,7 @@ clippy:
   image: rustlang/rust:nightly
   script:
     - cargo clippy
+    - cargo clippy --tests
 
 fmt:
   image: rustlang/rust:nightly
