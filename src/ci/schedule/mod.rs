@@ -13,7 +13,6 @@ pub trait CiDisplay {
 pub struct CompositeJobScheduler<'a> {
     job_starter: &'a mut dyn JobStarter,
     job_display: &'a mut dyn CiDisplay,
-    tracker: JobProgressTracker,
 }
 
 impl JobScheduler for CompositeJobScheduler<'_> {
@@ -22,24 +21,25 @@ impl JobScheduler for CompositeJobScheduler<'_> {
 
         Self::signal_all_existing_jobs(jobs, &tx);
         self.job_starter.start_all_jobs(jobs, tx);
+        let mut tracker = JobProgressTracker::new();
 
         let mut is_error = false;
         loop {
             if let Ok(state) = rx.try_recv() {
                 is_error |= state.failed();
-                self.tracker.record(state);
+                tracker.record(state);
             }
 
-            if self.tracker.is_finished() {
+            if tracker.is_finished() {
                 break;
             }
 
-            self.job_display.refresh(&self.tracker);
+            self.job_display.refresh(&tracker);
         }
 
         self.job_starter.join();
 
-        self.job_display.refresh(&self.tracker);
+        self.job_display.refresh(&tracker);
 
         if is_error {
             return Err(());
@@ -64,7 +64,6 @@ impl CompositeJobScheduler<'_> {
         CompositeJobScheduler {
             job_starter,
             job_display,
-            tracker: JobProgressTracker::new(),
         }
     }
 }
