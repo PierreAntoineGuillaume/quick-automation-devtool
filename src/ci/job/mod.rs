@@ -81,8 +81,8 @@ impl Pipeline {
         scheduler.schedule(&self.jobs)
     }
 
-    pub fn push(&mut self, key: String, instruction: String) {
-        self.jobs.push(Job::new(key, vec![instruction]));
+    pub fn push(&mut self, key: String, instruction: Vec<String>) {
+        self.jobs.push(Job::new(key, instruction));
     }
 
     pub fn new() -> Pipeline {
