@@ -2,17 +2,19 @@ use job::{Job, JobOutput, JobProgress, JobProgressConsumer, JobRunner};
 use schedule::JobStarter;
 use std::sync::mpsc::Sender;
 use std::thread;
+use std::thread::JoinHandle;
 
 pub(crate) mod display;
 pub(crate) mod job;
 pub(crate) mod schedule;
 
-#[derive(Clone, Copy)]
-pub struct ParrallelJobStarter {}
+pub struct ParrallelJobStarter {
+    threads: std::vec::Vec<JoinHandle<()>>,
+}
 
 impl ParrallelJobStarter {
     pub fn new() -> Self {
-        ParrallelJobStarter {}
+        ParrallelJobStarter { threads: vec![] }
     }
 }
 
@@ -23,13 +25,19 @@ impl JobProgressConsumer for Sender<JobProgress> {
 }
 
 impl JobStarter for ParrallelJobStarter {
-    fn start_all_jobs(&self, jobs: &[Job], tx: Sender<JobProgress>) {
+    fn start_all_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
         for real_job in jobs {
             let job = real_job.clone();
             let consumer = tx.clone();
-            thread::spawn(move || {
+            self.threads.push(thread::spawn(move || {
                 job.start(&CommandJobRunner::new(), &consumer);
-            });
+            }));
+        }
+    }
+
+    fn join(&mut self) {
+        while let Some(handle) = self.threads.pop() {
+            handle.join().expect("Could not join handle")
         }
     }
 }

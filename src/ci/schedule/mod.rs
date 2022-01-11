@@ -2,7 +2,8 @@ use super::job::{Job, JobProgress, JobScheduler, Progress};
 use std::sync::mpsc::{channel, Sender};
 
 pub trait JobStarter {
-    fn start_all_jobs(&self, jobs: &[Job], tx: Sender<JobProgress>);
+    fn start_all_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>);
+    fn join(&mut self);
 }
 
 pub trait CiDisplay {
@@ -12,7 +13,7 @@ pub trait CiDisplay {
 }
 
 pub struct CompositeJobScheduler<'a> {
-    job_starter: &'a dyn JobStarter,
+    job_starter: &'a mut dyn JobStarter,
     job_display: &'a mut dyn CiDisplay,
 }
 
@@ -34,6 +35,8 @@ impl JobScheduler for CompositeJobScheduler<'_> {
                 break;
             }
         }
+
+        self.job_starter.join();
 
         if is_error {
             return Err(());
