@@ -16,7 +16,7 @@ pub struct CompositeJobScheduler<'a> {
 }
 
 impl JobScheduler for CompositeJobScheduler<'_> {
-    fn schedule(&mut self, jobs: &[Job]) -> Result<(), ()> {
+    fn schedule(&mut self, jobs: &[Job]) -> Result<JobProgressTracker, JobProgressTracker> {
         let (tx, rx) = channel();
 
         Self::signal_all_existing_jobs(jobs, &tx);
@@ -42,10 +42,10 @@ impl JobScheduler for CompositeJobScheduler<'_> {
         self.job_display.refresh(&tracker);
 
         if is_error {
-            return Err(());
+            return Err(tracker);
         }
 
-        Ok(())
+        Ok(tracker)
     }
 }
 

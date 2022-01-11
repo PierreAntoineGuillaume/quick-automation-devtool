@@ -65,11 +65,14 @@ pub struct Pipeline {
 }
 
 pub trait JobScheduler {
-    fn schedule(&mut self, jobs: &[Job]) -> Result<(), ()>;
+    fn schedule(&mut self, jobs: &[Job]) -> Result<JobProgressTracker, JobProgressTracker>;
 }
 
 impl Pipeline {
-    pub fn run(&mut self, scheduler: &mut dyn JobScheduler) -> Result<(), ()> {
+    pub fn run(
+        &mut self,
+        scheduler: &mut dyn JobScheduler,
+    ) -> Result<JobProgressTracker, JobProgressTracker> {
         scheduler.schedule(&self.jobs)
     }
 
