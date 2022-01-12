@@ -1,5 +1,5 @@
 use super::job::{Job, JobProgress, JobProgressTracker, JobScheduler, Progress};
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::{channel, Sender, TryRecvError};
 
 pub trait JobStarter {
     fn start_all_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>);
@@ -25,9 +25,15 @@ impl JobScheduler for CompositeJobScheduler<'_> {
 
         let mut is_error = false;
         loop {
-            if let Ok(state) = rx.try_recv() {
-                is_error |= state.failed();
-                tracker.record(state);
+            match rx.try_recv() {
+                Ok(state) => {
+                    is_error |= state.failed();
+                    tracker.record(state);
+                }
+                Err(TryRecvError::Disconnected) => {
+                    panic!("State receiver has been disconnected, try restarting the program");
+                }
+                Err(TryRecvError::Empty) => {}
             }
 
             if tracker.is_finished() {
