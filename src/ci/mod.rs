@@ -1,4 +1,5 @@
 use job::{Job, JobOutput, JobProgress, JobProgressConsumer, JobRunner};
+use regex::Regex;
 use schedule::JobStarter;
 use std::process::Command;
 use std::sync::mpsc::Sender;
@@ -53,16 +54,19 @@ impl CommandJobRunner {
 
 impl JobRunner for CommandJobRunner {
     fn run(&self, job: &str) -> JobOutput {
-        let mut parts = job.split(' ');
+        let regex = Regex::new(r"\s+").unwrap();
+        let mut parts = regex.split(job);
         if let Some(program) = parts.next() {
             let args: Vec<&str> = parts.into_iter().collect();
             match Command::new(&program).args(&args).output() {
                 Ok(output) => {
-                    return match (output.status.success(), std::str::from_utf8(&output.stdout)) {
-                        (true, Ok(output)) => JobOutput::Success(output.to_string()),
-                        (false, Ok(e)) => JobOutput::JobError(e.to_string()),
-                        (_, Err(e)) => JobOutput::ProcessError(e.to_string()),
-                    };
+                    let stdout = String::from(std::str::from_utf8(&output.stdout).unwrap());
+                    let stderr = String::from(std::str::from_utf8(&output.stderr).unwrap());
+                    if output.status.success() {
+                        JobOutput::Success(stdout, stderr)
+                    } else {
+                        JobOutput::JobError(stdout, stderr)
+                    }
                 }
                 Err(e) => JobOutput::ProcessError(format!("{}: {}", job, e)),
             }

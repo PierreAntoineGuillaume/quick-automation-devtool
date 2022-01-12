@@ -20,24 +20,26 @@ impl OneOffCiDisplay {
 
 impl std::fmt::Display for JobProgressTracker {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut count = self.states.len();
-        for (job_name, progress) in &self.states {
-            if let Some(Progress::Terminated(job_output)) = progress.last() {
-                match job_output {
-                    JobOutput::Success(string) => {
-                        write!(f, "✅ {}\n{}", job_name, string)?;
+        for (job_name, progress_collector) in &self.states {
+            writeln!(f, "job {}: ...", job_name)?;
+            for progress in &progress_collector.progresses {
+                match progress {
+                    Progress::Partial(instruction, job_output) => match job_output {
+                        JobOutput::Success(stdout, stderr) => {
+                            write!(f, "✅ {}\n{}\n{}", instruction, stdout, stderr)?;
+                        }
+                        JobOutput::JobError(stdout, stderr) => {
+                            write!(f, "❌ {}\n{}\n{}", instruction, stdout, stderr)?;
+                        }
+                        JobOutput::ProcessError(stderr) => {
+                            write!(f, "💀 {}: {}", instruction, stderr)?;
+                        }
+                    },
+                    Progress::Terminated(bool) => {
+                        writeln!(f, "{} job {}", if *bool { "✅" } else { "❌" }, job_name)?;
                     }
-                    JobOutput::JobError(string) => {
-                        write!(f, "❌ {}\n{}", job_name, string)?;
-                    }
-                    JobOutput::ProcessError(string) => {
-                        write!(f, "💀 {}: {}", job_name, string)?;
-                    }
+                    _ => {}
                 }
-            }
-            count -= 1;
-            if count != 0 {
-                writeln!(f)?
             }
         }
         Ok(())
