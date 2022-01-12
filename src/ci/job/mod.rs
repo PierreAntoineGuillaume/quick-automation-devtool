@@ -2,14 +2,14 @@ use std::collections::BTreeMap;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JobOutput {
-    Success(String),
-    JobError(String),
+    Success(String, String),
+    JobError(String, String),
     ProcessError(String),
 }
 
 impl JobOutput {
-    pub fn failed(&self) -> bool {
-        !matches!(self, JobOutput::Success(_))
+    pub fn succeeded(&self) -> bool {
+        matches!(self, JobOutput::Success(_, _))
     }
 }
 
@@ -36,10 +36,20 @@ impl Job {
     }
     pub fn start(&self, runner: &dyn JobRunner, consumer: &dyn JobProgressConsumer) {
         consumer.consume(JobProgress::new(self.name.clone(), Progress::Started));
+        let mut success = true;
         for instruction in &self.instructions {
-            let terminated = Progress::Terminated(runner.run(instruction));
-            consumer.consume(JobProgress::new(self.name.clone(), terminated));
+            let output = runner.run(instruction);
+            success = output.succeeded();
+            let partial = Progress::Partial(instruction.clone(), output);
+            consumer.consume(JobProgress::new(self.name.clone(), partial));
+            if !success {
+                break;
+            }
         }
+        consumer.consume(JobProgress::new(
+            self.name.clone(),
+            Progress::Terminated(success),
+        ));
     }
 }
 
@@ -47,21 +57,24 @@ impl Job {
 pub enum Progress {
     Awaiting,
     Started,
-    Terminated(JobOutput),
+    Partial(String, JobOutput),
+    Terminated(bool),
 }
 
 impl Progress {
     pub fn failed(&self) -> bool {
-        match self {
-            Progress::Terminated(job_output) => job_output.failed(),
-            _ => false,
-        }
+        matches!(
+            self,
+            Progress::Partial(_, JobOutput::JobError(_, _))
+                | Progress::Partial(_, JobOutput::ProcessError(_))
+                | Progress::Terminated(false)
+        )
     }
 }
 
 impl Progress {
     pub fn is_pending(&self) -> bool {
-        matches!(*self, Progress::Awaiting | Progress::Started)
+        !matches!(*self, Progress::Terminated(_))
     }
 }
 
@@ -109,7 +122,7 @@ impl JobProgress {
 }
 
 pub struct ProgressCollector {
-    progresses: std::vec::Vec<Progress>,
+    pub progresses: std::vec::Vec<Progress>,
 }
 
 impl ProgressCollector {
@@ -163,9 +176,9 @@ pub mod test {
     impl JobRunner for TestJobRunner {
         fn run(&self, job: &str) -> JobOutput {
             if let Some(stripped) = job.strip_prefix("ok:") {
-                JobOutput::Success(stripped.into())
+                JobOutput::Success(stripped.into(), "".into())
             } else if let Some(stripped) = job.strip_prefix("ko:") {
-                JobOutput::JobError(stripped.into())
+                JobOutput::JobError(stripped.into(), "".into())
             } else if let Some(stripped) = job.strip_prefix("crash:") {
                 JobOutput::ProcessError(stripped.into())
             } else {

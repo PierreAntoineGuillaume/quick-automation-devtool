@@ -39,6 +39,10 @@ struct CiArgs {}
 )]
 struct AutocompleteArgs {}
 
+fn map_vec(vec: Vec<&str>) -> Vec<String> {
+    vec.iter().map(|item| String::from(*item)).collect()
+}
+
 fn main() {
     let args: Args = argh::from_env();
 
@@ -56,8 +60,9 @@ fn main() {
         Subcommands::Ci(_) => {
             let mut pipeline = Pipeline::new();
 
-            pipeline.push("phpstan".into(), vec!["vendor/bin/phpstan".into()]);
-            pipeline.push("phpcs".into(), vec!["vendor/bin/phpcs".into()]);
+            pipeline.push("phpstan".into(), map_vec(vec!["vendor/bin/phpstan"]));
+            pipeline.push("phpcs".into(), map_vec(vec!["vendor/bin/phpcs"]));
+            pipeline.push("tests".into(), map_vec(vec!["yarn install", "yarn jest"]));
 
             if pipeline
                 .run(&mut CompositeJobScheduler::new(
