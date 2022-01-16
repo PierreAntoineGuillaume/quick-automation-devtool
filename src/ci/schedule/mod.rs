@@ -59,7 +59,7 @@ impl CompositeJobScheduler<'_> {
     fn signal_all_existing_jobs(jobs: &[Job], first_tx: &Sender<JobProgress>) {
         for job in jobs {
             first_tx
-                .send(JobProgress::new(job.name.clone(), Progress::Awaiting))
+                .send(JobProgress::new(&job.name, Progress::Awaiting))
                 .unwrap();
         }
     }
