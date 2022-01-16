@@ -28,9 +28,9 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn new(name: String, instruction: Vec<String>) -> Self {
+    pub fn new(name: &str, instruction: Vec<String>) -> Self {
         Job {
-            name,
+            name: name.to_string(),
             instructions: instruction,
         }
     }
@@ -91,7 +91,7 @@ impl Pipeline {
         scheduler.schedule(&self.jobs)
     }
 
-    pub fn push(&mut self, key: String, instruction: Vec<String>) {
+    pub fn push(&mut self, key: &str, instruction: Vec<String>) {
         self.jobs.push(Job::new(key, instruction));
     }
 
