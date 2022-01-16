@@ -60,9 +60,9 @@ fn main() {
         Subcommands::Ci(_) => {
             let mut pipeline = Pipeline::new();
 
-            pipeline.push("phpstan".into(), map_vec(vec!["vendor/bin/phpstan"]));
-            pipeline.push("phpcs".into(), map_vec(vec!["vendor/bin/phpcs"]));
-            pipeline.push("tests".into(), map_vec(vec!["yarn install", "yarn jest"]));
+            pipeline.push("phpstan", map_vec(vec!["vendor/bin/phpstan"]));
+            pipeline.push("phpcs", map_vec(vec!["vendor/bin/phpcs"]));
+            pipeline.push("tests", map_vec(vec!["yarn install", "yarn jest"]));
 
             if pipeline
                 .run(&mut CompositeJobScheduler::new(
