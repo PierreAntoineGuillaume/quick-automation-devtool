@@ -35,21 +35,18 @@ impl Job {
         }
     }
     pub fn start(&self, runner: &dyn JobRunner, consumer: &dyn JobProgressConsumer) {
-        consumer.consume(JobProgress::new(self.name.clone(), Progress::Started));
+        consumer.consume(JobProgress::new(&self.name, Progress::Started));
         let mut success = true;
         for instruction in &self.instructions {
             let output = runner.run(instruction);
             success = output.succeeded();
             let partial = Progress::Partial(instruction.clone(), output);
-            consumer.consume(JobProgress::new(self.name.clone(), partial));
+            consumer.consume(JobProgress::new(&self.name, partial));
             if !success {
                 break;
             }
         }
-        consumer.consume(JobProgress::new(
-            self.name.clone(),
-            Progress::Terminated(success),
-        ));
+        consumer.consume(JobProgress::new(&self.name, Progress::Terminated(success)));
     }
 }
 
@@ -109,9 +106,9 @@ pub struct JobProgress {
 }
 
 impl JobProgress {
-    pub fn new(job: String, progress: Progress) -> Self {
+    pub fn new(job_name: &str, progress: Progress) -> Self {
         JobProgress {
-            job_name: job,
+            job_name: job_name.to_string(),
             progress,
         }
     }
