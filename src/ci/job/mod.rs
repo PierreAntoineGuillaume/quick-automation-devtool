@@ -28,10 +28,10 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn new(name: &str, instruction: Vec<String>) -> Self {
+    pub fn new(name: &str, instruction: Vec<&str>) -> Self {
         Job {
             name: name.to_string(),
-            instructions: instruction,
+            instructions: instruction.iter().map(|item| String::from(*item)).collect(),
         }
     }
     pub fn start(&self, runner: &dyn JobRunner, consumer: &dyn JobProgressConsumer) {
@@ -91,7 +91,7 @@ impl Pipeline {
         scheduler.schedule(&self.jobs)
     }
 
-    pub fn push(&mut self, key: &str, instruction: Vec<String>) {
+    pub fn push(&mut self, key: &str, instruction: Vec<&str>) {
         self.jobs.push(Job::new(key, instruction));
     }
 
