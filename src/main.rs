@@ -61,7 +61,10 @@ fn main() {
             pipeline.push("tests", &["yarn install", "yarn jest"]);
 
             if pipeline
-                .run(&mut CompositeJobScheduler::new(
+                .run(&mut CompositeJobScheduler::<
+                    ParrallelJobStarter,
+                    OneOffCiDisplay,
+                >::new(
                     &mut ParrallelJobStarter::new(),
                     &mut OneOffCiDisplay::new(),
                 ))
