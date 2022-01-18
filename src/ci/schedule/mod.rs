@@ -10,12 +10,14 @@ pub trait CiDisplay {
     fn refresh(&mut self, tracker: &JobProgressTracker);
 }
 
-pub struct CompositeJobScheduler<'a> {
-    job_starter: &'a mut dyn JobStarter,
-    job_display: &'a mut dyn CiDisplay,
+pub struct CompositeJobScheduler<'a, Starter: JobStarter, Displayer: CiDisplay> {
+    job_starter: &'a mut Starter,
+    job_display: &'a mut Displayer,
 }
 
-impl JobScheduler for CompositeJobScheduler<'_> {
+impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
+    for CompositeJobScheduler<'_, Starter, Displayer>
+{
     fn schedule(&mut self, jobs: &[Job]) -> Result<JobProgressTracker, JobProgressTracker> {
         let (tx, rx) = channel();
 
@@ -55,7 +57,7 @@ impl JobScheduler for CompositeJobScheduler<'_> {
     }
 }
 
-impl CompositeJobScheduler<'_> {
+impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starter, Displayer> {
     fn signal_all_existing_jobs(jobs: &[Job], first_tx: &Sender<JobProgress>) {
         for job in jobs {
             first_tx
@@ -63,10 +65,10 @@ impl CompositeJobScheduler<'_> {
                 .unwrap();
         }
     }
-    pub fn new<'a>(
-        job_starter: &'a mut dyn JobStarter,
-        job_display: &'a mut dyn CiDisplay,
-    ) -> CompositeJobScheduler<'a> {
+    pub fn new<'a, Ta: JobStarter, Tb: CiDisplay>(
+        job_starter: &'a mut Ta,
+        job_display: &'a mut Tb,
+    ) -> CompositeJobScheduler<'a, Ta, Tb> {
         CompositeJobScheduler {
             job_starter,
             job_display,
@@ -100,7 +102,10 @@ mod tests {
     fn test_that(callback: fn(&mut dyn JobScheduler)) {
         let mut job_start = TestJobStarter {};
         let mut job_display = NullCiDisplay {};
-        let mut scheduler = CompositeJobScheduler::new(&mut job_start, &mut job_display);
+        let mut scheduler = CompositeJobScheduler::<TestJobStarter, NullCiDisplay>::new(
+            &mut job_start,
+            &mut job_display,
+        );
         callback(&mut scheduler)
     }
 
