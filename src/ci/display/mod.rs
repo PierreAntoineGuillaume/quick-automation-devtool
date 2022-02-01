@@ -41,7 +41,7 @@ impl CiDisplay for TermCiDisplay {
             if !pending {
                 spin.finish();
             }
-            writeln!(self.term, "{job_name} {symbol}").unwrap();
+            writeln!(self.term, "{:10} {} {}", job_name, spin, symbol).unwrap();
             self.lines_written += 1;
             spin = spin.plus_one();
         }
@@ -99,7 +99,8 @@ impl std::fmt::Display for JobProgressTracker {
                             };
                             write!(
                                 f,
-                                "{symbol} {}",
+                                "{} {}",
+                                symbol,
                                 try_cleanup(format!(
                                     "{}{}{}",
                                     instruction,
@@ -119,7 +120,7 @@ impl std::fmt::Display for JobProgressTracker {
                     },
                     Progress::Terminated(bool) => {
                         let emoji: &str = if *bool { dict::CHECK } else { dict::CROSS };
-                        writeln!(f, "{emoji} all tasks done for job {job_name}")?;
+                        writeln!(f, "{} all tasks done for job {}", emoji, job_name)?;
                     }
                     _ => {}
                 }
