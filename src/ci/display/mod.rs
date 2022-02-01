@@ -102,7 +102,7 @@ impl std::fmt::Display for JobProgressTracker {
                                 "{} {}",
                                 symbol,
                                 try_cleanup(format!(
-                                    "{}{}{}",
+                                    "{}\n{}{}",
                                     instruction,
                                     try_cleanup(stdout.clone()),
                                     try_cleanup(stderr.clone())
