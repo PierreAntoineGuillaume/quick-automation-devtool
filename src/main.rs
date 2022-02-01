@@ -2,8 +2,10 @@ mod ci;
 
 extern crate atty;
 
-use crate::ci::logic::job::{JobScheduler, Pipeline};
-use crate::ci::NThreadedJobScheduler;
+use crate::ci::display::OneOffCiDisplay;
+use crate::ci::job::Pipeline;
+use crate::ci::schedule::CompositeJobScheduler;
+use crate::ci::ParrallelJobStarter;
 use argh::FromArgs;
 
 const VERSION: &str = "0.1.2";
@@ -54,11 +56,20 @@ fn main() {
         Subcommands::Ci(_) => {
             let mut pipeline = Pipeline::new();
 
-            pipeline.push("phpstan".into(), "vendor/bin/phpstan".into());
-            pipeline.push("phpcs".into(), "vendor/bin/phpcs".into());
+            pipeline.push("phpstan", &["vendor/bin/phpstan"]);
+            pipeline.push("phpcs", &["vendor/bin/phpcs"]);
+            pipeline.push("tests", &["yarn install", "yarn jest"]);
 
-            let mut scheduler: Box<dyn JobScheduler> = Box::new(NThreadedJobScheduler {});
-            if pipeline.run(&mut (*scheduler)).is_err() {
+            if pipeline
+                .run(&mut CompositeJobScheduler::<
+                    ParrallelJobStarter,
+                    OneOffCiDisplay,
+                >::new(
+                    &mut ParrallelJobStarter::new(),
+                    &mut OneOffCiDisplay::new(),
+                ))
+                .is_err()
+            {
                 std::process::exit(1);
             }
         }

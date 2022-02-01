@@ -1,84 +1,77 @@
-pub(crate) mod logic;
-
-use logic::display::PipelineProgress;
-use logic::job::*;
+use job::{Job, JobOutput, JobProgress, JobProgressConsumer, JobRunner};
+use regex::Regex;
+use schedule::JobStarter;
 use std::process::Command;
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::Sender;
 use std::thread;
+use std::thread::JoinHandle;
 
-#[derive(Clone)]
-pub struct NThreadedJobScheduler {}
+pub(crate) mod display;
+pub(crate) mod job;
+pub(crate) mod schedule;
 
-impl JobScheduler for NThreadedJobScheduler {
-    fn schedule(&mut self, jobs: &[Job]) -> Result<(), ()> {
-        let (first_tx, rx) = channel();
+pub struct ParrallelJobStarter {
+    threads: std::vec::Vec<JoinHandle<()>>,
+}
 
-        Self::signal_all_existing_jobs(jobs, &first_tx);
-        Self::start_all_jobs(jobs, first_tx);
-
-        let mut pipeline_progress = PipelineProgress::new();
-        let mut is_error = false;
-        loop {
-            if let Ok(state) = rx.try_recv() {
-                is_error |= state.failed();
-                pipeline_progress.push(state);
-            }
-            if pipeline_progress.is_finished() {
-                println!("{}", pipeline_progress);
-                break;
-            }
-        }
-
-        if is_error {
-            return Err(());
-        }
-
-        Ok(())
+impl ParrallelJobStarter {
+    pub fn new() -> Self {
+        ParrallelJobStarter { threads: vec![] }
     }
 }
 
-impl NThreadedJobScheduler {
-    fn signal_all_existing_jobs(jobs: &[Job], first_tx: &Sender<JobProgress>) {
-        for job in jobs {
-            first_tx
-                .send(JobProgress::new(job.name.clone(), Progress::Awaiting))
-                .unwrap();
+impl JobProgressConsumer for Sender<JobProgress> {
+    fn consume(&self, job_progress: JobProgress) {
+        self.send(job_progress).unwrap()
+    }
+}
+
+impl JobStarter for ParrallelJobStarter {
+    fn start_all_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
+        for real_job in jobs {
+            let job = real_job.clone();
+            let consumer = tx.clone();
+            self.threads.push(thread::spawn(move || {
+                job.start(&CommandJobRunner::new(), &consumer);
+            }));
         }
     }
 
-    fn start_all_jobs(jobs: &[Job], first_tx: Sender<JobProgress>) {
-        for real_job in jobs {
-            let job = real_job.clone();
-            let tx = first_tx.clone();
-            thread::spawn(move || {
-                tx.send(JobProgress::new(job.name.clone(), Progress::Started))
-                    .unwrap();
-                let terminated = Progress::Terminated(job.start(Box::new(CommandJobRunner::new())));
-                tx.send(JobProgress::new(job.name, terminated)).unwrap();
-            });
+    fn join(&mut self) {
+        while let Some(handle) = self.threads.pop() {
+            handle.join().expect("Could not join handle")
         }
     }
 }
 
 pub struct CommandJobRunner {}
 
-impl JobRunner for CommandJobRunner {
-    fn run(&self, job: &str) -> JobOutput {
-        match Command::new(&job).output() {
-            Ok(output) => {
-                return match (output.status.success(), std::str::from_utf8(&output.stdout)) {
-                    (true, Ok(output)) => JobOutput::Success(output.to_string()),
-                    (false, Ok(e)) => JobOutput::JobError(e.to_string()),
-                    (_, Err(e)) => JobOutput::ProcessError(e.to_string()),
-                };
-            }
-            Err(e) => JobOutput::ProcessError(format!("{}: {}", job, e)),
-        }
-    }
-}
-
 impl CommandJobRunner {
     pub fn new() -> CommandJobRunner {
         CommandJobRunner {}
+    }
+}
+
+impl JobRunner for CommandJobRunner {
+    fn run(&self, job: &str) -> JobOutput {
+        let regex = Regex::new(r"\s+").unwrap();
+        let mut parts = regex.split(job);
+        if let Some(program) = parts.next() {
+            let args: Vec<&str> = parts.into_iter().collect();
+            match Command::new(&program).args(&args).output() {
+                Ok(output) => {
+                    let stdout = String::from(std::str::from_utf8(&output.stdout).unwrap());
+                    let stderr = String::from(std::str::from_utf8(&output.stderr).unwrap());
+                    if output.status.success() {
+                        JobOutput::Success(stdout, stderr)
+                    } else {
+                        JobOutput::JobError(stdout, stderr)
+                    }
+                }
+                Err(e) => JobOutput::ProcessError(format!("{}: {}", job, e)),
+            }
+        } else {
+            JobOutput::ProcessError(String::from("No jobs to be ran"))
+        }
     }
 }
