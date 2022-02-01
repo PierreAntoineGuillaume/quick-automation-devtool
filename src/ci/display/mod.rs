@@ -1,5 +1,8 @@
+mod spinner;
+
 use super::job::{JobOutput, JobProgressTracker, Progress};
 use super::schedule::CiDisplay;
+use spinner::Spinner;
 use std::fmt::Formatter;
 use term::StdoutTerminal;
 
@@ -13,6 +16,7 @@ mod dict {
 }
 
 pub struct TermCiDisplay {
+    spin: Spinner,
     term: Box<StdoutTerminal>,
     lines_written: u16,
 }
@@ -20,6 +24,7 @@ pub struct TermCiDisplay {
 impl CiDisplay for TermCiDisplay {
     fn refresh(&mut self, tracker: &JobProgressTracker) {
         self.clear();
+        let mut spin = self.spin.plus_one();
         for (job_name, progress_collector) in &tracker.states {
             let progress = progress_collector.last().unwrap();
             let pending = progress.is_pending();
@@ -33,9 +38,14 @@ impl CiDisplay for TermCiDisplay {
                 dict::CHECK
             };
 
+            if !pending {
+                spin.finish();
+            }
             writeln!(self.term, "{job_name} {symbol}").unwrap();
             self.lines_written += 1;
+            spin = spin.plus_one();
         }
+        self.spin.tick();
     }
 
     fn finish(&mut self, tracker: &JobProgressTracker) {
@@ -59,6 +69,7 @@ impl TermCiDisplay {
         TermCiDisplay {
             term: term::stdout().unwrap(),
             lines_written: 0,
+            spin: Spinner::new(&[".  ", " . ", "  .", " . ", "..."]),
         }
     }
 }
