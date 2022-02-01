@@ -14,7 +14,7 @@ mod dict {
 
 pub struct TermCiDisplay {
     term: Box<StdoutTerminal>,
-    lines: u16,
+    lines_written: u16,
 }
 
 impl CiDisplay for TermCiDisplay {
@@ -34,7 +34,7 @@ impl CiDisplay for TermCiDisplay {
             };
 
             writeln!(self.term, "{job_name} {symbol}").unwrap();
-            self.lines += 1;
+            self.lines_written += 1;
         }
     }
 
@@ -47,18 +47,18 @@ impl CiDisplay for TermCiDisplay {
 
 impl TermCiDisplay {
     fn clear(&mut self) {
-        (0..self.lines as usize).for_each(|_| {
+        (0..self.lines_written as usize).for_each(|_| {
             self.term.cursor_up().unwrap();
             self.term.carriage_return().unwrap();
             self.term.delete_line().unwrap();
         });
         self.term.reset().unwrap();
-        self.lines = 0;
+        self.lines_written = 0;
     }
     pub fn new() -> Self {
         TermCiDisplay {
             term: term::stdout().unwrap(),
-            lines: 0,
+            lines_written: 0,
         }
     }
 }
