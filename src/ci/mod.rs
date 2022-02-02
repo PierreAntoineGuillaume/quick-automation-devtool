@@ -16,7 +16,7 @@ pub struct ParrallelJobStarter {
     last_occurence: SystemTime,
 }
 
-const AWAIT_TIME: Duration = std::time::Duration::from_millis(200);
+const AWAIT_TIME: Duration = std::time::Duration::from_millis(40);
 
 impl ParrallelJobStarter {
     pub fn new() -> Self {
@@ -50,15 +50,17 @@ impl JobStarter for ParrallelJobStarter {
         }
     }
 
-    fn delay(&mut self) {
+    fn delay(&mut self) -> usize {
         let time_for = AWAIT_TIME
             - SystemTime::now()
                 .duration_since(self.last_occurence)
                 .unwrap();
-        if time_for.as_millis() > 0 {
+        let millis: usize = std::cmp::max(time_for.as_millis() as usize, 0);
+        if millis != 0 {
             sleep(time_for);
         }
         self.last_occurence = SystemTime::now();
+        millis
     }
 }
 

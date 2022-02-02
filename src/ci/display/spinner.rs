@@ -1,19 +1,23 @@
 use std::fmt::{Display, Formatter};
 
 pub struct Spinner {
-    ticks: u8,
+    ticks: usize,
     roll: usize,
     finished: bool,
     frames: &'static [&'static str],
+    current_frame: usize,
+    per_frame: usize,
 }
 
 impl Spinner {
-    pub fn new(frames: &'static [&str]) -> Self {
+    pub fn new(frames: &'static [&str], per_frame: usize) -> Self {
         Spinner {
             frames,
             finished: false,
             ticks: 0,
             roll: frames.len() - 1,
+            current_frame: 0,
+            per_frame,
         }
     }
 }
@@ -33,9 +37,12 @@ impl Display for Spinner {
 }
 
 impl Spinner {
-    pub fn tick(&mut self) {
-        self.ticks += 1;
-        self.ticks %= self.roll as u8;
+    pub fn tick(&mut self, frames: usize) {
+        self.current_frame += frames;
+        if self.current_frame >= self.per_frame {
+            self.current_frame = 0;
+            self.ticks = (self.ticks + 1) % self.roll;
+        }
     }
 
     pub fn finish(&mut self) {
@@ -48,8 +55,10 @@ impl Spinner {
             roll: self.roll,
             finished: false,
             frames: self.frames,
+            per_frame: self.per_frame,
+            current_frame: 0,
         };
-        plus_one.tick();
+        plus_one.tick(self.per_frame);
         plus_one
     }
 }
@@ -60,18 +69,18 @@ mod tests {
 
     #[test]
     pub fn spin() {
-        let mut spinner = Spinner::new(&["titi", "tutu", "toto", "tata"]);
+        let mut spinner = Spinner::new(&["titi", "tutu", "toto", "tata"], 1);
 
         assert_eq!("titi", format!("{spinner}"));
-        spinner.tick();
+        spinner.tick(1);
         assert_eq!("tutu", format!("{spinner}"));
-        spinner.tick();
+        spinner.tick(1);
         assert_eq!("toto", format!("{spinner}"));
-        spinner.tick();
+        spinner.tick(1);
         assert_eq!("titi", format!("{spinner}"));
         spinner.finish();
         assert_eq!("tata", format!("{spinner}"));
-        spinner.tick();
+        spinner.tick(1);
         assert_eq!("tata", format!("{spinner}"));
 
         let other_spinner = spinner.plus_one();
