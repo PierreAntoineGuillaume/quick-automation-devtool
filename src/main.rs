@@ -3,13 +3,14 @@ mod ci;
 extern crate atty;
 extern crate term;
 
+use crate::ci::config::Config;
 use crate::ci::display::TermCiDisplay;
 use crate::ci::job::Pipeline;
 use crate::ci::schedule::CompositeJobScheduler;
 use crate::ci::ParrallelJobStarter;
 use argh::FromArgs;
 
-const VERSION: &str = "0.1.2";
+const VERSION: &str = "0.2.0";
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(description = "dt is a tool to help with testing, and dev-related tasks")]
@@ -57,9 +58,7 @@ fn main() {
         Subcommands::Ci(_) => {
             let mut pipeline = Pipeline::new();
 
-            pipeline.push("phpstan", &["vendor/bin/phpstan"]);
-            pipeline.push("phpcs", &["vendor/bin/phpcs"]);
-            pipeline.push("tests", &["yarn install", "yarn jest"]);
+            Config::load_into(&mut pipeline);
 
             if pipeline
                 .run(&mut CompositeJobScheduler::<

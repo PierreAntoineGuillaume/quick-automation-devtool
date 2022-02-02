@@ -21,6 +21,10 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
     for CompositeJobScheduler<'_, Starter, Displayer>
 {
     fn schedule(&mut self, jobs: &[Job]) -> Result<JobProgressTracker, JobProgressTracker> {
+        if jobs.is_empty() {
+            return Ok(JobProgressTracker::new());
+        }
+
         let (tx, rx) = channel();
 
         Self::signal_all_existing_jobs(jobs, &tx);
@@ -83,6 +87,18 @@ impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starte
 mod tests {
     use super::super::job::test::TestJobRunner;
     use super::*;
+
+    impl Job {
+        pub fn new(name: &str, instructions: &[&str]) -> Self {
+            Job {
+                name: name.to_string(),
+                instructions: instructions
+                    .iter()
+                    .map(|item| String::from(*item))
+                    .collect(),
+            }
+        }
+    }
 
     struct TestJobStarter {}
 

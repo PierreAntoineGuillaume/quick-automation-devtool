@@ -7,6 +7,7 @@ use std::thread;
 use std::thread::{sleep, JoinHandle};
 use std::time::{Duration, SystemTime};
 
+pub(crate) mod config;
 pub(crate) mod display;
 pub(crate) mod job;
 pub(crate) mod schedule;
