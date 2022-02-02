@@ -22,7 +22,7 @@ pub struct TermCiDisplay {
 }
 
 impl CiDisplay for TermCiDisplay {
-    fn refresh(&mut self, tracker: &JobProgressTracker) {
+    fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
         self.clear();
         let mut spin = self.spin.plus_one();
         for (job_name, progress_collector) in &tracker.states {
@@ -45,11 +45,11 @@ impl CiDisplay for TermCiDisplay {
             self.lines_written += 1;
             spin = spin.plus_one();
         }
-        self.spin.tick();
+        self.spin.tick(elapsed);
     }
 
     fn finish(&mut self, tracker: &JobProgressTracker) {
-        self.refresh(tracker);
+        self.refresh(tracker, 0);
         self.clear();
         print!("{tracker}")
     }
@@ -69,7 +69,7 @@ impl TermCiDisplay {
         TermCiDisplay {
             term: term::stdout().unwrap(),
             lines_written: 0,
-            spin: Spinner::new(&[".  ", " . ", "  .", " . ", "..."]),
+            spin: Spinner::new(&[".  ", " . ", "  .", " . ", "..."], 80),
         }
     }
 }
