@@ -4,10 +4,12 @@ use std::sync::mpsc::{channel, Sender, TryRecvError};
 pub trait JobStarter {
     fn start_all_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>);
     fn join(&mut self);
+    fn delay(&mut self);
 }
 
 pub trait CiDisplay {
     fn refresh(&mut self, tracker: &JobProgressTracker);
+    fn finish(&mut self, tracker: &JobProgressTracker);
 }
 
 pub struct CompositeJobScheduler<'a, Starter: JobStarter, Displayer: CiDisplay> {
@@ -24,8 +26,8 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
         Self::signal_all_existing_jobs(jobs, &tx);
         self.job_starter.start_all_jobs(jobs, tx);
         let mut tracker = JobProgressTracker::new();
-
         let mut is_error = false;
+
         loop {
             match rx.try_recv() {
                 Ok(state) => {
@@ -41,13 +43,13 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
             if tracker.is_finished() {
                 break;
             }
-
             self.job_display.refresh(&tracker);
+            self.job_starter.delay();
         }
 
         self.job_starter.join();
 
-        self.job_display.refresh(&tracker);
+        self.job_display.finish(&tracker);
 
         if is_error {
             return Err(tracker);
@@ -91,12 +93,14 @@ mod tests {
         }
 
         fn join(&mut self) {}
+        fn delay(&mut self) {}
     }
 
     struct NullCiDisplay {}
 
     impl CiDisplay for NullCiDisplay {
         fn refresh(&mut self, _: &JobProgressTracker) {}
+        fn finish(&mut self, _: &JobProgressTracker) {}
     }
 
     fn test_that(callback: fn(&mut dyn JobScheduler)) {

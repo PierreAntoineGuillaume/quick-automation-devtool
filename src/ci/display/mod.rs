@@ -1,26 +1,78 @@
+mod spinner;
+
 use super::job::{JobOutput, JobProgressTracker, Progress};
 use super::schedule::CiDisplay;
+use spinner::Spinner;
 use std::fmt::Formatter;
+use term::StdoutTerminal;
 
-pub struct OneOffCiDisplay {}
+use super::super::term;
 
-impl CiDisplay for OneOffCiDisplay {
+mod dict {
+    pub const CHECK: &str = "✔";
+    pub const CROSS: &str = "✕";
+    pub const CRASH: &str = "↺";
+    pub const AWAIT: &str = "�";
+}
+
+pub struct TermCiDisplay {
+    spin: Spinner,
+    term: Box<StdoutTerminal>,
+    lines_written: u16,
+}
+
+impl CiDisplay for TermCiDisplay {
     fn refresh(&mut self, tracker: &JobProgressTracker) {
-        if tracker.is_finished() {
-            print!("{}", tracker)
+        self.clear();
+        let mut spin = self.spin.plus_one();
+        for (job_name, progress_collector) in &tracker.states {
+            let progress = progress_collector.last().unwrap();
+            let pending = progress.is_pending();
+            let failed = progress.failed();
+
+            let symbol = if pending {
+                dict::AWAIT
+            } else if failed {
+                dict::CROSS
+            } else {
+                dict::CHECK
+            };
+
+            if !pending {
+                spin.finish();
+            }
+            writeln!(self.term, "{:10} {} {}", job_name, spin, symbol).unwrap();
+            self.lines_written += 1;
+            spin = spin.plus_one();
+        }
+        self.spin.tick();
+    }
+
+    fn finish(&mut self, tracker: &JobProgressTracker) {
+        self.refresh(tracker);
+        self.clear();
+        print!("{tracker}")
+    }
+}
+
+impl TermCiDisplay {
+    fn clear(&mut self) {
+        (0..self.lines_written as usize).for_each(|_| {
+            self.term.cursor_up().unwrap();
+            self.term.carriage_return().unwrap();
+            self.term.delete_line().unwrap();
+        });
+        self.term.reset().unwrap();
+        self.lines_written = 0;
+    }
+    pub fn new() -> Self {
+        TermCiDisplay {
+            term: term::stdout().unwrap(),
+            lines_written: 0,
+            spin: Spinner::new(&[".  ", " . ", "  .", " . ", "..."]),
         }
     }
 }
-
-impl OneOffCiDisplay {
-    pub fn new() -> Self {
-        OneOffCiDisplay {}
-    }
-}
-
-const CHECK: &str = "✔";
-const CROSS: &str = "✕";
-const SKULL: &str = "�";
 
 fn try_cleanup(input: String) -> String {
     let cleaned = input.trim_end();
@@ -40,12 +92,17 @@ impl std::fmt::Display for JobProgressTracker {
                     Progress::Partial(instruction, job_output) => match job_output {
                         JobOutput::Success(stdout, stderr)
                         | JobOutput::JobError(stdout, stderr) => {
-                            let symbol = if job_output.succeeded() { CHECK } else { CROSS };
+                            let symbol = if job_output.succeeded() {
+                                dict::CHECK
+                            } else {
+                                dict::CROSS
+                            };
                             write!(
                                 f,
-                                "{symbol} {}",
+                                "{} {}",
+                                symbol,
                                 try_cleanup(format!(
-                                    "{}{}{}",
+                                    "{}\n{}{}",
                                     instruction,
                                     try_cleanup(stdout.clone()),
                                     try_cleanup(stderr.clone())
@@ -53,12 +110,17 @@ impl std::fmt::Display for JobProgressTracker {
                             )?;
                         }
                         JobOutput::ProcessError(stderr) => {
-                            write!(f, "{SKULL} {instruction}: {}", try_cleanup(stderr.clone()))?;
+                            write!(
+                                f,
+                                "{} {instruction}: {}",
+                                dict::CRASH,
+                                try_cleanup(stderr.clone())
+                            )?;
                         }
                     },
                     Progress::Terminated(bool) => {
-                        let emoji: &str = if *bool { CHECK } else { CROSS };
-                        writeln!(f, "{emoji} all tasks done for job {job_name}")?;
+                        let emoji: &str = if *bool { dict::CHECK } else { dict::CROSS };
+                        writeln!(f, "{} all tasks done for job {}", emoji, job_name)?;
                     }
                     _ => {}
                 }

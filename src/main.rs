@@ -1,8 +1,9 @@
 mod ci;
 
 extern crate atty;
+extern crate term;
 
-use crate::ci::display::OneOffCiDisplay;
+use crate::ci::display::TermCiDisplay;
 use crate::ci::job::Pipeline;
 use crate::ci::schedule::CompositeJobScheduler;
 use crate::ci::ParrallelJobStarter;
@@ -63,10 +64,10 @@ fn main() {
             if pipeline
                 .run(&mut CompositeJobScheduler::<
                     ParrallelJobStarter,
-                    OneOffCiDisplay,
+                    TermCiDisplay,
                 >::new(
                     &mut ParrallelJobStarter::new(),
-                    &mut OneOffCiDisplay::new(),
+                    &mut TermCiDisplay::new(),
                 ))
                 .is_err()
             {

@@ -4,7 +4,8 @@ use schedule::JobStarter;
 use std::process::Command;
 use std::sync::mpsc::Sender;
 use std::thread;
-use std::thread::JoinHandle;
+use std::thread::{sleep, JoinHandle};
+use std::time::{Duration, SystemTime};
 
 pub(crate) mod display;
 pub(crate) mod job;
@@ -12,11 +13,17 @@ pub(crate) mod schedule;
 
 pub struct ParrallelJobStarter {
     threads: std::vec::Vec<JoinHandle<()>>,
+    last_occurence: SystemTime,
 }
+
+const AWAIT_TIME: Duration = std::time::Duration::from_millis(200);
 
 impl ParrallelJobStarter {
     pub fn new() -> Self {
-        ParrallelJobStarter { threads: vec![] }
+        ParrallelJobStarter {
+            threads: vec![],
+            last_occurence: SystemTime::now(),
+        }
     }
 }
 
@@ -41,6 +48,17 @@ impl JobStarter for ParrallelJobStarter {
         while let Some(handle) = self.threads.pop() {
             handle.join().expect("Could not join handle")
         }
+    }
+
+    fn delay(&mut self) {
+        let time_for = AWAIT_TIME
+            - SystemTime::now()
+                .duration_since(self.last_occurence)
+                .unwrap();
+        if time_for.as_millis() > 0 {
+            sleep(time_for);
+        }
+        self.last_occurence = SystemTime::now();
     }
 }
 
