@@ -21,19 +21,13 @@ pub trait JobRunner {
     fn run(&self, job: &str) -> JobOutput;
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Job {
     pub name: String,
-    instructions: Vec<String>,
+    pub instructions: Vec<String>,
 }
 
 impl Job {
-    pub fn new(name: &str, instruction: &[&str]) -> Self {
-        Job {
-            name: name.to_string(),
-            instructions: instruction.iter().map(|item| String::from(*item)).collect(),
-        }
-    }
     pub fn start(&self, runner: &dyn JobRunner, consumer: &dyn JobProgressConsumer) {
         consumer.consume(JobProgress::new(&self.name, Progress::Started));
         let mut success = true;
@@ -91,8 +85,8 @@ impl Pipeline {
         scheduler.schedule(&self.jobs)
     }
 
-    pub fn push(&mut self, key: &str, instruction: &[&str]) {
-        self.jobs.push(Job::new(key, instruction));
+    pub fn push_job(&mut self, job: Job) {
+        self.jobs.push(job);
     }
 
     pub fn new() -> Pipeline {
