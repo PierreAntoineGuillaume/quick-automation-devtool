@@ -10,7 +10,7 @@ use crate::ci::schedule::CompositeJobScheduler;
 use crate::ci::ParrallelJobStarter;
 use argh::FromArgs;
 
-const VERSION: &str = "0.2.0";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(description = "dt is a tool to help with testing, and dev-related tasks")]
@@ -75,7 +75,11 @@ fn main() {
         }
         Subcommands::Autocomplete(_) => {
             if atty::is(atty::Stream::Stdout) {
-                eprintln!("#dt autocomplete > ~/.local/share/bash-completion/completions/dt");
+                eprintln!(
+                    "#{} autocomplete > ~/.local/share/bash-completion/completions/{}",
+                    env!("CARGO_PKG_NAME"),
+                    env!("CARGO_PKG_NAME")
+                );
             }
             print!("{}", include_str!("../assets/dt_bash_competion.sh"));
         }
