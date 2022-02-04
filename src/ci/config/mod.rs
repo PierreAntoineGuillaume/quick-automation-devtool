@@ -17,12 +17,13 @@ impl Config {
     /// Will compile and load pipeline config from multiple sources with descending priority order
     /// ./dt/config.tml
     pub fn load_into(pipeline: &mut Pipeline) {
-        let file = "dt.toml";
+        let file = format!("{}.toml", env!("CARGO_PKG_NAME"));
         if let Ok(content) = fs::read_to_string(&file) {
             let res = toml::from_str::<Config>(content.as_str());
             if res.is_err() {
                 eprintln!(
-                    "dt: could not parse {} config file, missing version=<int>",
+                    "{}: could not parse {} config file, missing version=<int>",
+                    env!("CARGO_PKG_NAME"),
                     file
                 );
                 std::process::exit(2);
@@ -38,8 +39,10 @@ impl Config {
                 }
             } else {
                 eprintln!(
-                    "dt: version {} is unrecognised in file {}",
-                    config.version, file
+                    "{}: version {} is unrecognised in file {}",
+                    env!("CARGO_PKG_NAME"),
+                    config.version,
+                    file
                 );
                 std::process::exit(2);
             }
