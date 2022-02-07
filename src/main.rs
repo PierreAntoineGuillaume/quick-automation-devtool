@@ -1,13 +1,14 @@
 mod ci;
+mod config;
 
 extern crate atty;
 extern crate term;
 
-use crate::ci::config::Config;
 use crate::ci::display::TermCiDisplay;
 use crate::ci::job::Pipeline;
 use crate::ci::schedule::CompositeJobScheduler;
 use crate::ci::ParrallelJobStarter;
+use crate::config::Config;
 use argh::FromArgs;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -57,8 +58,14 @@ fn main() {
     match command {
         Subcommands::Ci(_) => {
             let mut pipeline = Pipeline::new();
+            let config = Config::parse("dt.toml")
+                .map_err(|error| {
+                    eprintln!("dt: {}", error);
+                    std::process::exit(1);
+                })
+                .unwrap();
 
-            Config::load_into(&mut pipeline);
+            config.load_into(&mut pipeline);
 
             if pipeline
                 .run(&mut CompositeJobScheduler::<
