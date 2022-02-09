@@ -1,9 +1,9 @@
 mod spinner;
 
-use super::job::{JobOutput, JobProgressTracker, Progress};
+use super::job::{JobOutput, JobProgressTracker, Progress, ProgressCollector};
 use super::schedule::CiDisplay;
 use spinner::Spinner;
-use std::fmt::Formatter;
+use std::fmt::{Display, Formatter};
 use term::StdoutTerminal;
 
 use super::super::term;
@@ -18,33 +18,35 @@ mod dict {
 pub struct TermCiDisplay {
     spin: Spinner,
     term: Box<StdoutTerminal>,
-    lines_written: u16,
+    written_lines: u16,
 }
 
 impl CiDisplay for TermCiDisplay {
     fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
-        self.clear();
+        let previous_written_lines = self.written_lines;
+        self.written_lines = 0;
+        (0..previous_written_lines).for_each(|_| {
+            self.term.cursor_up().unwrap();
+        });
+        self.term.carriage_return().unwrap();
         let mut spin = self.spin.plus_one();
         for (job_name, progress_collector) in &tracker.states {
-            let progress = progress_collector.last().unwrap();
-            let pending = progress.is_pending();
-            let failed = progress.failed();
-
-            let symbol = if pending {
-                dict::AWAIT
-            } else if failed {
-                dict::CROSS
-            } else {
-                dict::CHECK
-            };
-
-            if !pending {
-                spin.finish();
+            if !progress_collector.progresses.last().unwrap().is_pending() {
+                spin.finish()
             }
-            writeln!(self.term, "{:10} {} {}", job_name, spin, symbol).unwrap();
-            self.lines_written += 1;
+            self.term.delete_line().unwrap();
+            writeln!(
+                self.term,
+                "{}",
+                TempStatusLine::new(&spin, job_name, progress_collector)
+            )
+            .unwrap();
+            self.written_lines += 1;
             spin = spin.plus_one();
         }
+        (previous_written_lines..self.written_lines).for_each(|_| {
+            self.term.delete_line().unwrap();
+        });
         self.spin.tick(elapsed);
     }
 
@@ -55,20 +57,57 @@ impl CiDisplay for TermCiDisplay {
     }
 }
 
+struct TempStatusLine<'a> {
+    spin: &'a Spinner,
+    job_name: &'a str,
+    progress_collector: &'a ProgressCollector,
+}
+
+impl Display for TempStatusLine<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let progress = self.progress_collector.last().unwrap();
+        let pending = progress.is_pending();
+
+        let symbol = if pending {
+            dict::AWAIT
+        } else if progress.failed() {
+            dict::CROSS
+        } else {
+            dict::CHECK
+        };
+
+        write!(f, "{:12} {} {}", self.job_name, self.spin, symbol)
+    }
+}
+
+impl<'a> TempStatusLine<'a> {
+    fn new(
+        spin: &'a Spinner,
+        job_name: &'a str,
+        progress_collector: &'a ProgressCollector,
+    ) -> Self {
+        TempStatusLine {
+            spin,
+            job_name,
+            progress_collector,
+        }
+    }
+}
+
 impl TermCiDisplay {
     fn clear(&mut self) {
-        (0..self.lines_written as usize).for_each(|_| {
+        (0..self.written_lines as usize).for_each(|_| {
             self.term.cursor_up().unwrap();
             self.term.carriage_return().unwrap();
             self.term.delete_line().unwrap();
         });
         self.term.reset().unwrap();
-        self.lines_written = 0;
+        self.written_lines = 0;
     }
     pub fn new() -> Self {
         TermCiDisplay {
             term: term::stdout().unwrap(),
-            lines_written: 0,
+            written_lines: 0,
             spin: Spinner::new(&[".  ", " . ", "  .", " . ", "..."], 80),
         }
     }
@@ -83,7 +122,7 @@ fn try_cleanup(input: String) -> String {
     }
 }
 
-impl std::fmt::Display for JobProgressTracker {
+impl Display for JobProgressTracker {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for (job_name, progress_collector) in &self.states {
             writeln!(f, "Running tasks for job {job_name}")?;
