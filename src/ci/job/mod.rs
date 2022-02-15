@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::time::SystemTime;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JobOutput {
@@ -74,7 +75,7 @@ pub struct Pipeline {
 }
 
 pub trait JobScheduler {
-    fn schedule(&mut self, jobs: &[Job]) -> Result<JobProgressTracker, JobProgressTracker>;
+    fn schedule(&mut self, jobs: &[Job]) -> JobProgressTracker;
 }
 
 impl Pipeline {
@@ -82,7 +83,12 @@ impl Pipeline {
         &mut self,
         scheduler: &mut dyn JobScheduler,
     ) -> Result<JobProgressTracker, JobProgressTracker> {
-        scheduler.schedule(&self.jobs)
+        let tracker = scheduler.schedule(&self.jobs);
+        if tracker.has_failed {
+            Err(tracker)
+        } else {
+            Ok(tracker)
+        }
     }
 
     pub fn push_job(&mut self, job: Job) {
@@ -130,23 +136,33 @@ impl ProgressCollector {
 }
 
 pub struct JobProgressTracker {
+    pub start_time: SystemTime,
+    pub end_time: Option<SystemTime>,
     pub states: BTreeMap<String, ProgressCollector>,
+    pub has_failed: bool,
 }
 
 impl JobProgressTracker {
     pub fn new() -> Self {
         JobProgressTracker {
+            start_time: SystemTime::now(),
+            end_time: None,
             states: BTreeMap::new(),
+            has_failed: false,
         }
     }
     pub fn record(&mut self, job_progress: JobProgress) {
+        self.has_failed |= job_progress.failed();
         self.states
             .entry(job_progress.job_name)
             .or_insert_with(ProgressCollector::new)
-            .push(job_progress.progress)
+            .push(job_progress.progress);
     }
 
-    pub fn is_finished(&self) -> bool {
+    pub fn try_finish(&mut self) -> bool {
+        if self.end_time.is_some() {
+            return true;
+        }
         for progress in self.states.values() {
             if let Some(progress) = progress.last() {
                 if progress.is_pending() {
@@ -154,6 +170,7 @@ impl JobProgressTracker {
                 }
             }
         }
+        self.end_time = Some(SystemTime::now());
         true
     }
 }

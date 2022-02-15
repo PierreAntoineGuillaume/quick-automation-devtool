@@ -4,6 +4,7 @@ use super::job::{JobOutput, JobProgressTracker, Progress, ProgressCollector};
 use super::schedule::CiDisplay;
 use spinner::Spinner;
 use std::fmt::{Display, Formatter};
+use std::time::SystemTime;
 use term::StdoutTerminal;
 
 use super::super::term;
@@ -165,6 +166,20 @@ impl Display for JobProgressTracker {
                 }
             }
         }
+        let time = self.end_time.or_else(|| Some(SystemTime::now())).unwrap();
+        let elasped = time.duration_since(self.start_time).unwrap().as_millis() as f64;
+        let status = if !self.has_failed {
+            (dict::CHECK, "succeeded")
+        } else {
+            (dict::CROSS, "failed")
+        };
+        writeln!(
+            f,
+            "\n{} ci {} in {:.2} seconds",
+            status.0,
+            status.1,
+            elasped / 1000f64
+        )?;
         Ok(())
     }
 }
