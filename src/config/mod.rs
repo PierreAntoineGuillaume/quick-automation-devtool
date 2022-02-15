@@ -9,6 +9,7 @@ use wrapped_content::WrappedContent;
 
 #[derive(Debug)]
 pub enum ConfigError {
+    UnrecognizedFileformat,
     NoVersion(&'static str),
     BadVersion(String, &'static str),
     ParseError(String),
@@ -30,10 +31,24 @@ impl Config {
         let content =
             fs::read_to_string(&filename).map_err(|_| format!("could not read {}", filename))?;
 
-        Config::parse_toml(&content).map_err(|error| match error {
+        let content = if filename.ends_with(".toml") {
+            Config::parse_toml(&content)
+        } else if filename.ends_with(".yaml") || filename.ends_with(".yml") {
+            Config::parse_yaml(&content)
+        } else {
+            Err(ConfigError::UnrecognizedFileformat)
+        };
+
+        content.map_err(|error| match error {
+            ConfigError::UnrecognizedFileformat => {
+                format!(
+                    "{} could not be parsed, expected file types are .toml, .yml or .yaml",
+                    filename
+                )
+            }
             ConfigError::NoVersion(latest) => {
                 format!(
-                    "{} should contain version=<string> (latest is {})",
+                    "{} should contain version id (latest is {})",
                     filename, latest
                 )
             }
@@ -49,7 +64,7 @@ impl Config {
         })
     }
 
-    pub fn parse_toml(content: &str) -> Result<Config, ConfigError> {
+    fn parse_toml(content: &str) -> Result<Config, ConfigError> {
         let version =
             toml::from_str::<Version>(content).map_err(|_| ConfigError::NoVersion("0.x"))?;
 
@@ -58,6 +73,22 @@ impl Config {
         }
 
         let v0x = toml::from_str::<Version0x>(content)
+            .map_err(|_| ConfigError::ParseError(version.version.clone()))?;
+
+        Ok(Config {
+            version,
+            content: WrappedContent::V0x(v0x),
+        })
+    }
+
+    fn parse_yaml(content: &str) -> Result<Config, ConfigError> {
+        let version =
+            serde_yaml::from_str::<Version>(content).map_err(|_| ConfigError::NoVersion("0.x"))?;
+        if version.version != "0.x" {
+            return Err(ConfigError::BadVersion(version.version, "0.x"));
+        }
+
+        let v0x = serde_yaml::from_str::<Version0x>(content)
             .map_err(|_| ConfigError::ParseError(version.version.clone()))?;
 
         Ok(Config {
@@ -87,7 +118,7 @@ mod tests {
     }
 
     #[test]
-    pub fn parse_good_v0x() -> Result<(), ()> {
+    pub fn parse_good_v0x_toml() -> Result<(), ()> {
         let mut job_set = JobSet::new();
         job_set.insert(
             String::from("jobname"),
@@ -99,7 +130,26 @@ mod tests {
                 .unwrap(),
             Config {
                 version: "0.x".parse::<Version>()?,
-                content: WrappedContent::V0x(Version0x::new(job_set))
+                content: WrappedContent::V0x(Version0x::new(job_set)),
+            }
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn parse_good_v0x_yaml() -> Result<(), ()> {
+        let mut job_set = JobSet::new();
+        job_set.insert(
+            String::from("jobname"),
+            vec![String::from("inst1"), String::from("inst2")],
+        );
+
+        assert_eq!(
+            Config::parse_yaml("{ version: 0.x, jobs: { jobname: [inst1, inst2] } }").unwrap(),
+            Config {
+                version: "0.x".parse::<Version>()?,
+                content: WrappedContent::V0x(Version0x::new(job_set)),
             }
         );
 

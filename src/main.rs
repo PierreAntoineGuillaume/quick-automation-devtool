@@ -58,7 +58,11 @@ fn main() {
     match command {
         Subcommands::Ci(_) => {
             let mut pipeline = Pipeline::new();
-            let config = Config::parse("dt.toml")
+            let envvar = std::env::var("DT_CONFIG_FILE")
+                .or_else::<String, _>(|_| Ok(String::from("dt.toml")))
+                .unwrap();
+
+            let config = Config::parse(&envvar)
                 .map_err(|error| {
                     eprintln!("dt: {}", error);
                     std::process::exit(1);
