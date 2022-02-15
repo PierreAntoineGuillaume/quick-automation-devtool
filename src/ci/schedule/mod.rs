@@ -20,23 +20,21 @@ pub struct CompositeJobScheduler<'a, Starter: JobStarter, Displayer: CiDisplay> 
 impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
     for CompositeJobScheduler<'_, Starter, Displayer>
 {
-    fn schedule(&mut self, jobs: &[Job]) -> Result<JobProgressTracker, JobProgressTracker> {
+    fn schedule(&mut self, jobs: &[Job]) -> JobProgressTracker {
+        let mut tracker = JobProgressTracker::new();
         if jobs.is_empty() {
-            return Ok(JobProgressTracker::new());
+            return tracker;
         }
 
         let (tx, rx) = channel();
 
         Self::signal_all_existing_jobs(jobs, &tx);
         self.job_starter.start_all_jobs(jobs, tx);
-        let mut tracker = JobProgressTracker::new();
-        let mut is_error = false;
         let mut delay: usize = 0;
 
         loop {
             match rx.try_recv() {
                 Ok(state) => {
-                    is_error |= state.failed();
                     tracker.record(state);
                 }
                 Err(TryRecvError::Disconnected) => {
@@ -45,7 +43,7 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
                 Err(TryRecvError::Empty) => {}
             }
 
-            if tracker.is_finished() {
+            if tracker.try_finish() {
                 break;
             }
             self.job_display.refresh(&tracker, delay);
@@ -56,11 +54,7 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
 
         self.job_display.finish(&tracker);
 
-        if is_error {
-            return Err(tracker);
-        }
-
-        Ok(tracker)
+        tracker
     }
 }
 
@@ -136,7 +130,7 @@ mod tests {
     pub fn every_job_is_initialisated() {
         test_that(|scheduler| {
             let result = scheduler.schedule(&[Job::new("a", &["ok: result"])]);
-            assert!(result.is_ok());
+            assert!(!result.has_failed);
         })
     }
 
@@ -144,7 +138,7 @@ mod tests {
     pub fn one_job_failure_fails_scheduling() {
         test_that(|scheduler| {
             let result = scheduler.schedule(&[Job::new("c", &["ko: result"])]);
-            assert!(result.is_err());
+            assert!(result.has_failed);
         })
     }
 
@@ -152,7 +146,7 @@ mod tests {
     pub fn one_job_crash_fails_scheduling() {
         test_that(|scheduler| {
             let result = scheduler.schedule(&[Job::new("c", &["crash: result"])]);
-            assert!(result.is_err());
+            assert!(result.has_failed);
         })
     }
 }
