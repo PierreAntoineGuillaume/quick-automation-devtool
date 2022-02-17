@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+latest_tag=$(git tag | tail -n 1)
+
+mapfile -t commits < <(git log "$latest_tag..HEAD" --format="%s" --no-merges )
+
+printf -- "%s\n" "${commits[@]}"
+
