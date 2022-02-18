@@ -40,6 +40,15 @@ clippy:
     - cargo clippy
     - cargo clippy --tests
 
+lint-commits:
+  image: node
+  cache: []
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
+  script:
+    - npm install -g commitlint
+    - commitlint --from=$CI_MERGE_REQUEST_DIFF_BASE_SHA --to=$CI_COMMIT_SHORT_SHA
+
 fmt:
   image: rustlang/rust:nightly
   script:
