@@ -23,6 +23,8 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
     fn schedule(&mut self, jobs: &[Job]) -> JobProgressTracker {
         let mut tracker = JobProgressTracker::new();
         if jobs.is_empty() {
+            tracker.try_finish();
+            self.job_display.finish(&tracker);
             return tracker;
         }
 
