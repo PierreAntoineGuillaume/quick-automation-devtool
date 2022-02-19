@@ -62,6 +62,10 @@ impl Progress {
                 | Progress::Terminated(false)
         )
     }
+
+    pub fn is_awaiting(&self) -> bool {
+        matches!(self, Progress::Awaiting)
+    }
 }
 
 impl Progress {
@@ -133,6 +137,13 @@ impl ProgressCollector {
     pub fn last(&self) -> Option<&Progress> {
         self.progresses.last()
     }
+
+    pub fn is_awaiting(&self) -> bool {
+        match self.last() {
+            Some(progress) => progress.is_awaiting(),
+            _ => false,
+        }
+    }
 }
 
 pub struct JobProgressTracker {
@@ -172,6 +183,14 @@ impl JobProgressTracker {
         }
         self.end_time = Some(SystemTime::now());
         true
+    }
+
+    pub fn is_waiting_for(&self, name: &String) -> bool {
+        if let Some(collector) = self.states.get(name) {
+            collector.is_awaiting()
+        } else {
+            false
+        }
     }
 }
 

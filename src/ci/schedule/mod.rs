@@ -36,10 +36,19 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
             tracker.record(progress);
         }
 
-        self.job_starter.start_all_jobs(jobs, tx.clone());
         let mut delay: usize = 0;
 
         loop {
+            let awaiting_jobs: Vec<Job> = jobs
+                .iter()
+                .filter(|job| tracker.is_waiting_for(&job.name))
+                .cloned()
+                .collect();
+
+            if ! awaiting_jobs.is_empty() {
+                self.job_starter.start_all_jobs(&awaiting_jobs, tx.clone());
+            }
+
             while let Some(progress) = self.read(&rx) {
                 tracker.record(progress);
             }
@@ -52,8 +61,6 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
         }
 
         self.job_starter.join();
-
-        drop(tx);
 
         self.job_display.finish(&tracker);
 
