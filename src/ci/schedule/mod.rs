@@ -1,5 +1,5 @@
 use super::job::{Job, JobProgress, JobProgressTracker, JobScheduler, Progress};
-use std::sync::mpsc::{channel, Sender, TryRecvError};
+use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
 pub trait JobStarter {
     fn start_all_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>);
@@ -31,18 +31,17 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
         let (tx, rx) = channel();
 
         Self::signal_all_existing_jobs(jobs, &tx);
-        self.job_starter.start_all_jobs(jobs, tx);
+
+        while let Some(progress) = self.read(&rx) {
+            tracker.record(progress);
+        }
+
+        self.job_starter.start_all_jobs(jobs, tx.clone());
         let mut delay: usize = 0;
 
         loop {
-            match rx.try_recv() {
-                Ok(state) => {
-                    tracker.record(state);
-                }
-                Err(TryRecvError::Disconnected) => {
-                    panic!("State receiver has been disconnected, try restarting the program");
-                }
-                Err(TryRecvError::Empty) => {}
+            while let Some(progress) = self.read(&rx) {
+                tracker.record(progress);
             }
 
             if tracker.try_finish() {
@@ -53,6 +52,8 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
         }
 
         self.job_starter.join();
+
+        drop(tx);
 
         self.job_display.finish(&tracker);
 
@@ -68,6 +69,7 @@ impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starte
                 .unwrap();
         }
     }
+
     pub fn new<'a, Ta: JobStarter, Tb: CiDisplay>(
         job_starter: &'a mut Ta,
         job_display: &'a mut Tb,
@@ -75,6 +77,16 @@ impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starte
         CompositeJobScheduler {
             job_starter,
             job_display,
+        }
+    }
+
+    pub fn read(&self, rx: &Receiver<JobProgress>) -> Option<JobProgress> {
+        match rx.try_recv() {
+            Ok(state) => Some(state),
+            Err(TryRecvError::Empty) => None,
+            Err(TryRecvError::Disconnected) => {
+                panic!("State receiver has been disconnected, try restarting the program");
+            }
         }
     }
 }
