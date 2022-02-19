@@ -30,7 +30,7 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
 
         let (tx, rx) = channel();
 
-        Self::signal_all_existing_jobs(jobs, &tx);
+        self.signal_all_existing_jobs(jobs, &tx);
 
         while let Some(progress) = self.read(&rx) {
             tracker.record(progress);
@@ -70,14 +70,6 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
 }
 
 impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starter, Displayer> {
-    fn signal_all_existing_jobs(jobs: &[Job], first_tx: &Sender<JobProgress>) {
-        for job in jobs {
-            first_tx
-                .send(JobProgress::new(&job.name, Progress::Awaiting))
-                .unwrap();
-        }
-    }
-
     pub fn new<'a, Ta: JobStarter, Tb: CiDisplay>(
         job_starter: &'a mut Ta,
         job_display: &'a mut Tb,
@@ -85,6 +77,14 @@ impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starte
         CompositeJobScheduler {
             job_starter,
             job_display,
+        }
+    }
+
+    fn signal_all_existing_jobs(&self, jobs: &[Job], first_tx: &Sender<JobProgress>) {
+        for job in jobs {
+            first_tx
+                .send(JobProgress::new(&job.name, Progress::Awaiting))
+                .unwrap();
         }
     }
 
