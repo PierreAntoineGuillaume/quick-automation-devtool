@@ -2,7 +2,7 @@ use super::job::{Job, JobProgress, JobProgressTracker, JobScheduler, Progress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
 pub trait JobStarter {
-    fn start_all_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>);
+    fn consume_some_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>);
     fn join(&mut self);
     fn delay(&mut self) -> usize;
 }
@@ -45,8 +45,9 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
                 .cloned()
                 .collect();
 
-            if ! awaiting_jobs.is_empty() {
-                self.job_starter.start_all_jobs(&awaiting_jobs, tx.clone());
+            if !awaiting_jobs.is_empty() {
+                self.job_starter
+                    .consume_some_jobs(&awaiting_jobs, tx.clone());
             }
 
             while let Some(progress) = self.read(&rx) {
@@ -118,7 +119,7 @@ mod tests {
     struct TestJobStarter {}
 
     impl JobStarter for TestJobStarter {
-        fn start_all_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
+        fn consume_some_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
             for job in jobs {
                 job.start(&TestJobRunner {}, &tx.clone());
             }

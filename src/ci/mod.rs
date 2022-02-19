@@ -34,7 +34,7 @@ impl JobProgressConsumer for Sender<JobProgress> {
 }
 
 impl JobStarter for ParrallelJobStarter {
-    fn start_all_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
+    fn consume_some_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
         for real_job in jobs {
             let job = real_job.clone();
             let consumer = tx.clone();
