@@ -1,0 +1,5 @@
+version: 0.x
+jobs:
+  fmt: ['cargo fmt --check']
+  clippy: [ 'cargo clippy --tests' ]
+
