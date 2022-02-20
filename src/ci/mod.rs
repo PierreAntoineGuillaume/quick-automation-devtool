@@ -1,5 +1,5 @@
 use crate::ci::job::schedule::{JobRunner, JobScheduler, JobStarter};
-use crate::{CompositeJobScheduler, Config, TermCiDisplay};
+use crate::{Config, TermCiDisplay};
 use job::job_output::JobOutput;
 use job::{Job, JobProgress, JobProgressConsumer};
 use regex::Regex;
@@ -22,12 +22,9 @@ impl Ci {
         let mut starter = ParrallelJobStarter::new();
         let mut display = TermCiDisplay::new();
 
-        let mut scheduler = CompositeJobScheduler::<ParrallelJobStarter, TermCiDisplay>::new(
-            &mut starter,
-            &mut display,
-        );
+        let mut scheduler = JobScheduler {};
 
-        let tracker = scheduler.schedule(&jobs);
+        let tracker = scheduler.schedule(&jobs, &mut starter, &mut display);
         if tracker.has_failed {
             Err(())
         } else {

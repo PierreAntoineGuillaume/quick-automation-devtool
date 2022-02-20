@@ -3,10 +3,6 @@ use crate::ci::job::state::Progress;
 use crate::ci::job::{Job, JobProgress, JobProgressTracker};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
-pub trait JobScheduler {
-    fn schedule(&mut self, jobs: &[Job]) -> JobProgressTracker;
-}
-
 pub trait JobRunner {
     fn run(&self, job: &str) -> JobOutput;
 }
@@ -22,19 +18,18 @@ pub trait CiDisplay {
     fn finish(&mut self, tracker: &JobProgressTracker);
 }
 
-pub struct CompositeJobScheduler<'a, Starter: JobStarter, Displayer: CiDisplay> {
-    job_starter: &'a mut Starter,
-    job_display: &'a mut Displayer,
-}
-
-impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
-    for CompositeJobScheduler<'_, Starter, Displayer>
-{
-    fn schedule(&mut self, jobs: &[Job]) -> JobProgressTracker {
+pub struct JobScheduler {}
+impl JobScheduler {
+    pub fn schedule(
+        &mut self,
+        jobs: &[Job],
+        job_starter: &mut dyn JobStarter,
+        job_display: &mut dyn CiDisplay,
+    ) -> JobProgressTracker {
         let mut tracker = JobProgressTracker::new();
         if jobs.is_empty() {
             tracker.try_finish();
-            self.job_display.finish(&tracker);
+            job_display.finish(&tracker);
             return tracker;
         }
 
@@ -56,8 +51,7 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
                 .collect();
 
             if !available_jobs.is_empty() {
-                self.job_starter
-                    .consume_some_jobs(&available_jobs, tx.clone());
+                job_starter.consume_some_jobs(&available_jobs, tx.clone());
             }
 
             while let Some(progress) = self.read(&rx) {
@@ -67,27 +61,15 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
             if tracker.try_finish() {
                 break;
             }
-            self.job_display.refresh(&tracker, delay);
-            delay = self.job_starter.delay();
+            job_display.refresh(&tracker, delay);
+            delay = job_starter.delay();
         }
 
-        self.job_starter.join();
+        job_starter.join();
 
-        self.job_display.finish(&tracker);
+        job_display.finish(&tracker);
 
         tracker
-    }
-}
-
-impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starter, Displayer> {
-    pub fn new<'a, Ta: JobStarter, Tb: CiDisplay>(
-        job_starter: &'a mut Ta,
-        job_display: &'a mut Tb,
-    ) -> CompositeJobScheduler<'a, Ta, Tb> {
-        CompositeJobScheduler {
-            job_starter,
-            job_display,
-        }
     }
 
     fn signal_all_existing_jobs(&self, jobs: &[Job], first_tx: &Sender<JobProgress>) {
@@ -112,7 +94,6 @@ impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starte
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ci::job::schedule::test::{NullCiDisplay, TestJobStarter};
 
     impl Job {
         pub fn new(name: &str, instructions: &[&str]) -> Self {
@@ -126,47 +107,29 @@ mod tests {
         }
     }
 
-    fn test_that(callback: fn(&mut dyn JobScheduler)) {
+    fn pipeline(jobs: &[Job]) -> JobProgressTracker {
         let mut job_start = TestJobStarter {};
         let mut job_display = NullCiDisplay {};
-        let mut scheduler = CompositeJobScheduler::<TestJobStarter, NullCiDisplay>::new(
-            &mut job_start,
-            &mut job_display,
-        );
-        callback(&mut scheduler)
+        let mut scheduler = JobScheduler {};
+        scheduler.schedule(jobs, &mut job_start, &mut job_display)
     }
 
     #[test]
     pub fn every_job_is_initialisated() {
-        test_that(|scheduler| {
-            let result = scheduler.schedule(&[Job::new("a", &["ok: result"])]);
-            assert!(!result.has_failed);
-        })
+        assert!(!pipeline(&[Job::new("a", &["ok: result"])]).has_failed)
     }
 
     #[test]
     pub fn one_job_failure_fails_scheduling() {
-        test_that(|scheduler| {
-            let result = scheduler.schedule(&[Job::new("c", &["ko: result"])]);
-            assert!(result.has_failed);
-        })
+        assert!(pipeline(&[Job::new("c", &["ko: result"])]).has_failed)
     }
 
     #[test]
     pub fn one_job_crash_fails_scheduling() {
-        test_that(|scheduler| {
-            let result = scheduler.schedule(&[Job::new("c", &["crash: result"])]);
-            assert!(result.has_failed);
-        })
+        assert!(pipeline(&[Job::new("c", &["crash: result"])]).has_failed)
     }
-}
-
-#[cfg(test)]
-pub mod test {
-    use super::*;
 
     pub struct TestJobStarter {}
-
     impl JobStarter for TestJobStarter {
         fn consume_some_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
             for job in jobs {
@@ -181,14 +144,12 @@ pub mod test {
     }
 
     pub struct NullCiDisplay {}
-
     impl CiDisplay for NullCiDisplay {
         fn refresh(&mut self, _: &JobProgressTracker, _: usize) {}
         fn finish(&mut self, _: &JobProgressTracker) {}
     }
 
     pub struct TestJobRunner {}
-
     impl JobRunner for TestJobRunner {
         fn run(&self, job: &str) -> JobOutput {
             if let Some(stripped) = job.strip_prefix("ok:") {
