@@ -1,5 +1,6 @@
+use crate::ci::job::schedule::JobRunner;
 use job::job_output::JobOutput;
-use job::{Job, JobProgress, JobProgressConsumer, JobRunner};
+use job::{Job, JobProgress, JobProgressConsumer};
 use regex::Regex;
 use schedule::JobStarter;
 use std::process::Command;

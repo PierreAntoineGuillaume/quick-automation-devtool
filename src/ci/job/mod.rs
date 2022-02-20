@@ -1,19 +1,14 @@
 pub mod inspection;
 pub mod job_output;
-pub mod job_scheduler;
+pub mod schedule;
 pub mod state;
 
 use crate::ci::job::inspection::JobProgressTracker;
-use crate::ci::job::job_output::JobOutput;
-use crate::ci::job::job_scheduler::JobScheduler;
+use crate::ci::job::schedule::{JobRunner, JobScheduler};
 use crate::ci::job::state::Progress;
 
 pub trait JobProgressConsumer {
     fn consume(&self, job_progress: JobProgress);
-}
-
-pub trait JobRunner {
-    fn run(&self, job: &str) -> JobOutput;
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
@@ -80,26 +75,5 @@ impl JobProgress {
 
     pub fn failed(&self) -> bool {
         self.progress.failed()
-    }
-}
-
-#[cfg(test)]
-pub mod test {
-    use super::*;
-
-    pub struct TestJobRunner {}
-
-    impl JobRunner for TestJobRunner {
-        fn run(&self, job: &str) -> JobOutput {
-            if let Some(stripped) = job.strip_prefix("ok:") {
-                JobOutput::Success(stripped.into(), "".into())
-            } else if let Some(stripped) = job.strip_prefix("ko:") {
-                JobOutput::JobError(stripped.into(), "".into())
-            } else if let Some(stripped) = job.strip_prefix("crash:") {
-                JobOutput::ProcessError(stripped.into())
-            } else {
-                panic!("Job should begin with ok:, ko, or crash:")
-            }
-        }
     }
 }
