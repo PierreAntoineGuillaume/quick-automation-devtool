@@ -39,15 +39,15 @@ impl<Starter: JobStarter, Displayer: CiDisplay> JobScheduler
         let mut delay: usize = 0;
 
         loop {
-            let awaiting_jobs: Vec<Job> = jobs
+            let available_jobs: Vec<Job> = jobs
                 .iter()
-                .filter(|job| tracker.is_waiting_for(&job.name))
+                .filter(|job| tracker.job_is_available(&job.name))
                 .cloned()
                 .collect();
 
-            if !awaiting_jobs.is_empty() {
+            if !available_jobs.is_empty() {
                 self.job_starter
-                    .consume_some_jobs(&awaiting_jobs, tx.clone());
+                    .consume_some_jobs(&available_jobs, tx.clone());
             }
 
             while let Some(progress) = self.read(&rx) {
@@ -83,7 +83,7 @@ impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starte
     fn signal_all_existing_jobs(&self, jobs: &[Job], first_tx: &Sender<JobProgress>) {
         for job in jobs {
             first_tx
-                .send(JobProgress::new(&job.name, Progress::Awaiting))
+                .send(JobProgress::new(&job.name, Progress::Available))
                 .unwrap();
         }
     }

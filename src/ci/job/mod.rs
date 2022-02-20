@@ -47,7 +47,7 @@ impl Job {
 
 #[derive(Debug, PartialEq)]
 pub enum Progress {
-    Awaiting,
+    Available,
     Started,
     Partial(String, JobOutput),
     Terminated(bool),
@@ -63,8 +63,8 @@ impl Progress {
         )
     }
 
-    pub fn is_awaiting(&self) -> bool {
-        matches!(self, Progress::Awaiting)
+    pub fn is_available(&self) -> bool {
+        matches!(self, Progress::Available)
     }
 }
 
@@ -138,9 +138,9 @@ impl ProgressCollector {
         self.progresses.last()
     }
 
-    pub fn is_awaiting(&self) -> bool {
+    pub fn is_available(&self) -> bool {
         match self.last() {
-            Some(progress) => progress.is_awaiting(),
+            Some(progress) => progress.is_available(),
             _ => false,
         }
     }
@@ -185,9 +185,9 @@ impl JobProgressTracker {
         true
     }
 
-    pub fn is_waiting_for(&self, name: &String) -> bool {
+    pub fn job_is_available(&self, name: &String) -> bool {
         if let Some(collector) = self.states.get(name) {
-            collector.is_awaiting()
+            collector.is_available()
         } else {
             false
         }
