@@ -1,6 +1,8 @@
 pub mod job_output;
+pub mod progress;
 
 use crate::ci::job::job_output::JobOutput;
+use crate::ci::job::progress::Progress;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 
@@ -32,35 +34,6 @@ impl Job {
             }
         }
         consumer.consume(JobProgress::new(&self.name, Progress::Terminated(success)));
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Progress {
-    Available,
-    Started,
-    Partial(String, JobOutput),
-    Terminated(bool),
-}
-
-impl Progress {
-    pub fn failed(&self) -> bool {
-        matches!(
-            self,
-            Progress::Partial(_, JobOutput::JobError(_, _))
-                | Progress::Partial(_, JobOutput::ProcessError(_))
-                | Progress::Terminated(false)
-        )
-    }
-
-    pub fn is_available(&self) -> bool {
-        matches!(self, Progress::Available)
-    }
-}
-
-impl Progress {
-    pub fn is_pending(&self) -> bool {
-        !matches!(*self, Progress::Terminated(_))
     }
 }
 
