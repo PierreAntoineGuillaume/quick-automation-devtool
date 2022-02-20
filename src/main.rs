@@ -54,32 +54,32 @@ fn main() {
         std::process::exit(0);
     });
 
-    match command {
-        Subcommands::Ci(_) => {
-            let envvar = std::env::var("DT_CONFIG_FILE")
-                .or_else::<String, _>(|_| Ok(String::from("dt.toml")))
-                .unwrap();
-
-            let config = Config::parse(&envvar)
-                .map_err(|error| {
-                    eprintln!("dt: {}", error);
-                    std::process::exit(1);
-                })
-                .unwrap();
-
-            if (Ci {}).run(config).is_err() {
-                std::process::exit(1);
-            }
+    if matches!(command, Subcommands::Autocomplete(_)) {
+        if atty::is(atty::Stream::Stdout) {
+            eprintln!(
+                "#{} autocomplete > ~/.local/share/bash-completion/completions/{}",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_NAME")
+            );
         }
-        Subcommands::Autocomplete(_) => {
-            if atty::is(atty::Stream::Stdout) {
-                eprintln!(
-                    "#{} autocomplete > ~/.local/share/bash-completion/completions/{}",
-                    env!("CARGO_PKG_NAME"),
-                    env!("CARGO_PKG_NAME")
-                );
-            }
-            print!("{}", include_str!("../assets/dt_bash_competion.sh"));
+        print!("{}", include_str!("../assets/dt_bash_competion.sh"));
+        std::process::exit(0);
+    }
+
+    let envvar = std::env::var("DT_CONFIG_FILE")
+        .or_else::<String, _>(|_| Ok(String::from("dt.toml")))
+        .unwrap();
+
+    let config = Config::parse(&envvar)
+        .map_err(|error| {
+            eprintln!("dt: {}", error);
+            std::process::exit(1);
+        })
+        .unwrap();
+
+    if let Subcommands::Ci(_) = command {
+        if (Ci {}).run(config).is_err() {
+            std::process::exit(1);
         }
     }
 }
