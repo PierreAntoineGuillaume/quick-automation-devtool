@@ -1,4 +1,5 @@
-use job::{Job, JobOutput, JobProgress, JobProgressConsumer, JobRunner};
+use job::job_output::JobOutput;
+use job::{Job, JobProgress, JobProgressConsumer, JobRunner};
 use regex::Regex;
 use schedule::JobStarter;
 use std::process::Command;

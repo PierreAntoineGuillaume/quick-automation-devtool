@@ -1,18 +1,8 @@
+pub mod job_output;
+
+use crate::ci::job::job_output::JobOutput;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum JobOutput {
-    Success(String, String),
-    JobError(String, String),
-    ProcessError(String),
-}
-
-impl JobOutput {
-    pub fn succeeded(&self) -> bool {
-        matches!(self, JobOutput::Success(_, _))
-    }
-}
 
 pub trait JobProgressConsumer {
     fn consume(&self, job_progress: JobProgress);

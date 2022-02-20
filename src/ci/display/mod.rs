@@ -1,6 +1,7 @@
 mod spinner;
 
-use super::job::{JobOutput, JobProgressTracker, Progress, ProgressCollector};
+use super::job::job_output::JobOutput;
+use super::job::{JobProgressTracker, Progress, ProgressCollector};
 use super::schedule::CiDisplay;
 use spinner::Spinner;
 use std::fmt::{Display, Formatter};
