@@ -1,7 +1,8 @@
+use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{JobRunner, JobStarter, Pipeline};
 use crate::{Config, TermCiDisplay};
 use job::job_output::JobOutput;
-use job::{Job, JobProgress, JobProgressConsumer};
+use job::{Job, JobProgressConsumer};
 use regex::Regex;
 use std::process::Command;
 use std::sync::mpsc::Sender;

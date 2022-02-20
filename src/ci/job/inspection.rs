@@ -1,7 +1,18 @@
 use crate::ci::job::state::Progress;
-use crate::ci::job::JobProgress;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
+
+pub struct JobProgress(String, Progress);
+
+impl JobProgress {
+    pub fn new(job_name: &str, progress: Progress) -> Self {
+        JobProgress(job_name.to_string(), progress)
+    }
+
+    pub fn failed(&self) -> bool {
+        self.1.failed()
+    }
+}
 
 pub struct ProgressCollector {
     pub progresses: std::vec::Vec<Progress>,
@@ -46,9 +57,9 @@ impl JobProgressTracker {
     pub fn record(&mut self, job_progress: JobProgress) {
         self.has_failed |= job_progress.failed();
         self.states
-            .entry(job_progress.job_name)
+            .entry(job_progress.0)
             .or_insert_with(ProgressCollector::new)
-            .push(job_progress.progress);
+            .push(job_progress.1);
     }
 
     pub fn try_finish(&mut self) -> bool {

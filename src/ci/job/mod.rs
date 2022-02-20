@@ -3,7 +3,7 @@ pub mod job_output;
 pub mod schedule;
 pub mod state;
 
-use crate::ci::job::inspection::JobProgressTracker;
+use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
 use crate::ci::job::schedule::JobRunner;
 use crate::ci::job::state::Progress;
 
@@ -31,23 +31,5 @@ impl Job {
             }
         }
         consumer.consume(JobProgress::new(&self.name, Progress::Terminated(success)));
-    }
-}
-
-pub struct JobProgress {
-    pub job_name: String,
-    pub progress: Progress,
-}
-
-impl JobProgress {
-    pub fn new(job_name: &str, progress: Progress) -> Self {
-        JobProgress {
-            job_name: job_name.to_string(),
-            progress,
-        }
-    }
-
-    pub fn failed(&self) -> bool {
-        self.progress.failed()
     }
 }
