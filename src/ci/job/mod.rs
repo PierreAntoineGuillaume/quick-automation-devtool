@@ -6,23 +6,6 @@ use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
 use crate::ci::job::schedule::JobRunner;
 use crate::ci::job::state::Progress;
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum JobOutput {
-    Success(String, String),
-    JobError(String, String),
-    ProcessError(String),
-}
-
-impl JobOutput {
-    pub fn succeeded(&self) -> bool {
-        matches!(self, JobOutput::Success(_, _))
-    }
-}
-
-pub trait JobProgressConsumer {
-    fn consume(&self, job_progress: JobProgress);
-}
-
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Job {
     pub name: String,
@@ -43,5 +26,22 @@ impl Job {
             }
         }
         consumer.consume(JobProgress::new(&self.name, Progress::Terminated(success)));
+    }
+}
+
+pub trait JobProgressConsumer {
+    fn consume(&self, job_progress: JobProgress);
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum JobOutput {
+    Success(String, String),
+    JobError(String, String),
+    ProcessError(String),
+}
+
+impl JobOutput {
+    pub fn succeeded(&self) -> bool {
+        matches!(self, JobOutput::Success(_, _))
     }
 }
