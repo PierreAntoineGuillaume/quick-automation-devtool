@@ -1,4 +1,3 @@
-use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::schedule::{JobRunner, JobScheduler, JobStarter};
 use crate::{CompositeJobScheduler, Config, TermCiDisplay};
 use job::job_output::JobOutput;
@@ -16,7 +15,7 @@ pub(crate) mod job;
 pub struct Ci {}
 
 impl Ci {
-    pub fn run(&mut self, config: Config) -> Result<JobProgressTracker, JobProgressTracker> {
+    pub fn run(&mut self, config: Config) -> Result<(), ()> {
         let mut jobs: Vec<Job> = vec![];
         config.load_into(&mut jobs);
 
@@ -30,9 +29,9 @@ impl Ci {
 
         let tracker = scheduler.schedule(&jobs);
         if tracker.has_failed {
-            Err(tracker)
+            Err(())
         } else {
-            Ok(tracker)
+            Ok(())
         }
     }
 }
