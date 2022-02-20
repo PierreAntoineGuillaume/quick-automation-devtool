@@ -6,8 +6,7 @@ extern crate term;
 
 use crate::ci::display::TermCiDisplay;
 use crate::ci::job::schedule::CompositeJobScheduler;
-use crate::ci::job::Pipeline;
-use crate::ci::ParrallelJobStarter;
+use crate::ci::{ParrallelJobStarter, Pipeline};
 use crate::config::Config;
 use argh::FromArgs;
 

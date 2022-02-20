@@ -4,7 +4,7 @@ pub mod schedule;
 pub mod state;
 
 use crate::ci::job::inspection::JobProgressTracker;
-use crate::ci::job::schedule::{JobRunner, JobScheduler};
+use crate::ci::job::schedule::JobRunner;
 use crate::ci::job::state::Progress;
 
 pub trait JobProgressConsumer {
@@ -31,32 +31,6 @@ impl Job {
             }
         }
         consumer.consume(JobProgress::new(&self.name, Progress::Terminated(success)));
-    }
-}
-
-pub struct Pipeline {
-    jobs: Vec<Job>,
-}
-
-impl Pipeline {
-    pub fn run(
-        &mut self,
-        scheduler: &mut dyn JobScheduler,
-    ) -> Result<JobProgressTracker, JobProgressTracker> {
-        let tracker = scheduler.schedule(&self.jobs);
-        if tracker.has_failed {
-            Err(tracker)
-        } else {
-            Ok(tracker)
-        }
-    }
-
-    pub fn push_job(&mut self, job: Job) {
-        self.jobs.push(job);
-    }
-
-    pub fn new() -> Pipeline {
-        Pipeline { jobs: Vec::new() }
     }
 }
 
