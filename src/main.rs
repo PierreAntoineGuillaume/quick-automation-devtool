@@ -5,8 +5,8 @@ extern crate atty;
 extern crate term;
 
 use crate::ci::display::TermCiDisplay;
+use crate::ci::job::schedule::CompositeJobScheduler;
 use crate::ci::job::Pipeline;
-use crate::ci::schedule::CompositeJobScheduler;
 use crate::ci::ParrallelJobStarter;
 use crate::config::Config;
 use argh::FromArgs;

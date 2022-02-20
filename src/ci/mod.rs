@@ -10,7 +10,6 @@ use std::time::{Duration, SystemTime};
 
 pub(crate) mod display;
 pub(crate) mod job;
-pub(crate) mod schedule;
 
 pub struct ParrallelJobStarter {
     threads: std::vec::Vec<JoinHandle<()>>,
