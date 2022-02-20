@@ -18,8 +18,8 @@ pub trait CiDisplay {
     fn finish(&mut self, tracker: &JobProgressTracker);
 }
 
-pub struct JobScheduler {}
-impl JobScheduler {
+pub struct Pipeline {}
+impl Pipeline {
     pub fn schedule(
         &mut self,
         jobs: &[Job],
@@ -110,7 +110,7 @@ mod tests {
     fn pipeline(jobs: &[Job]) -> JobProgressTracker {
         let mut job_start = TestJobStarter {};
         let mut job_display = NullCiDisplay {};
-        let mut scheduler = JobScheduler {};
+        let mut scheduler = Pipeline {};
         scheduler.schedule(jobs, &mut job_start, &mut job_display)
     }
 

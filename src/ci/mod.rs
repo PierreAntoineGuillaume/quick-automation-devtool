@@ -1,4 +1,4 @@
-use crate::ci::job::schedule::{JobRunner, JobScheduler, JobStarter};
+use crate::ci::job::schedule::{JobRunner, Pipeline, JobStarter};
 use crate::{Config, TermCiDisplay};
 use job::job_output::JobOutput;
 use job::{Job, JobProgress, JobProgressConsumer};
@@ -22,7 +22,7 @@ impl Ci {
         let mut starter = ParrallelJobStarter::new();
         let mut display = TermCiDisplay::new();
 
-        let mut scheduler = JobScheduler {};
+        let mut scheduler = Pipeline {};
 
         let tracker = scheduler.schedule(&jobs, &mut starter, &mut display);
         if tracker.has_failed {
