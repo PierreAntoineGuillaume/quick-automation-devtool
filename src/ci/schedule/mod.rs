@@ -94,8 +94,7 @@ impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starte
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ci::job::inspection::JobProgressTracker;
-    use crate::ci::job::schedule::test::{TestJobStarter};
+    use crate::ci::job::schedule::test::{NullCiDisplay, TestJobStarter};
 
     impl Job {
         pub fn new(name: &str, instructions: &[&str]) -> Self {
@@ -107,13 +106,6 @@ mod tests {
                     .collect(),
             }
         }
-    }
-
-    struct NullCiDisplay {}
-
-    impl CiDisplay for NullCiDisplay {
-        fn refresh(&mut self, _: &JobProgressTracker, _: usize) {}
-        fn finish(&mut self, _: &JobProgressTracker) {}
     }
 
     fn test_that(callback: fn(&mut dyn JobScheduler)) {

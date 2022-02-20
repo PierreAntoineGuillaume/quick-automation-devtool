@@ -40,6 +40,13 @@ pub mod test {
         }
     }
 
+    pub struct NullCiDisplay {}
+
+    impl CiDisplay for NullCiDisplay {
+        fn refresh(&mut self, _: &JobProgressTracker, _: usize) {}
+        fn finish(&mut self, _: &JobProgressTracker) {}
+    }
+
     pub struct TestJobRunner {}
 
     impl JobRunner for TestJobRunner {
