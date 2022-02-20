@@ -22,9 +22,9 @@ impl Ci {
         let mut starter = ParrallelJobStarter::new();
         let mut display = TermCiDisplay::new();
 
-        let mut scheduler = Pipeline {};
+        let mut pipeline = Pipeline {};
 
-        let tracker = scheduler.schedule(&jobs, &mut starter, &mut display);
+        let tracker = pipeline.schedule(&jobs, &mut starter, &mut display);
 
         display.finish(&tracker);
 
