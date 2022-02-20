@@ -1,5 +1,4 @@
 use crate::ci::job::Job;
-use crate::Pipeline;
 use serde::Deserialize;
 
 pub type JobSet = std::collections::HashMap<String, std::vec::Vec<String>>;
@@ -10,9 +9,9 @@ pub struct Version0x {
 }
 
 impl Version0x {
-    pub fn load_into(&self, pipeline: &mut Pipeline) {
+    pub fn load_into(&self, vec: &mut Vec<Job>) {
         for (name, instruction) in &self.jobs {
-            pipeline.push_job(Job {
+            vec.push(Job {
                 name: name.clone(),
                 instructions: instruction.clone(),
             })

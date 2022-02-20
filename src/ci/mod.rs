@@ -1,5 +1,6 @@
 use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::schedule::{JobRunner, JobScheduler, JobStarter};
+use crate::{CompositeJobScheduler, Config, TermCiDisplay};
 use job::job_output::JobOutput;
 use job::{Job, JobProgress, JobProgressConsumer};
 use regex::Regex;
@@ -12,29 +13,27 @@ use std::time::{Duration, SystemTime};
 pub(crate) mod display;
 pub(crate) mod job;
 
-pub struct Pipeline {
-    jobs: Vec<Job>,
-}
+pub struct Ci {}
 
-impl Pipeline {
-    pub fn run(
-        &mut self,
-        scheduler: &mut dyn JobScheduler,
-    ) -> Result<JobProgressTracker, JobProgressTracker> {
-        let tracker = scheduler.schedule(&self.jobs);
+impl Ci {
+    pub fn run(&mut self, config: Config) -> Result<JobProgressTracker, JobProgressTracker> {
+        let mut jobs: Vec<Job> = vec![];
+        config.load_into(&mut jobs);
+
+        let mut starter = ParrallelJobStarter::new();
+        let mut display = TermCiDisplay::new();
+
+        let mut scheduler = CompositeJobScheduler::<ParrallelJobStarter, TermCiDisplay>::new(
+            &mut starter,
+            &mut display,
+        );
+
+        let tracker = scheduler.schedule(&jobs);
         if tracker.has_failed {
             Err(tracker)
         } else {
             Ok(tracker)
         }
-    }
-
-    pub fn push_job(&mut self, job: Job) {
-        self.jobs.push(job);
-    }
-
-    pub fn new() -> Pipeline {
-        Pipeline { jobs: Vec::new() }
     }
 }
 

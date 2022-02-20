@@ -6,7 +6,7 @@ extern crate term;
 
 use crate::ci::display::TermCiDisplay;
 use crate::ci::job::schedule::CompositeJobScheduler;
-use crate::ci::{ParrallelJobStarter, Pipeline};
+use crate::ci::Ci;
 use crate::config::Config;
 use argh::FromArgs;
 
@@ -56,7 +56,6 @@ fn main() {
 
     match command {
         Subcommands::Ci(_) => {
-            let mut pipeline = Pipeline::new();
             let envvar = std::env::var("DT_CONFIG_FILE")
                 .or_else::<String, _>(|_| Ok(String::from("dt.toml")))
                 .unwrap();
@@ -68,18 +67,7 @@ fn main() {
                 })
                 .unwrap();
 
-            config.load_into(&mut pipeline);
-
-            if pipeline
-                .run(&mut CompositeJobScheduler::<
-                    ParrallelJobStarter,
-                    TermCiDisplay,
-                >::new(
-                    &mut ParrallelJobStarter::new(),
-                    &mut TermCiDisplay::new(),
-                ))
-                .is_err()
-            {
+            if (Ci {}).run(config).is_err() {
                 std::process::exit(1);
             }
         }
