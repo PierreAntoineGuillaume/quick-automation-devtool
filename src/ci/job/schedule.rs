@@ -1,5 +1,4 @@
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::state::Progress;
 use crate::ci::job::{Job, JobOutput, JobProgressTracker};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
@@ -18,26 +17,20 @@ pub trait CiDisplay {
 }
 
 pub struct Pipeline {}
-impl Pipeline {
+impl<'a> Pipeline {
     pub fn schedule(
         &mut self,
-        jobs: &[Job],
+        jobs: &'a [Job],
         job_starter: &mut dyn JobStarter,
         job_display: &mut dyn CiDisplay,
-    ) -> JobProgressTracker {
-        let mut tracker = JobProgressTracker::new();
+    ) -> JobProgressTracker<'a> {
+        let mut tracker = JobProgressTracker::new(jobs);
         if jobs.is_empty() {
             tracker.try_finish();
             return tracker;
         }
 
         let (tx, rx) = channel();
-
-        self.signal_all_existing_jobs(jobs, &tx);
-
-        while let Some(progress) = self.read(&rx) {
-            tracker.record(progress);
-        }
 
         let mut delay: usize = 0;
 
@@ -66,14 +59,6 @@ impl Pipeline {
         job_starter.join();
 
         tracker
-    }
-
-    fn signal_all_existing_jobs(&self, jobs: &[Job], first_tx: &Sender<JobProgress>) {
-        for job in jobs {
-            first_tx
-                .send(JobProgress::new(&job.name, Progress::Available))
-                .unwrap();
-        }
     }
 
     pub fn read(&self, rx: &Receiver<JobProgress>) -> Option<JobProgress> {
