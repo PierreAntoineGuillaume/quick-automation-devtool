@@ -1,6 +1,7 @@
-use super::job::{Job, JobProgress, JobProgressTracker};
+use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::job_scheduler::JobScheduler;
 use crate::ci::job::progress::Progress;
+use crate::ci::job::{Job, JobProgress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
 pub trait JobStarter {
@@ -105,6 +106,7 @@ impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starte
 mod tests {
     use super::super::job::test::TestJobRunner;
     use super::*;
+    use crate::ci::job::inspection::JobProgressTracker;
 
     impl Job {
         pub fn new(name: &str, instructions: &[&str]) -> Self {
