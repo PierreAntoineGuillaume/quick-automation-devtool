@@ -24,6 +24,14 @@ pub struct TermCiDisplay {
     written_lines: u16,
 }
 
+impl TermCiDisplay {
+    pub fn finish(&mut self, tracker: &JobProgressTracker) {
+        self.refresh(tracker, 0);
+        self.clear();
+        print!("{tracker}")
+    }
+}
+
 impl CiDisplay for TermCiDisplay {
     fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
         let previous_written_lines = self.written_lines;
@@ -51,12 +59,6 @@ impl CiDisplay for TermCiDisplay {
             self.term.delete_line().unwrap();
         });
         self.spin.tick(elapsed);
-    }
-
-    fn finish(&mut self, tracker: &JobProgressTracker) {
-        self.refresh(tracker, 0);
-        self.clear();
-        print!("{tracker}")
     }
 }
 

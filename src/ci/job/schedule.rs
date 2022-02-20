@@ -15,7 +15,6 @@ pub trait JobStarter {
 
 pub trait CiDisplay {
     fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize);
-    fn finish(&mut self, tracker: &JobProgressTracker);
 }
 
 pub struct Pipeline {}
@@ -29,7 +28,6 @@ impl Pipeline {
         let mut tracker = JobProgressTracker::new();
         if jobs.is_empty() {
             tracker.try_finish();
-            job_display.finish(&tracker);
             return tracker;
         }
 
@@ -66,8 +64,6 @@ impl Pipeline {
         }
 
         job_starter.join();
-
-        job_display.finish(&tracker);
 
         tracker
     }
@@ -146,7 +142,6 @@ mod tests {
     pub struct NullCiDisplay {}
     impl CiDisplay for NullCiDisplay {
         fn refresh(&mut self, _: &JobProgressTracker, _: usize) {}
-        fn finish(&mut self, _: &JobProgressTracker) {}
     }
 
     pub struct TestJobRunner {}
