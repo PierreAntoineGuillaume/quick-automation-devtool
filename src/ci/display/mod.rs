@@ -3,7 +3,7 @@ mod spinner;
 use super::job::job_output::JobOutput;
 use super::schedule::CiDisplay;
 use crate::ci::job::inspection::{JobProgressTracker, ProgressCollector};
-use crate::ci::job::progress::Progress;
+use crate::ci::job::state::Progress;
 use spinner::Spinner;
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;

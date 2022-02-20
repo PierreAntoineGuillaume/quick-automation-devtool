@@ -1,6 +1,6 @@
 use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::job_scheduler::JobScheduler;
-use crate::ci::job::progress::Progress;
+use crate::ci::job::state::Progress;
 use crate::ci::job::{Job, JobProgress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 

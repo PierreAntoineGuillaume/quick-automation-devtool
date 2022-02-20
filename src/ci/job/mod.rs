@@ -1,12 +1,12 @@
 pub mod inspection;
 pub mod job_output;
 pub mod job_scheduler;
-pub mod progress;
+pub mod state;
 
 use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::job_output::JobOutput;
 use crate::ci::job::job_scheduler::JobScheduler;
-use crate::ci::job::progress::Progress;
+use crate::ci::job::state::Progress;
 
 pub trait JobProgressConsumer {
     fn consume(&self, job_progress: JobProgress);

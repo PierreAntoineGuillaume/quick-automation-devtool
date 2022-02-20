@@ -1,4 +1,4 @@
-use crate::ci::job::progress::Progress;
+use crate::ci::job::state::Progress;
 use crate::ci::job::JobProgress;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
