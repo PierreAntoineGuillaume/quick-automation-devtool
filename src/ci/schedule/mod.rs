@@ -95,7 +95,7 @@ impl<Starter: JobStarter, Displayer: CiDisplay> CompositeJobScheduler<'_, Starte
 mod tests {
     use super::*;
     use crate::ci::job::inspection::JobProgressTracker;
-    use crate::ci::job::schedule::test::TestJobRunner;
+    use crate::ci::job::schedule::test::{TestJobStarter};
 
     impl Job {
         pub fn new(name: &str, instructions: &[&str]) -> Self {
@@ -106,21 +106,6 @@ mod tests {
                     .map(|item| String::from(*item))
                     .collect(),
             }
-        }
-    }
-
-    struct TestJobStarter {}
-
-    impl JobStarter for TestJobStarter {
-        fn consume_some_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
-            for job in jobs {
-                job.start(&TestJobRunner {}, &tx.clone());
-            }
-        }
-
-        fn join(&mut self) {}
-        fn delay(&mut self) -> usize {
-            0
         }
     }
 

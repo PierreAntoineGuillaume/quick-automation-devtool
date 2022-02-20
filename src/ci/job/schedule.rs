@@ -25,6 +25,21 @@ pub trait CiDisplay {
 pub mod test {
     use super::*;
 
+    pub struct TestJobStarter {}
+
+    impl JobStarter for TestJobStarter {
+        fn consume_some_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
+            for job in jobs {
+                job.start(&TestJobRunner {}, &tx.clone());
+            }
+        }
+
+        fn join(&mut self) {}
+        fn delay(&mut self) -> usize {
+            0
+        }
+    }
+
     pub struct TestJobRunner {}
 
     impl JobRunner for TestJobRunner {
