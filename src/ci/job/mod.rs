@@ -1,7 +1,9 @@
 pub mod job_output;
+pub mod job_scheduler;
 pub mod progress;
 
 use crate::ci::job::job_output::JobOutput;
+use crate::ci::job::job_scheduler::JobScheduler;
 use crate::ci::job::progress::Progress;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
@@ -39,10 +41,6 @@ impl Job {
 
 pub struct Pipeline {
     jobs: Vec<Job>,
-}
-
-pub trait JobScheduler {
-    fn schedule(&mut self, jobs: &[Job]) -> JobProgressTracker;
 }
 
 impl Pipeline {

@@ -1,4 +1,5 @@
-use super::job::{Job, JobProgress, JobProgressTracker, JobScheduler};
+use super::job::{Job, JobProgress, JobProgressTracker};
+use crate::ci::job::job_scheduler::JobScheduler;
 use crate::ci::job::progress::Progress;
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
