@@ -1,4 +1,4 @@
-use super::job_output::JobOutput;
+use crate::ci::job::JobOutput;
 
 #[derive(Debug, PartialEq)]
 pub enum Progress {

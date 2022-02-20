@@ -1,11 +1,23 @@
 pub mod inspection;
-pub mod job_output;
 pub mod schedule;
 pub mod state;
 
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
 use crate::ci::job::schedule::JobRunner;
 use crate::ci::job::state::Progress;
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum JobOutput {
+    Success(String, String),
+    JobError(String, String),
+    ProcessError(String),
+}
+
+impl JobOutput {
+    pub fn succeeded(&self) -> bool {
+        matches!(self, JobOutput::Success(_, _))
+    }
+}
 
 pub trait JobProgressConsumer {
     fn consume(&self, job_progress: JobProgress);

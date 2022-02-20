@@ -1,7 +1,7 @@
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{JobRunner, JobStarter, Pipeline};
+use crate::ci::job::JobOutput;
 use crate::{Config, TermCiDisplay};
-use job::job_output::JobOutput;
 use job::{Job, JobProgressConsumer};
 use regex::Regex;
 use std::process::Command;

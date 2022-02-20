@@ -1,7 +1,6 @@
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::job_output::JobOutput;
 use crate::ci::job::state::Progress;
-use crate::ci::job::{Job, JobProgressTracker};
+use crate::ci::job::{Job, JobOutput, JobProgressTracker};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
 pub trait JobRunner {
