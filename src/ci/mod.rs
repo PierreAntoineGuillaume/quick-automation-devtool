@@ -1,8 +1,7 @@
-use crate::ci::job::schedule::JobRunner;
+use crate::ci::job::schedule::{JobRunner, JobStarter};
 use job::job_output::JobOutput;
 use job::{Job, JobProgress, JobProgressConsumer};
 use regex::Regex;
-use schedule::JobStarter;
 use std::process::Command;
 use std::sync::mpsc::Sender;
 use std::thread;

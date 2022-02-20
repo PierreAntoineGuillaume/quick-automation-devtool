@@ -1,19 +1,8 @@
 use crate::ci::job::inspection::JobProgressTracker;
-use crate::ci::job::schedule::JobScheduler;
+use crate::ci::job::schedule::{CiDisplay, JobScheduler, JobStarter};
 use crate::ci::job::state::Progress;
 use crate::ci::job::{Job, JobProgress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
-
-pub trait JobStarter {
-    fn consume_some_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>);
-    fn join(&mut self);
-    fn delay(&mut self) -> usize;
-}
-
-pub trait CiDisplay {
-    fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize);
-    fn finish(&mut self, tracker: &JobProgressTracker);
-}
 
 pub struct CompositeJobScheduler<'a, Starter: JobStarter, Displayer: CiDisplay> {
     job_starter: &'a mut Starter,

@@ -1,5 +1,6 @@
 use crate::ci::job::job_output::JobOutput;
-use crate::ci::job::{Job, JobProgressTracker};
+use crate::ci::job::{Job, JobProgress, JobProgressTracker};
+use std::sync::mpsc::Sender;
 
 pub trait JobScheduler {
     fn schedule(&mut self, jobs: &[Job]) -> JobProgressTracker;
@@ -7,6 +8,17 @@ pub trait JobScheduler {
 
 pub trait JobRunner {
     fn run(&self, job: &str) -> JobOutput;
+}
+
+pub trait JobStarter {
+    fn consume_some_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>);
+    fn join(&mut self);
+    fn delay(&mut self) -> usize;
+}
+
+pub trait CiDisplay {
+    fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize);
+    fn finish(&mut self, tracker: &JobProgressTracker);
 }
 
 #[cfg(test)]
