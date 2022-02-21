@@ -1,5 +1,5 @@
-use crate::ci::job::state::Progress;
 use crate::ci::job::Job;
+use crate::ci::job::Progress;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 

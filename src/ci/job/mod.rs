@@ -1,10 +1,8 @@
 pub mod inspection;
 pub mod schedule;
-pub mod state;
 
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
 use crate::ci::job::schedule::JobRunner;
-use crate::ci::job::state::Progress;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Job {
@@ -43,5 +41,32 @@ pub enum JobOutput {
 impl JobOutput {
     pub fn succeeded(&self) -> bool {
         matches!(self, JobOutput::Success(_, _))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Progress {
+    Available,
+    Started,
+    Partial(String, JobOutput),
+    Terminated(bool),
+}
+
+impl Progress {
+    pub fn failed(&self) -> bool {
+        matches!(
+            self,
+            Progress::Partial(_, JobOutput::JobError(_, _))
+                | Progress::Partial(_, JobOutput::ProcessError(_))
+                | Progress::Terminated(false)
+        )
+    }
+
+    pub fn is_available(&self) -> bool {
+        matches!(self, Progress::Available)
+    }
+
+    pub fn is_pending(&self) -> bool {
+        !matches!(*self, Progress::Terminated(_))
     }
 }
