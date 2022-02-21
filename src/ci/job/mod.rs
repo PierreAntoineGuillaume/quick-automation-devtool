@@ -1,5 +1,6 @@
 pub mod inspection;
 pub mod schedule;
+pub mod dag;
 
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
 use crate::ci::job::schedule::JobRunner;
