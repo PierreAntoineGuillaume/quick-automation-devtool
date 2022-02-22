@@ -5,7 +5,7 @@ mod tests {
 
     #[derive(Debug)]
     struct ConstraintMatrix {
-        pub map: HashMap<(String, String), Constraint>,
+        map: HashMap<(String, String), Constraint>,
     }
 
     impl ConstraintMatrix {
@@ -26,7 +26,7 @@ mod tests {
 
             for constraint in constraints {
                 if constraint.0 == constraint.1 {
-                    return Err(DagError::BlockerBlocked);
+                    return Err(DagError::JobCannotBlockItself(constraint.1.to_string()));
                 }
                 if !job_names.contains(&constraint.0) {
                     return Err(DagError::UnknownJobInConstraint(constraint.0.to_string()));
@@ -38,7 +38,7 @@ mod tests {
             for new_constraint in constraints {
                 if let Some(cons) = matrix.get_mut(new_constraint) {
                     *cons = cons.constrain().map_err(|_| {
-                        DagError::CycleForConstraint(
+                        DagError::CycleExistsBetween(
                             new_constraint.0.to_string(),
                             new_constraint.1.to_string(),
                         )
@@ -75,9 +75,9 @@ mod tests {
 
     #[derive(Debug)]
     pub enum DagError {
-        BlockerBlocked,
+        JobCannotBlockItself(String),
         UnknownJobInConstraint(String),
-        CycleForConstraint(String, String),
+        CycleExistsBetween(String, String),
     }
 
     fn job(name: &str) -> Job {
@@ -135,7 +135,7 @@ mod tests {
         let constraints = vec![cons("build", "build")];
 
         let matrix = ConstraintMatrix::new(&jobs, &constraints);
-        assert!(matches!(matrix, Err(DagError::BlockerBlocked)))
+        assert!(matches!(matrix, Err(DagError::JobCannotBlockItself(_))))
     }
 
     #[test]
