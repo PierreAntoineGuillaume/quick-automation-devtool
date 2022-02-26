@@ -79,12 +79,18 @@ impl ConstraintMatrix {
 
 #[cfg(test)]
 mod tests {
-    use crate::ci::job::dag::tests::*;
+    use super::*;
     use crate::ci::job::dag::Constraint;
+    use crate::ci::job::tests::tests::*;
+
+    pub fn complex_matrix() -> Result<ConstraintMatrix, DagError> {
+        let list = complex_list();
+        ConstraintMatrix::new(&list.0, &list.1)
+    }
 
     #[test]
     pub fn check_direct_links() {
-        let matrix = complex_pipeline().unwrap();
+        let matrix = complex_matrix().unwrap();
         assert!(matches!(
             matrix.matrix.get(&cons("build1", "build2")).unwrap(),
             Constraint::Indifferent
@@ -97,5 +103,42 @@ mod tests {
             matrix.matrix.get(&cons("build1", "build1")).unwrap(),
             Constraint::Free
         ))
+    }
+
+    #[test]
+    pub fn fails_on_unknown_job_in_constraint() {
+        let jobs = vec![job("build")];
+
+        let constraints = vec![cons("build1", "test1")];
+
+        let matrix = ConstraintMatrix::new(&jobs, &constraints);
+        assert!(matches!(matrix, Err(DagError::UnknownJobInConstraint(_))))
+    }
+
+    #[test]
+    pub fn fails_on_unknown_bad_constraint() {
+        let jobs = vec![job("build")];
+
+        let constraints = vec![cons("build", "build")];
+
+        let matrix = ConstraintMatrix::new(&jobs, &constraints);
+        assert!(matches!(matrix, Err(DagError::JobCannotBlockItself(_))))
+    }
+
+    #[test]
+    pub fn list_all_blocking() {
+        let pipeline = complex_matrix().unwrap();
+        let vector: Vec<String> = pipeline.blocking("deploy").collect();
+        assert_eq!(
+            r#"["build1", "build2", "test1", "test2"]"#,
+            format!("{:?}", vector)
+        )
+    }
+
+    #[test]
+    pub fn list_all_blocks() {
+        let pipeline = complex_matrix().unwrap();
+        let vector: Vec<String> = pipeline.blocked_by("test1").collect();
+        assert_eq!(r#"["deploy"]"#, format!("{:?}", vector))
     }
 }

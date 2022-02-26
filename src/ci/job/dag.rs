@@ -1,8 +1,8 @@
-use std::collections::BTreeMap;
 use crate::ci::job::dag::constraint_matrix::ConstraintMatrix;
 use crate::ci::job::Job;
+use std::collections::BTreeMap;
 
-mod constraint_matrix;
+pub mod constraint_matrix;
 mod constraint_matrix_constraint_iterator;
 
 #[derive(Debug)]
@@ -38,7 +38,7 @@ pub enum DagError {
 #[derive(Debug)]
 pub enum JobResult {
     Success,
-    Failure
+    Failure,
 }
 
 #[derive(Debug)]
@@ -58,7 +58,7 @@ impl Default for JobState {
 
 #[derive(Debug)]
 pub struct JobList {
-    vec: Vec<String>
+    vec: Vec<String>,
 }
 
 impl JobList {
@@ -66,15 +66,15 @@ impl JobList {
         JobList { vec }
     }
 
-    pub fn new () -> Self {
-         Self::from_vec(vec![])
+    pub fn new() -> Self {
+        Self::from_vec(vec![])
     }
 
-    pub fn remove_job (&mut self, name: &str) {
+    pub fn remove_job(&mut self, name: &str) {
         self.vec.retain(|contained| contained != name)
     }
 
-    pub fn add_job (&mut self, name: &str) {
+    pub fn add_job(&mut self, name: &str) {
         self.vec.push(name.to_string())
     }
 
@@ -98,17 +98,19 @@ pub struct Dag {
 
 impl Dag {
     pub fn new(jobs: &[Job], constraints: &[(String, String)]) -> Result<Self, DagError> {
-        let jobs : Vec<Job> = jobs.iter().cloned().collect();
-        let matrix = ConstraintMatrix::new(&jobs, constraints)?;
+        let jobs: Vec<Job> = jobs.to_vec();
+        let _matrix = ConstraintMatrix::new(&jobs, constraints)?;
 
         let all_jobs = BTreeMap::<String, JobWatcher>::new();
         let available_jobs = JobList::new();
 
-        Ok(Dag{ all_jobs, available_jobs })
+        Ok(Dag {
+            all_jobs,
+            available_jobs,
+        })
     }
 
     pub fn record_event(&mut self, job: &str, result: JobResult) {
-
         let watcher = self.all_jobs.get_mut(job).unwrap();
 
         if !matches!(watcher.state, JobState::Started) {
@@ -136,7 +138,7 @@ impl Dag {
                 .values()
                 .filter(|job_watcher| matches!(job_watcher.state, JobState::Pending))
                 .map(|job_watcher| job_watcher.job.name.to_string())
-                .collect()
+                .collect(),
         );
     }
 
@@ -148,7 +150,7 @@ impl Dag {
 
         for blocked_job_name in blocked_job_list {
             let blocked_job = self.all_jobs.get_mut(blocked_job_name.as_str()).unwrap();
-            if ! matches!(blocked_job.state, JobState::Blocked) {
+            if !matches!(blocked_job.state, JobState::Blocked) {
                 continue;
             }
             blocked_job.blocking_jobs.remove_job(&blocking_job_name);
@@ -164,7 +166,7 @@ impl Dag {
         let blocked_job_list = watcher.blocks_job.clone();
         for blocked_job_name in blocked_job_list {
             let blocked_job = self.all_jobs.get_mut(blocked_job_name.as_str()).unwrap();
-            if ! matches!(blocked_job.state, JobState::Blocked) {
+            if !matches!(blocked_job.state, JobState::Blocked) {
                 continue;
             }
             blocked_job.blocking_jobs.remove_job(&blocking_job_name);
@@ -177,76 +179,10 @@ impl Dag {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::ci::job::dag::constraint_matrix::ConstraintMatrix;
-    use crate::ci::job::Job;
-
-    pub fn job(name: &str) -> Job {
-        Job {
-            name: name.to_string(),
-            instructions: vec![],
-        }
-    }
-
-    pub fn cons(blocking: &str, blocked: &str) -> (String, String) {
-        (blocking.to_string(), blocked.to_string())
-    }
+    use crate::ci::job::tests::tests::complex_list;
 
     #[test]
-    pub fn fails_on_unknown_job_in_constraint() {
-        let jobs = vec![job("build")];
-
-        let constraints = vec![cons("build1", "test1")];
-
-        let matrix = ConstraintMatrix::new(&jobs, &constraints);
-        assert!(matches!(matrix, Err(DagError::UnknownJobInConstraint(_))))
-    }
-
-    #[test]
-    pub fn fails_on_unknown_bad_constraint() {
-        let jobs = vec![job("build")];
-
-        let constraints = vec![cons("build", "build")];
-
-        let matrix = ConstraintMatrix::new(&jobs, &constraints);
-        assert!(matches!(matrix, Err(DagError::JobCannotBlockItself(_))))
-    }
-
-    pub fn complex_pipeline() -> Result<ConstraintMatrix, DagError> {
-        let jobs = vec![
-            job("deploy"),
-            job("build1"),
-            job("build2"),
-            job("test1"),
-            job("test2"),
-        ];
-
-        let constraints = vec![
-            cons("build1", "test1"),
-            cons("build1", "test2"),
-            cons("build2", "test1"),
-            cons("build2", "test2"),
-            cons("test1", "deploy"),
-            cons("test2", "deploy"),
-        ];
-
-        ConstraintMatrix::new(&jobs, &constraints)
-    }
-
-    #[test]
-    pub fn list_all_blocking() {
-        let pipeline = complex_pipeline().unwrap();
-        let vector: Vec<String> = pipeline.blocking("deploy").collect();
-        assert_eq!(
-            r#"["build1", "build2", "test1", "test2"]"#,
-            format!("{:?}", vector)
-        )
-    }
-
-    #[test]
-    pub fn list_all_blocks() {
-        let pipeline = complex_pipeline().unwrap();
-        let vector: Vec<String> = pipeline.blocked_by("test1").collect();
-        assert_eq!(r#"["deploy"]"#, format!("{:?}", vector))
+    pub fn record() {
+        let list = complex_list();
     }
 }
