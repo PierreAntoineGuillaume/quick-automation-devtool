@@ -35,19 +35,19 @@ pub enum DagError {
     CycleExistsBecauseOf(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum JobResult {
     Success,
     Failure,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum JobState {
     Pending,
     Started,
     Blocked,
     Terminated(JobResult),
-    Cancelled(String),
+    Cancelled(Vec<String>),
 }
 
 impl JobState {
@@ -213,8 +213,6 @@ impl Dag {
             panic!("recorded job not in all_jobs");
         }
 
-        self.available_jobs.remove_job(job);
-
         if job_went_wrong {
             self.cancel_next_jobs(job);
             return;
@@ -232,6 +230,14 @@ impl Dag {
             }
         }
         true
+    }
+
+    /// Query all job states by job name
+    pub fn enumerate(&self) -> Vec<(String, JobState)> {
+        self.all_jobs
+            .values()
+            .map(|watcher| (watcher.job.name.clone(), watcher.state.clone()))
+            .collect()
     }
 
     fn actualize_job_list(&mut self) {
@@ -270,20 +276,33 @@ impl Dag {
         for blocked_job_name in blocked_job_list {
             let blocked_job = self.all_jobs.get_mut(blocked_job_name.as_str()).unwrap();
             debug_assert!(
-                matches!(blocked_job.state, JobState::Blocked),
+                matches!(
+                    blocked_job.state,
+                    JobState::Blocked | JobState::Cancelled(_)
+                ),
                 "Only blocked jobs should be in blocked list"
             );
-            blocked_job.blocked_by_jobs.remove_job(&blocking_job_name);
-            if blocked_job.blocked_by_jobs.is_empty() {
-                blocked_job.state = JobState::Cancelled(blocking_job_name.clone());
-            }
+            let list = match &blocked_job.state {
+                JobState::Blocked => {
+                    vec![blocking_job_name.clone()]
+                }
+                JobState::Cancelled(old) => {
+                    let mut vec = old.clone();
+                    vec.push(blocking_job_name.clone());
+                    vec
+                }
+                _ => {
+                    panic!("This statement cannot happen")
+                }
+            };
+            blocked_job.state = JobState::Cancelled(list)
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::ci::job::dag::{Dag, DagError, JobList, JobResult};
+    use crate::ci::job::dag::{Dag, DagError, JobList, JobResult, JobState};
     use crate::ci::job::tests::{complex_job_schedule, cons, job, simple_job_schedule};
     use std::fmt::{Display, Formatter};
 
@@ -362,6 +381,80 @@ mod tests {
         assert_eq!("deploy", &deploy.name);
         dag.record_event(&deploy.name, JobResult::Success);
         assert!(dag.is_finished())
+    }
+
+    fn pending(str: &str) -> (String, JobState) {
+        (str.to_string(), JobState::Pending)
+    }
+
+    fn blocked(str: &str) -> (String, JobState) {
+        (str.to_string(), JobState::Blocked)
+    }
+
+    fn cancelled(str: &str, blocker: Vec<&str>) -> (String, JobState) {
+        (
+            str.to_string(),
+            JobState::Cancelled(blocker.iter().map(|str| str.to_string()).collect()),
+        )
+    }
+
+    fn failed(str: &str) -> (String, JobState) {
+        (str.to_string(), JobState::Terminated(JobResult::Failure))
+    }
+
+    #[test]
+    pub fn test_enumerate_base() {
+        let items = complex_job_schedule();
+        let dag = Dag::new(&items.0, &items.1).unwrap();
+        let mut expected = vec![
+            pending("build1"),
+            pending("build2"),
+            blocked("test1"),
+            blocked("test2"),
+            blocked("deploy"),
+        ];
+        expected.sort();
+        let mut actual = dag.enumerate();
+        actual.sort();
+        assert_eq!(format!("{expected:?}"), format!("{actual:?}"));
+    }
+
+    #[test]
+    pub fn test_enumerate_failure() {
+        let items = complex_job_schedule();
+        let mut dag = Dag::new(&items.0, &items.1).unwrap();
+
+        dag.poll();
+        dag.record_event("build1", JobResult::Failure);
+
+        let mut expected = vec![
+            failed("build1"),
+            pending("build2"),
+            cancelled("test1", vec!["build1"]),
+            cancelled("test2", vec!["build1"]),
+            cancelled("deploy", vec!["build1"]),
+        ];
+        expected.sort();
+        let mut actual = dag.enumerate();
+
+        actual.sort();
+        assert_eq!(format!("{expected:?}"), format!("{actual:?}"));
+
+        dag.poll();
+        dag.record_event("build2", JobResult::Failure);
+
+        let mut expected = vec![
+            failed("build1"),
+            failed("build2"),
+            cancelled("test1", vec!["build1", "build2"]),
+            cancelled("test2", vec!["build1", "build2"]),
+            cancelled("deploy", vec!["build1", "build2"]),
+        ];
+        expected.sort();
+        let mut actual = dag.enumerate();
+
+        actual.sort();
+        assert_eq!(format!("{expected:?}"), format!("{actual:?}"));
     }
 
     #[test]
