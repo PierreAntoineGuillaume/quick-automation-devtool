@@ -17,10 +17,10 @@ pub trait CiDisplay {
 }
 
 pub struct Pipeline {}
-impl<'a> Pipeline {
+impl Pipeline {
     pub fn schedule(
         &mut self,
-        jobs: &'a [Job],
+        jobs: &[Job],
         job_starter: &mut dyn JobStarter,
         job_display: &mut dyn CiDisplay,
     ) -> JobProgressTracker {
