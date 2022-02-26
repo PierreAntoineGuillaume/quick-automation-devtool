@@ -109,6 +109,7 @@ impl JobWatcher {
     }
 }
 
+#[derive(Debug)]
 pub struct Dag {
     all_jobs: BTreeMap<String, JobWatcher>,
     available_jobs: JobList,
@@ -347,21 +348,14 @@ mod tests {
         let cons = vec![cons("A", "B"), cons("B", "C"), cons("C", "A")];
         let error = Dag::new(&jobs, &cons);
 
-        assert!(error.is_err());
+        if let Err(DagError::CycleExistsBecauseOf(letter)) = error {
+            assert_eq!(&letter, "A");
+        } else {
+            panic!(
+                "{error:?} should be a {:?}",
+                DagError::CycleExistsBecauseOf(String::from("A"))
+            )
 
-        let error = error.err().unwrap();
-
-        match error {
-            DagError::CycleExistsBecauseOf(letter) => {
-                assert_eq!(&letter, "A");
-            }
-            err => {
-                panic!(
-                    "{:?} should be a {:?}",
-                    err,
-                    DagError::CycleExistsBecauseOf(String::from("A"))
-                )
-            }
         }
     }
 }
