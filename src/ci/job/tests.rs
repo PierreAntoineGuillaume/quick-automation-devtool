@@ -2,7 +2,7 @@
 pub mod tests {
     use crate::ci::job::Job;
 
-    pub fn complex_list() -> (Vec<Job>, Vec<(String, String)>) {
+    pub fn complex_job_schedule() -> (Vec<Job>, Vec<(String, String)>) {
         let jobs = vec![
             job("deploy"),
             job("build1"),

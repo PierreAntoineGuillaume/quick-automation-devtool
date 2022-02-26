@@ -84,7 +84,7 @@ mod tests {
     use crate::ci::job::tests::tests::*;
 
     pub fn complex_matrix() -> Result<ConstraintMatrix, DagError> {
-        let list = complex_list();
+        let list = complex_job_schedule();
         ConstraintMatrix::new(&list.0, &list.1)
     }
 

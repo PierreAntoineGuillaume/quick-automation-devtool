@@ -179,10 +179,11 @@ impl Dag {
 
 #[cfg(test)]
 mod tests {
-    use crate::ci::job::tests::tests::complex_list;
+    use crate::ci::job::tests::tests::complex_job_schedule;
 
     #[test]
     pub fn record() {
-        let list = complex_list();
+        let list = complex_job_schedule();
+
     }
 }
