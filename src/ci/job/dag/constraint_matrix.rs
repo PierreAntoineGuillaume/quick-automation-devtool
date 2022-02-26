@@ -45,12 +45,9 @@ impl ConstraintMatrix {
         }
         for new_constraint in constraints {
             if let Some(cons) = matrix.get_mut(new_constraint) {
-                *cons = cons.constrain().map_err(|_| {
-                    DagError::CycleExistsBetween(
-                        new_constraint.0.to_string(),
-                        new_constraint.1.to_string(),
-                    )
-                })?
+                *cons = cons
+                    .constrain()
+                    .map_err(|_| DagError::CycleExistsBecauseOf(new_constraint.0.to_string()))?
             }
             if let Some(vec) = blocks_jobs.get_mut(&new_constraint.0) {
                 vec.insert(new_constraint.1.to_string());

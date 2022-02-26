@@ -32,7 +32,7 @@ impl Default for Constraint {
 pub enum DagError {
     JobCannotBlockItself(String),
     UnknownJobInConstraint(String),
-    CycleExistsBetween(String, String),
+    CycleExistsBecauseOf(String),
 }
 
 #[derive(Debug)]
@@ -124,15 +124,25 @@ impl Dag {
 
         for job in &jobs {
             let blocking = matrix.blocked_by(&job.name);
-            let blocked_by: Vec<String> = matrix.blocking(&job.name).collect();
-            let state = if blocked_by.is_empty() {
+            let blocked_by_jobs: Vec<String> = matrix.blocking(&job.name).collect();
+            let state = if blocked_by_jobs.is_empty() {
                 JobState::Pending
             } else {
+                for blocked_by_job in &blocked_by_jobs {
+                    if blocked_by_job == &job.name {
+                        return Err(DagError::CycleExistsBecauseOf(blocked_by_job.clone()));
+                    }
+                }
                 JobState::Blocked
             };
             all_jobs.insert(
                 job.name.to_string(),
-                JobWatcher::new(job, state, blocking.collect(), JobList::from(blocked_by)),
+                JobWatcher::new(
+                    job,
+                    state,
+                    blocking.collect(),
+                    JobList::from(blocked_by_jobs),
+                ),
             );
         }
 
@@ -240,8 +250,8 @@ impl Dag {
 
 #[cfg(test)]
 mod tests {
-    use crate::ci::job::dag::{Dag, JobList, JobResult};
-    use crate::ci::job::tests::{complex_job_schedule, simple_job_schedule};
+    use crate::ci::job::dag::{Dag, DagError, JobList, JobResult};
+    use crate::ci::job::tests::{complex_job_schedule, cons, job, simple_job_schedule};
     use std::fmt::{Display, Formatter};
 
     impl Display for JobList {
@@ -263,9 +273,6 @@ mod tests {
     pub fn record_good() {
         let list = simple_job_schedule();
         let mut dag = Dag::new(&list.0, &list.1).unwrap();
-
-        assert_eq!("[build]", format!("{}", dag.available_jobs));
-
         let build = dag.poll().expect("this is not None");
 
         assert_eq!("build", &build.name);
@@ -287,8 +294,6 @@ mod tests {
         dag.record_event(&job.name, JobResult::Failure);
 
         let none = dag.poll();
-
-        println!("{:?}", none);
 
         assert!(none.is_none())
     }
@@ -321,5 +326,29 @@ mod tests {
         let deploy = dag.poll().unwrap();
         assert_eq!("deploy", &deploy.name);
         assert!(dag.poll().is_none());
+    }
+
+    #[test]
+    pub fn test_cycle() {
+        let jobs = vec![job("A"), job("B"), job("C")];
+        let cons = vec![cons("A", "B"), cons("B", "C"), cons("C", "A")];
+        let error = Dag::new(&jobs, &cons);
+
+        assert!(error.is_err());
+
+        let error = error.err().unwrap();
+
+        match error {
+            DagError::CycleExistsBecauseOf(letter) => {
+                assert_eq!(&letter, "A");
+            }
+            err => {
+                panic!(
+                    "{:?} should be a {:?}",
+                    err,
+                    DagError::CycleExistsBecauseOf(String::from("A"))
+                )
+            }
+        }
     }
 }
