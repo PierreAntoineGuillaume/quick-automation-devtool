@@ -156,24 +156,35 @@ impl Dag {
         Ok(dag)
     }
 
+    /// Poll will return a job if a job is available
+    /// Available jobs are Pending
+    /// When a job is polled, it is considered Started
     pub fn poll(&mut self) -> Option<Job> {
         let jobname = self.available_jobs.shift()?;
-        let job = self
-            .all_jobs
-            .get_mut(&jobname)
-            .unwrap_or_else(|| panic!("There is an unknown job {:?} in all_jobs", &jobname));
-        if !matches!(job.state, JobState::Pending) {
-            panic!(
-                "Logic error : job {:?} should be {:?}, is actually {:?}",
-                jobname,
-                JobState::Pending,
-                job.state
-            )
-        }
-        (*job).state = JobState::Started;
+        let job = self.all_jobs.get_mut(&jobname);
+
+        debug_assert!(
+            job.is_some(),
+            "There is an unknown job {:?} in all_jobs",
+            &jobname
+        );
+
+        let job = job.unwrap();
+        debug_assert!(
+            matches!(job.state, JobState::Pending),
+            "Logic error : job {:?} should be {:?}, is actually {:?}",
+            jobname,
+            JobState::Pending,
+            job.state
+        );
+        job.state = JobState::Started;
         Some(job.job.clone())
     }
 
+    /// After being issued a job by `poll`
+    /// inform the Dag of the result of the job `job`
+    /// with `result` either:
+    /// JobResult::Failure or JobResult::Success
     pub fn record_event(&mut self, job: &str, result: JobResult) {
         let job_went_wrong = matches!(result, JobResult::Failure);
 
@@ -221,9 +232,10 @@ impl Dag {
 
         for blocked_job_name in blocked_job_list {
             let blocked_job = self.all_jobs.get_mut(blocked_job_name.as_str()).unwrap();
-            if !matches!(blocked_job.state, JobState::Blocked) {
-                continue;
-            }
+            debug_assert!(
+                matches!(blocked_job.state, JobState::Blocked),
+                "Only blocked jobs should be in blocked list"
+            );
             blocked_job.blocked_by_jobs.remove_job(&blocking_job_name);
             if blocked_job.blocked_by_jobs.is_empty() {
                 blocked_job.state = JobState::Pending;
@@ -237,9 +249,10 @@ impl Dag {
         let blocked_job_list = watcher.blocks_job.clone();
         for blocked_job_name in blocked_job_list {
             let blocked_job = self.all_jobs.get_mut(blocked_job_name.as_str()).unwrap();
-            if !matches!(blocked_job.state, JobState::Blocked) {
-                continue;
-            }
+            debug_assert!(
+                matches!(blocked_job.state, JobState::Blocked),
+                "Only blocked jobs should be in blocked list"
+            );
             blocked_job.blocked_by_jobs.remove_job(&blocking_job_name);
             if blocked_job.blocked_by_jobs.is_empty() {
                 blocked_job.state = JobState::Cancelled(blocking_job_name.clone());
