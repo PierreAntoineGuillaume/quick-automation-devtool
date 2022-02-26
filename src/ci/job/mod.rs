@@ -1,6 +1,7 @@
 pub mod dag;
 pub mod inspection;
 pub mod schedule;
+#[cfg(test)]
 pub mod tests;
 
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};

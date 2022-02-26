@@ -6,15 +6,15 @@ use std::collections::{BTreeMap, BTreeSet};
 #[derive(Debug)]
 pub struct ConstraintMatrix {
     matrix: BTreeMap<(String, String), Constraint>,
-    blocked_by: BTreeMap<String, BTreeSet<String>>,
-    blocking: BTreeMap<String, BTreeSet<String>>,
+    blocked_by_jobs: BTreeMap<String, BTreeSet<String>>,
+    blocks_jobs: BTreeMap<String, BTreeSet<String>>,
 }
 
 impl ConstraintMatrix {
     pub fn new(jobs: &[Job], constraints: &[(String, String)]) -> Result<Self, DagError> {
         let mut matrix = BTreeMap::<(String, String), Constraint>::new();
-        let mut blocks = BTreeMap::new();
-        let mut blocked_by = BTreeMap::new();
+        let mut blocks_jobs = BTreeMap::new();
+        let mut blocked_by_jobs = BTreeMap::new();
 
         for outer in jobs {
             for inner in jobs {
@@ -26,8 +26,8 @@ impl ConstraintMatrix {
                 matrix.insert((outer.name.to_string(), inner.name.to_string()), constraint);
             }
 
-            blocks.insert(outer.name.to_string(), BTreeSet::<String>::new());
-            blocked_by.insert(outer.name.to_string(), BTreeSet::<String>::new());
+            blocks_jobs.insert(outer.name.to_string(), BTreeSet::<String>::new());
+            blocked_by_jobs.insert(outer.name.to_string(), BTreeSet::<String>::new());
         }
 
         let job_names: Vec<String> = jobs.iter().map(|job| job.name.to_string()).collect();
@@ -52,36 +52,36 @@ impl ConstraintMatrix {
                     )
                 })?
             }
-            if let Some(vec) = blocks.get_mut(&new_constraint.0) {
+            if let Some(vec) = blocks_jobs.get_mut(&new_constraint.0) {
                 vec.insert(new_constraint.1.to_string());
             }
 
-            if let Some(vec) = blocked_by.get_mut(&new_constraint.1) {
+            if let Some(vec) = blocked_by_jobs.get_mut(&new_constraint.1) {
                 vec.insert(new_constraint.0.to_string());
             }
         }
 
         Ok(ConstraintMatrix {
             matrix,
-            blocked_by: blocks,
-            blocking: blocked_by,
+            blocked_by_jobs,
+            blocks_jobs,
         })
     }
 
-    pub fn blocking(&self, link: &str) -> ConstraintMatrixConstraintIterator {
-        ConstraintMatrixConstraintIterator::new(&self.blocking, link.to_string())
+    pub fn blocked_by(&self, link: &str) -> ConstraintMatrixConstraintIterator {
+        ConstraintMatrixConstraintIterator::new(&self.blocks_jobs, link.to_string())
     }
 
-    pub fn blocked_by(&self, link: &str) -> ConstraintMatrixConstraintIterator {
-        ConstraintMatrixConstraintIterator::new(&self.blocked_by, link.to_string())
+    pub fn blocking(&self, link: &str) -> ConstraintMatrixConstraintIterator {
+        ConstraintMatrixConstraintIterator::new(&self.blocked_by_jobs, link.to_string())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ci::job::dag::Constraint;
-    use crate::ci::job::tests::tests::*;
+    use crate::ci::job::dag::{Constraint, JobList};
+    use crate::ci::job::tests::*;
 
     pub fn complex_matrix() -> Result<ConstraintMatrix, DagError> {
         let list = complex_job_schedule();
@@ -128,17 +128,14 @@ mod tests {
     #[test]
     pub fn list_all_blocking() {
         let pipeline = complex_matrix().unwrap();
-        let vector: Vec<String> = pipeline.blocking("deploy").collect();
-        assert_eq!(
-            r#"["build1", "build2", "test1", "test2"]"#,
-            format!("{:?}", vector)
-        )
+        let list = JobList::from(pipeline.blocking("deploy").collect());
+        assert_eq!("[build1, build2, test1, test2]", format!("{}", list))
     }
 
     #[test]
     pub fn list_all_blocks() {
         let pipeline = complex_matrix().unwrap();
-        let vector: Vec<String> = pipeline.blocked_by("test1").collect();
-        assert_eq!(r#"["deploy"]"#, format!("{:?}", vector))
+        let list = JobList::from(pipeline.blocked_by("test1").collect());
+        assert_eq!("[deploy]", format!("{}", list))
     }
 }
