@@ -1,5 +1,5 @@
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::{Job, JobOutput, JobProgressTracker};
+use crate::ci::job::{Job, JobOutput, JobProgressTracker, Progress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
 pub trait JobRunner {
@@ -23,11 +23,16 @@ impl<'a> Pipeline {
         jobs: &'a [Job],
         job_starter: &mut dyn JobStarter,
         job_display: &mut dyn CiDisplay,
-    ) -> JobProgressTracker<'a> {
-        let mut tracker = JobProgressTracker::new(jobs);
+    ) -> JobProgressTracker {
+        let mut tracker = JobProgressTracker::new();
+
         if jobs.is_empty() {
             tracker.try_finish();
             return tracker;
+        }
+
+        for job in jobs {
+            tracker.record(JobProgress::new(&job.name, Progress::Available))
         }
 
         let (tx, rx) = channel();

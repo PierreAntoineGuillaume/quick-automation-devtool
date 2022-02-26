@@ -1,4 +1,3 @@
-use crate::ci::job::Job;
 use crate::ci::job::Progress;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
@@ -39,25 +38,21 @@ impl ProgressCollector {
     }
 }
 
-pub struct JobProgressTracker<'a> {
-    jobs: &'a [Job],
+pub struct JobProgressTracker {
     pub start_time: SystemTime,
     pub end_time: Option<SystemTime>,
     pub states: BTreeMap<String, ProgressCollector>,
     pub has_failed: bool,
 }
 
-impl<'a> JobProgressTracker<'a> {
-    pub fn new(jobs: &'a [Job]) -> Self {
-        let mut tracker = JobProgressTracker {
-            jobs,
+impl JobProgressTracker {
+    pub fn new() -> Self {
+        JobProgressTracker {
             start_time: SystemTime::now(),
             end_time: None,
             states: BTreeMap::new(),
             has_failed: false,
-        };
-        tracker.init();
-        tracker
+        }
     }
     pub fn record(&mut self, job_progress: JobProgress) {
         self.has_failed |= job_progress.failed();
@@ -87,11 +82,6 @@ impl<'a> JobProgressTracker<'a> {
             collector.is_available()
         } else {
             false
-        }
-    }
-    fn init(&mut self) {
-        for job in self.jobs {
-            self.record(JobProgress::new(&job.name, Progress::Available))
         }
     }
 }

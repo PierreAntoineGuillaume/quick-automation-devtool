@@ -127,7 +127,7 @@ fn try_cleanup(input: String) -> String {
     }
 }
 
-impl<'a> Display for JobProgressTracker<'a> {
+impl Display for JobProgressTracker {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for (job_name, progress_collector) in &self.states {
             writeln!(f, "Running tasks for job {job_name}")?;
