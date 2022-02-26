@@ -1,3 +1,4 @@
+use crate::ci::job::dag::Dag;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{JobRunner, JobStarter, Pipeline};
 use crate::ci::job::JobOutput;
@@ -25,7 +26,9 @@ impl Ci {
 
         let mut pipeline = Pipeline {};
 
-        let tracker = pipeline.schedule(&jobs, &mut starter, &mut display);
+        let dag = Dag::new(&jobs, &[]).unwrap();
+
+        let tracker = pipeline.schedule(dag, &mut starter, &mut display);
 
         display.finish(&tracker);
 
@@ -60,9 +63,8 @@ impl JobProgressConsumer for Sender<JobProgress> {
 }
 
 impl JobStarter for ParrallelJobStarter {
-    fn consume_some_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
-        for real_job in jobs {
-            let job = real_job.clone();
+    fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>) {
+        while let Some(job) = jobs.poll() {
             let consumer = tx.clone();
             self.threads.push(thread::spawn(move || {
                 job.start(&CommandJobRunner::new(), &consumer);

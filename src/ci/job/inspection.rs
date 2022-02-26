@@ -2,11 +2,15 @@ use crate::ci::job::Progress;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 
-pub struct JobProgress(String, Progress);
+pub struct JobProgress(String, pub(crate) Progress);
 
 impl JobProgress {
     pub fn new(job_name: &str, progress: Progress) -> Self {
         JobProgress(job_name.to_string(), progress)
+    }
+
+    pub fn name(&self) -> &str {
+        &self.0
     }
 
     pub fn failed(&self) -> bool {
@@ -28,13 +32,6 @@ impl ProgressCollector {
 
     pub fn last(&self) -> Option<&Progress> {
         self.progresses.last()
-    }
-
-    pub fn is_available(&self) -> bool {
-        match self.last() {
-            Some(progress) => progress.is_available(),
-            _ => false,
-        }
     }
 }
 
@@ -75,13 +72,5 @@ impl JobProgressTracker {
         }
         self.end_time = Some(SystemTime::now());
         true
-    }
-
-    pub fn job_is_available(&self, name: &String) -> bool {
-        if let Some(collector) = self.states.get(name) {
-            collector.is_available()
-        } else {
-            false
-        }
     }
 }

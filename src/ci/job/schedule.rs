@@ -1,5 +1,6 @@
+use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::{Job, JobOutput, JobProgressTracker, Progress};
+use crate::ci::job::{JobOutput, JobProgressTracker, Progress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
 pub trait JobRunner {
@@ -7,7 +8,7 @@ pub trait JobRunner {
 }
 
 pub trait JobStarter {
-    fn consume_some_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>);
+    fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>);
     fn join(&mut self);
     fn delay(&mut self) -> usize;
 }
@@ -20,19 +21,29 @@ pub struct Pipeline {}
 impl Pipeline {
     pub fn schedule(
         &mut self,
-        jobs: &[Job],
+        mut jobs: Dag,
         job_starter: &mut dyn JobStarter,
         job_display: &mut dyn CiDisplay,
     ) -> JobProgressTracker {
         let mut tracker = JobProgressTracker::new();
 
-        if jobs.is_empty() {
+        if jobs.is_finished() {
             tracker.try_finish();
             return tracker;
         }
 
-        for job in jobs {
-            tracker.record(JobProgress::new(&job.name, Progress::Available))
+        for job in jobs.enumerate() {
+            tracker.record(JobProgress::new(
+                &job.0,
+                match job.1 {
+                    JobState::Pending => Progress::Available,
+                    JobState::Started => Progress::Started,
+                    JobState::Blocked => Progress::Blocked,
+                    _ => {
+                        panic!("This state is impossible with no poll yet")
+                    }
+                },
+            ))
         }
 
         let (tx, rx) = channel();
@@ -40,21 +51,24 @@ impl Pipeline {
         let mut delay: usize = 0;
 
         loop {
-            let available_jobs: Vec<Job> = jobs
-                .iter()
-                .filter(|job| tracker.job_is_available(&job.name))
-                .cloned()
-                .collect();
-
-            if !available_jobs.is_empty() {
-                job_starter.consume_some_jobs(&available_jobs, tx.clone());
-            }
+            job_starter.consume_some_jobs(&mut jobs, tx.clone());
 
             while let Some(progress) = self.read(&rx) {
+                if let Progress::Terminated(success) = progress.1 {
+                    jobs.record_event(
+                        progress.name(),
+                        if success {
+                            JobResult::Success
+                        } else {
+                            JobResult::Failure
+                        },
+                    );
+                }
                 tracker.record(progress);
             }
 
-            if tracker.try_finish() {
+            if jobs.is_finished() {
+                tracker.try_finish();
                 break;
             }
             job_display.refresh(&tracker, delay);
@@ -80,6 +94,7 @@ impl Pipeline {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ci::job::Job;
 
     impl Job {
         pub fn new(name: &str, instructions: &[&str]) -> Self {
@@ -97,7 +112,8 @@ mod tests {
         let mut job_start = TestJobStarter {};
         let mut job_display = NullCiDisplay {};
         let mut scheduler = Pipeline {};
-        scheduler.schedule(jobs, &mut job_start, &mut job_display)
+        let dag = Dag::new(jobs, &[]).unwrap();
+        scheduler.schedule(dag, &mut job_start, &mut job_display)
     }
 
     #[test]
@@ -117,13 +133,14 @@ mod tests {
 
     pub struct TestJobStarter {}
     impl JobStarter for TestJobStarter {
-        fn consume_some_jobs(&mut self, jobs: &[Job], tx: Sender<JobProgress>) {
-            for job in jobs {
+        fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>) {
+            while let Some(job) = jobs.poll() {
                 job.start(&TestJobRunner {}, &tx.clone());
             }
         }
 
         fn join(&mut self) {}
+
         fn delay(&mut self) -> usize {
             0
         }

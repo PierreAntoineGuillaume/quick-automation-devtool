@@ -51,6 +51,7 @@ impl Job {
 pub enum Progress {
     Available,
     Started,
+    Blocked,
     Partial(String, JobOutput),
     Terminated(bool),
 }
@@ -63,10 +64,6 @@ impl Progress {
                 | Progress::Partial(_, JobOutput::ProcessError(_))
                 | Progress::Terminated(false)
         )
-    }
-
-    pub fn is_available(&self) -> bool {
-        matches!(self, Progress::Available)
     }
 
     pub fn is_pending(&self) -> bool {
