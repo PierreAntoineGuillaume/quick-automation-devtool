@@ -50,6 +50,15 @@ pub enum JobState {
     Cancelled(String),
 }
 
+impl JobState {
+    pub fn is_unresolved(&self) -> bool {
+        matches!(
+            self,
+            JobState::Pending | JobState::Started | JobState::Blocked
+        )
+    }
+}
+
 impl Default for JobState {
     fn default() -> Self {
         JobState::Pending
@@ -215,6 +224,16 @@ impl Dag {
         self.actualize_job_list();
     }
 
+    /// A query method to know if all possible jobs have been ran
+    pub fn is_finished(&self) -> bool {
+        for job in self.all_jobs.values() {
+            if job.state.is_unresolved() {
+                return false;
+            }
+        }
+        true
+    }
+
     fn actualize_job_list(&mut self) {
         self.available_jobs = JobList::from(
             self.all_jobs
@@ -317,6 +336,8 @@ mod tests {
         let list = complex_job_schedule();
         let mut dag = Dag::new(&list.0, &list.1).unwrap();
 
+        assert!(!dag.is_finished());
+
         let build1 = dag.poll().unwrap();
         let build2 = dag.poll().unwrap();
 
@@ -339,7 +360,8 @@ mod tests {
 
         let deploy = dag.poll().unwrap();
         assert_eq!("deploy", &deploy.name);
-        assert!(dag.poll().is_none());
+        dag.record_event(&deploy.name, JobResult::Success);
+        assert!(dag.is_finished())
     }
 
     #[test]
@@ -355,7 +377,6 @@ mod tests {
                 "{error:?} should be a {:?}",
                 DagError::CycleExistsBecauseOf(String::from("A"))
             )
-
         }
     }
 }
