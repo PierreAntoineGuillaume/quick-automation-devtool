@@ -32,9 +32,12 @@ pub struct Job {
 
 impl Job {
     pub fn start(&self, runner: &dyn JobRunner, consumer: &dyn JobProgressConsumer) {
-        consumer.consume(JobProgress::new(&self.name, Progress::Started));
         let mut success = true;
         for instruction in &self.instructions {
+            consumer.consume(JobProgress::new(
+                &self.name,
+                Progress::Started(instruction.clone()),
+            ));
             let output = runner.run(instruction);
             success = output.succeeded();
             let partial = Progress::Partial(instruction.clone(), output);
@@ -50,8 +53,8 @@ impl Job {
 #[derive(Debug, PartialEq)]
 pub enum Progress {
     Available,
-    Started,
-    Blocked,
+    Started(String),
+    Blocked(Vec<String>),
     Partial(String, JobOutput),
     Terminated(bool),
 }

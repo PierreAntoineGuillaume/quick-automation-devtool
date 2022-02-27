@@ -102,9 +102,6 @@ impl<'a> CiDisplay for TermCiDisplay<'a> {
         self.term.carriage_return().unwrap();
         let mut spin = self.spin.plus_one();
         for (job_name, progress_collector) in &tracker.states {
-            if !progress_collector.progresses.last().unwrap().is_pending() {
-                spin.finish()
-            }
             self.term.delete_line().unwrap();
             writeln!(
                 self.term,
@@ -134,17 +131,33 @@ impl Display for TempStatusLine<'_> {
         let progress = self.progress_collector.last().unwrap();
 
         match progress {
+            Progress::Available => {
+                write!(f, "{:12} not started yet", self.job_name)
+            }
             Progress::Terminated(true) => {
-                write!(f, "{:12} {} {}", self.job_name, self.spin, self.dict.ok)
+                write!(f, "{:12} {}", self.job_name, self.dict.ok)
             }
             Progress::Terminated(false) => {
-                write!(f, "{:12} {} {}", self.job_name, self.spin, self.dict.ko)
+                write!(f, "{:12} {}", self.job_name, self.dict.ko)
             }
-            Progress::Blocked => {
-                write!(f, "{:12} {}", self.job_name, self.spin.blocked(),)
-            }
-            _ => {
+            Progress::Partial(_, _) => {
                 write!(f, "{:12} {}", self.job_name, self.spin)
+            }
+            Progress::Blocked(blocked_by) => {
+                write!(f, "{:12} blocked by ", self.job_name)?;
+                let mut len = blocked_by.len();
+                for job in blocked_by {
+                    write!(f, "{}", job)?;
+                    len -= 1;
+                    if len > 0 {
+                        write!(f, ", ")?;
+                    }
+                }
+                Ok(())
+            }
+
+            Progress::Started(command) => {
+                write!(f, "{:12} {} {}", self.job_name, command, self.spin)
             }
         }
     }

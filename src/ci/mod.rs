@@ -28,7 +28,7 @@ impl CiConfig {
             jobs: Vec::new(),
             constraints: Vec::new(),
             spinner: (
-                vec![".  ", " . ", "  .", " . ", "...", "   "]
+                vec![".  ", ".. ", "...", ".. ", "."]
                     .iter()
                     .map(|str| str.to_string())
                     .collect(),

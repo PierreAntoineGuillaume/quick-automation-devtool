@@ -3,7 +3,6 @@ use std::fmt::{Display, Formatter};
 pub struct Spinner<'a> {
     ticks: usize,
     roll: usize,
-    finished: bool,
     frames: &'a Vec<String>,
     current_frame: usize,
     per_frame: usize,
@@ -11,28 +10,14 @@ pub struct Spinner<'a> {
 
 impl<'a> Spinner<'a> {
     pub fn current(&self) -> &'a str {
-        self.frames[if self.finished {
-            self.roll
-        } else {
-            self.ticks as usize
-        }]
-        .as_str()
-    }
-
-    pub fn finish(&mut self) {
-        self.finished = true
-    }
-
-    pub fn blocked(&self) -> &'a str {
-        self.frames[self.roll + 1].as_str()
+        self.frames[self.ticks as usize].as_str()
     }
 
     pub fn new(frames: &'a Vec<String>, per_frame: usize) -> Self {
         Spinner {
             frames,
-            finished: false,
             ticks: 0,
-            roll: frames.len() - 2,
+            roll: frames.len(),
             current_frame: 0,
             per_frame,
         }
@@ -66,7 +51,6 @@ impl<'a> Clone for Spinner<'a> {
         Spinner {
             ticks: self.ticks,
             roll: self.roll,
-            finished: false,
             frames: self.frames,
             current_frame: self.current_frame,
             per_frame: self.per_frame,
@@ -80,7 +64,7 @@ mod tests {
 
     #[test]
     pub fn spin() {
-        let strings = vec!["titi", "tutu", "toto", "tata", "    "]
+        let strings = vec!["titi", "tutu", "toto", "tata"]
             .iter()
             .map(|str| str.to_string())
             .collect();
@@ -92,11 +76,9 @@ mod tests {
         spinner.tick(1);
         assert_eq!("toto", format!("{spinner}"));
         spinner.tick(1);
-        assert_eq!("titi", format!("{spinner}"));
-        spinner.finish();
         assert_eq!("tata", format!("{spinner}"));
 
         let other_spinner = spinner.plus_one();
-        assert_eq!("tutu", format!("{other_spinner}"));
+        assert_eq!("titi", format!("{other_spinner}"));
     }
 }

@@ -18,7 +18,7 @@ impl ConstraintMatrixConstraintIterator {
             }
         }
 
-        let proximity = accumulator.iter().rev().cloned().collect();
+        let proximity = accumulator.iter().cloned().collect();
 
         Self { proximity }
     }

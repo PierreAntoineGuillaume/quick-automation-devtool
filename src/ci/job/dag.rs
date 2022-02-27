@@ -124,6 +124,8 @@ pub struct Dag {
     available_jobs: JobList,
 }
 
+pub type JobEnumeration = (String, JobState, Vec<String>);
+
 impl Dag {
     pub fn new(jobs: &[Job], constraints: &[(String, String)]) -> Result<Self, DagError> {
         let jobs: Vec<Job> = jobs.to_vec();
@@ -233,10 +235,16 @@ impl Dag {
     }
 
     /// Query all job states by job name
-    pub fn enumerate(&self) -> Vec<(String, JobState)> {
+    pub fn enumerate(&self) -> Vec<JobEnumeration> {
         self.all_jobs
             .values()
-            .map(|watcher| (watcher.job.name.clone(), watcher.state.clone()))
+            .map(|watcher| {
+                (
+                    watcher.job.name.clone(),
+                    watcher.state.clone(),
+                    watcher.blocked_by_jobs.vec.clone(),
+                )
+            })
             .collect()
     }
 
@@ -302,7 +310,7 @@ impl Dag {
 
 #[cfg(test)]
 mod tests {
-    use crate::ci::job::dag::{Dag, DagError, JobList, JobResult, JobState};
+    use crate::ci::job::dag::{Dag, DagError, JobEnumeration, JobList, JobResult, JobState};
     use crate::ci::job::tests::{complex_job_schedule, cons, job, simple_job_schedule};
     use std::fmt::{Display, Formatter};
 
@@ -383,23 +391,32 @@ mod tests {
         assert!(dag.is_finished())
     }
 
-    fn pending(str: &str) -> (String, JobState) {
-        (str.to_string(), JobState::Pending)
+    fn pending(str: &str) -> JobEnumeration {
+        (str.to_string(), JobState::Pending, vec![])
     }
 
-    fn blocked(str: &str) -> (String, JobState) {
-        (str.to_string(), JobState::Blocked)
-    }
-
-    fn cancelled(str: &str, blocker: Vec<&str>) -> (String, JobState) {
+    fn blocked(str: &str, blocked: Vec<&str>) -> JobEnumeration {
         (
             str.to_string(),
-            JobState::Cancelled(blocker.iter().map(|str| str.to_string()).collect()),
+            JobState::Blocked,
+            blocked.iter().map(|str| str.to_string()).collect(),
         )
     }
 
-    fn failed(str: &str) -> (String, JobState) {
-        (str.to_string(), JobState::Terminated(JobResult::Failure))
+    fn cancelled(str: &str, blocker: Vec<&str>, blocked: Vec<&str>) -> JobEnumeration {
+        (
+            str.to_string(),
+            JobState::Cancelled(blocker.iter().map(|str| str.to_string()).collect()),
+            blocked.iter().map(|str| str.to_string()).collect(),
+        )
+    }
+
+    fn failed(str: &str) -> JobEnumeration {
+        (
+            str.to_string(),
+            JobState::Terminated(JobResult::Failure),
+            vec![],
+        )
     }
 
     #[test]
@@ -409,9 +426,9 @@ mod tests {
         let mut expected = vec![
             pending("build1"),
             pending("build2"),
-            blocked("test1"),
-            blocked("test2"),
-            blocked("deploy"),
+            blocked("test1", vec!["build1", "build2"]),
+            blocked("test2", vec!["build1", "build2"]),
+            blocked("deploy", vec!["build1", "build2", "test1", "test2"]),
         ];
         expected.sort();
         let mut actual = dag.enumerate();
@@ -430,9 +447,13 @@ mod tests {
         let mut expected = vec![
             failed("build1"),
             pending("build2"),
-            cancelled("test1", vec!["build1"]),
-            cancelled("test2", vec!["build1"]),
-            cancelled("deploy", vec!["build1"]),
+            cancelled("test1", vec!["build1"], vec!["build1", "build2"]),
+            cancelled("test2", vec!["build1"], vec!["build1", "build2"]),
+            cancelled(
+                "deploy",
+                vec!["build1"],
+                vec!["build1", "build2", "test1", "test2"],
+            ),
         ];
         expected.sort();
         let mut actual = dag.enumerate();
@@ -446,9 +467,13 @@ mod tests {
         let mut expected = vec![
             failed("build1"),
             failed("build2"),
-            cancelled("test1", vec!["build1", "build2"]),
-            cancelled("test2", vec!["build1", "build2"]),
-            cancelled("deploy", vec!["build1", "build2"]),
+            cancelled("test1", vec!["build1", "build2"], vec!["build1", "build2"]),
+            cancelled("test2", vec!["build1", "build2"], vec!["build1", "build2"]),
+            cancelled(
+                "deploy",
+                vec!["build1", "build2"],
+                vec!["build1", "build2", "test1", "test2"],
+            ),
         ];
         expected.sort();
         let mut actual = dag.enumerate();

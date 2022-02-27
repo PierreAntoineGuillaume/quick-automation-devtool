@@ -106,7 +106,9 @@ mod tests {
     #[test]
     pub fn list_all_blocking() {
         let pipeline = complex_matrix().unwrap();
-        let list = JobList::from(pipeline.blocking("deploy").collect());
+        let mut vec: Vec<String> = pipeline.blocking("deploy").collect();
+        vec.sort();
+        let list = JobList::from(vec);
         assert_eq!("[build1, build2, test1, test2]", format!("{}", list))
     }
 

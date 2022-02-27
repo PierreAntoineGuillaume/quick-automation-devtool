@@ -8,8 +8,6 @@ pub type Constraints = std::collections::HashMap<String, Vec<String>>;
 #[derive(Deserialize, Debug, PartialEq)]
 struct CiSpinner {
     frames: Vec<String>,
-    finished: String,
-    blocked: String,
     per_frames: usize,
 }
 
@@ -47,10 +45,7 @@ impl Version0x {
         }
 
         if let Some(spinner) = &self.ci_spinner {
-            let mut vec = spinner.frames.clone();
-            vec.push(spinner.finished.clone());
-            vec.push(spinner.blocked.clone());
-            ci_config.spinner = (vec, spinner.per_frames)
+            ci_config.spinner = (spinner.frames.clone(), spinner.per_frames)
         }
 
         if let Some(icons) = &self.ci_icons {

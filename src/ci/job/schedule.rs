@@ -37,8 +37,7 @@ impl Pipeline {
                 &job.0,
                 match job.1 {
                     JobState::Pending => Progress::Available,
-                    JobState::Started => Progress::Started,
-                    JobState::Blocked => Progress::Blocked,
+                    JobState::Blocked => Progress::Blocked(job.2.clone()),
                     _ => {
                         panic!("This state is impossible with no poll yet")
                     }
