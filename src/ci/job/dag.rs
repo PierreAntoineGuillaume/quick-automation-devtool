@@ -1,6 +1,8 @@
 use crate::ci::job::dag::constraint_matrix::ConstraintMatrix;
 use crate::ci::job::Job;
+use std::cmp::Ordering;
 use std::collections::BTreeMap;
+use std::fmt::{Debug, Formatter};
 
 pub mod constraint_matrix;
 mod constraint_matrix_constraint_iterator;
@@ -41,7 +43,7 @@ pub enum JobResult {
     Failure,
 }
 
-#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum JobState {
     Pending,
     Started,
@@ -55,6 +57,23 @@ impl JobState {
         matches!(
             self,
             JobState::Pending | JobState::Started | JobState::Blocked
+        )
+    }
+}
+
+impl Debug for JobState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                JobState::Pending => "pending",
+                JobState::Started => "started",
+                JobState::Blocked => "blocked",
+                JobState::Terminated(JobResult::Success) => "success",
+                JobState::Terminated(JobResult::Failure) => "failure",
+                JobState::Cancelled(_) => "cancelled",
+            }
         )
     }
 }
@@ -124,7 +143,44 @@ pub struct Dag {
     available_jobs: JobList,
 }
 
-pub type JobEnumeration = (String, JobState, Vec<String>);
+pub struct JobEnumeration {
+    pub name: String,
+    pub state: JobState,
+    pub block: Vec<String>,
+}
+
+fn jobenum(name: String, state: JobState, block: Vec<String>) -> JobEnumeration {
+    JobEnumeration { name, state, block }
+}
+
+impl Eq for JobEnumeration {}
+
+impl PartialEq<Self> for JobEnumeration {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+            && self.state == other.state
+            && self.block.len() == other.block.len()
+            && self.block == other.block
+    }
+}
+
+impl PartialOrd<Self> for JobEnumeration {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(match self.state.cmp(&other.state) {
+            Ordering::Equal => match self.block.len().cmp(&other.block.len()) {
+                Ordering::Equal => self.name.cmp(&other.name),
+                ord => ord,
+            },
+            res => res,
+        })
+    }
+}
+
+impl Ord for JobEnumeration {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
 
 impl Dag {
     pub fn new(jobs: &[Job], constraints: &[(String, String)]) -> Result<Self, DagError> {
@@ -132,7 +188,6 @@ impl Dag {
         let matrix = ConstraintMatrix::new(&jobs, constraints)?;
 
         let mut all_jobs = BTreeMap::<String, JobWatcher>::new();
-        let available_jobs = JobList::new();
 
         for job in &jobs {
             let blocking = matrix.blocked_by(&job.name);
@@ -160,7 +215,7 @@ impl Dag {
 
         let mut dag = Dag {
             all_jobs,
-            available_jobs,
+            available_jobs: JobList::new(),
         };
 
         dag.actualize_job_list();
@@ -236,16 +291,19 @@ impl Dag {
 
     /// Query all job states by job name
     pub fn enumerate(&self) -> Vec<JobEnumeration> {
-        self.all_jobs
+        let mut vec: Vec<JobEnumeration> = self
+            .all_jobs
             .values()
             .map(|watcher| {
-                (
+                jobenum(
                     watcher.job.name.clone(),
                     watcher.state.clone(),
                     watcher.blocked_by_jobs.vec.clone(),
                 )
             })
-            .collect()
+            .collect();
+        vec.sort();
+        vec
     }
 
     fn actualize_job_list(&mut self) {
@@ -310,9 +368,9 @@ impl Dag {
 
 #[cfg(test)]
 mod tests {
-    use crate::ci::job::dag::{Dag, DagError, JobEnumeration, JobList, JobResult, JobState};
+    use crate::ci::job::dag::{Dag, DagError, JobEnumeration, JobList, JobResult};
     use crate::ci::job::tests::{complex_job_schedule, cons, job, simple_job_schedule};
-    use std::fmt::{Display, Formatter};
+    use std::fmt::{Debug, Display, Formatter};
 
     impl Display for JobList {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -326,6 +384,12 @@ mod tests {
                 }
             }
             write!(f, "]")
+        }
+    }
+
+    impl Debug for JobEnumeration {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}({:?})", self.name, self.state)
         }
     }
 
@@ -391,49 +455,15 @@ mod tests {
         assert!(dag.is_finished())
     }
 
-    fn pending(str: &str) -> JobEnumeration {
-        (str.to_string(), JobState::Pending, vec![])
-    }
-
-    fn blocked(str: &str, blocked: Vec<&str>) -> JobEnumeration {
-        (
-            str.to_string(),
-            JobState::Blocked,
-            blocked.iter().map(|str| str.to_string()).collect(),
-        )
-    }
-
-    fn cancelled(str: &str, blocker: Vec<&str>, blocked: Vec<&str>) -> JobEnumeration {
-        (
-            str.to_string(),
-            JobState::Cancelled(blocker.iter().map(|str| str.to_string()).collect()),
-            blocked.iter().map(|str| str.to_string()).collect(),
-        )
-    }
-
-    fn failed(str: &str) -> JobEnumeration {
-        (
-            str.to_string(),
-            JobState::Terminated(JobResult::Failure),
-            vec![],
-        )
-    }
-
     #[test]
     pub fn test_enumerate_base() {
         let items = complex_job_schedule();
         let dag = Dag::new(&items.0, &items.1).unwrap();
-        let mut expected = vec![
-            pending("build1"),
-            pending("build2"),
-            blocked("test1", vec!["build1", "build2"]),
-            blocked("test2", vec!["build1", "build2"]),
-            blocked("deploy", vec!["build1", "build2", "test1", "test2"]),
-        ];
-        expected.sort();
-        let mut actual = dag.enumerate();
-        actual.sort();
-        assert_eq!(format!("{expected:?}"), format!("{actual:?}"));
+        let actual = dag.enumerate();
+        assert_eq!(
+            String::from("[build1(pending), build2(pending), test1(blocked), test2(blocked), deploy(blocked)]"),
+            format!("{actual:?}")
+        );
     }
 
     #[test]
@@ -444,42 +474,22 @@ mod tests {
         dag.poll();
         dag.record_event("build1", JobResult::Failure);
 
-        let mut expected = vec![
-            failed("build1"),
-            pending("build2"),
-            cancelled("test1", vec!["build1"], vec!["build1", "build2"]),
-            cancelled("test2", vec!["build1"], vec!["build1", "build2"]),
-            cancelled(
-                "deploy",
-                vec!["build1"],
-                vec!["build1", "build2", "test1", "test2"],
-            ),
-        ];
-        expected.sort();
-        let mut actual = dag.enumerate();
+        let actual = dag.enumerate();
 
-        actual.sort();
-        assert_eq!(format!("{expected:?}"), format!("{actual:?}"));
+        assert_eq!(
+            String::from("[build2(pending), build1(failure), test1(cancelled), test2(cancelled), deploy(cancelled)]")
+            ,
+            format!("{actual:?}"));
 
         dag.poll();
         dag.record_event("build2", JobResult::Failure);
 
-        let mut expected = vec![
-            failed("build1"),
-            failed("build2"),
-            cancelled("test1", vec!["build1", "build2"], vec!["build1", "build2"]),
-            cancelled("test2", vec!["build1", "build2"], vec!["build1", "build2"]),
-            cancelled(
-                "deploy",
-                vec!["build1", "build2"],
-                vec!["build1", "build2", "test1", "test2"],
-            ),
-        ];
-        expected.sort();
-        let mut actual = dag.enumerate();
+        let actual = dag.enumerate();
 
-        actual.sort();
-        assert_eq!(format!("{expected:?}"), format!("{actual:?}"));
+        assert_eq!(
+            String::from("[build1(failure), build2(failure), test1(cancelled), test2(cancelled), deploy(cancelled)]")
+            ,
+            format!("{actual:?}"));
     }
 
     #[test]

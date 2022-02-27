@@ -34,10 +34,10 @@ impl Pipeline {
 
         for job in jobs.enumerate() {
             tracker.record(JobProgress::new(
-                &job.0,
-                match job.1 {
+                &job.name,
+                match job.state {
                     JobState::Pending => Progress::Available,
-                    JobState::Blocked => Progress::Blocked(job.2.clone()),
+                    JobState::Blocked => Progress::Blocked(job.block.clone()),
                     _ => {
                         panic!("This state is impossible with no poll yet")
                     }
