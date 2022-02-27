@@ -7,9 +7,9 @@ pub enum WrappedContent {
 }
 
 impl WrappedContent {
-    pub fn load_into(&self, pipeline: &mut CiConfig) {
+    pub fn load_into(&self, ci_config: &mut CiConfig) {
         match self {
-            WrappedContent::V0x(v) => v.load_into(pipeline),
+            WrappedContent::V0x(v) => v.load_into(ci_config),
         }
     }
 }
