@@ -1,5 +1,5 @@
 use crate::ci::job::Progress;
-use std::collections::BTreeMap;
+use indexmap::IndexMap;
 use std::time::SystemTime;
 
 pub struct JobProgress(String, pub(crate) Progress);
@@ -38,7 +38,7 @@ impl ProgressCollector {
 pub struct JobProgressTracker {
     pub start_time: SystemTime,
     pub end_time: Option<SystemTime>,
-    pub states: BTreeMap<String, ProgressCollector>,
+    pub states: IndexMap<String, ProgressCollector>,
     pub has_failed: bool,
 }
 
@@ -47,7 +47,7 @@ impl JobProgressTracker {
         JobProgressTracker {
             start_time: SystemTime::now(),
             end_time: None,
-            states: BTreeMap::new(),
+            states: IndexMap::new(),
             has_failed: false,
         }
     }

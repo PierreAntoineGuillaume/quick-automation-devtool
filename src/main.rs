@@ -2,6 +2,7 @@ mod ci;
 mod config;
 
 extern crate atty;
+extern crate indexmap;
 extern crate term;
 
 use crate::ci::display::TermCiDisplay;
