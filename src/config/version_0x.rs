@@ -13,8 +13,9 @@ struct CiSpinner {
 
 #[derive(Deserialize, Debug, PartialEq)]
 struct CiIcons {
-    ok: String,
-    ko: String,
+    ok: Option<String>,
+    ko: Option<String>,
+    cancelled: Option<String>,
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
@@ -50,8 +51,15 @@ impl ConfigLoader for Version0x {
         }
 
         if let Some(icons) = &self.ci_icons {
-            ci_config.icons.ok = icons.ok.clone();
-            ci_config.icons.ko = icons.ko.clone();
+            if let Some(ok) = &icons.ok {
+                ci_config.icons.ok = ok.clone()
+            }
+            if let Some(ko) = &icons.ko {
+                ci_config.icons.ko = ko.clone()
+            }
+            if let Some(cancelled) = &icons.cancelled {
+                ci_config.icons.cancelled = cancelled.clone()
+            }
         }
     }
 }
