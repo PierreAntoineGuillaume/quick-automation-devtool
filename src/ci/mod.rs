@@ -11,22 +11,30 @@ use std::thread;
 use std::thread::{sleep, JoinHandle};
 use std::time::{Duration, SystemTime};
 
-pub(crate) mod display;
-pub(crate) mod job;
+pub mod display;
+pub mod job;
+
+pub struct CiConfig {
+    pub jobs: Vec<Job>,
+    pub constraints: Vec<(String, String)>,
+}
 
 pub struct Ci {}
 
 impl Ci {
     pub fn run(&mut self, config: Config) -> Result<(), ()> {
-        let mut jobs: Vec<Job> = vec![];
-        config.load_into(&mut jobs);
+        let mut ci_config = CiConfig {
+            jobs: vec![],
+            constraints: vec![],
+        };
+        config.load_into(&mut ci_config);
 
         let mut starter = ParrallelJobStarter::new();
         let mut display = TermCiDisplay::new();
 
         let mut pipeline = Pipeline {};
 
-        let dag = Dag::new(&jobs, &[]).unwrap();
+        let dag = Dag::new(&ci_config.jobs, &ci_config.constraints).unwrap();
 
         let tracker = pipeline.schedule(dag, &mut starter, &mut display);
 

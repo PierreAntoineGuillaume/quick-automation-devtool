@@ -5,7 +5,6 @@ use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug)]
 pub struct ConstraintMatrix {
-    matrix: BTreeMap<(String, String), Constraint>,
     blocked_by_jobs: BTreeMap<String, BTreeSet<String>>,
     blocks_jobs: BTreeMap<String, BTreeSet<String>>,
 }
@@ -59,7 +58,6 @@ impl ConstraintMatrix {
         }
 
         Ok(ConstraintMatrix {
-            matrix,
             blocked_by_jobs,
             blocks_jobs,
         })
@@ -77,29 +75,12 @@ impl ConstraintMatrix {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ci::job::dag::{Constraint, JobList};
+    use crate::ci::job::dag::JobList;
     use crate::ci::job::tests::*;
 
     pub fn complex_matrix() -> Result<ConstraintMatrix, DagError> {
         let list = complex_job_schedule();
         ConstraintMatrix::new(&list.0, &list.1)
-    }
-
-    #[test]
-    pub fn check_direct_links() {
-        let matrix = complex_matrix().unwrap();
-        assert!(matches!(
-            matrix.matrix.get(&cons("build1", "build2")).unwrap(),
-            Constraint::Indifferent
-        ));
-        assert!(matches!(
-            matrix.matrix.get(&cons("build1", "test1")).unwrap(),
-            Constraint::Blocked(1)
-        ));
-        assert!(matches!(
-            matrix.matrix.get(&cons("build1", "build1")).unwrap(),
-            Constraint::Free
-        ))
     }
 
     #[test]

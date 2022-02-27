@@ -12,10 +12,10 @@ use term::StdoutTerminal;
 use super::super::term;
 
 mod dict {
+    pub const AWAIT: &str = "�";
     pub const CHECK: &str = "✔";
     pub const CROSS: &str = "✕";
     pub const CRASH: &str = "↺";
-    pub const AWAIT: &str = "�";
 }
 
 pub struct TermCiDisplay {

@@ -1,7 +1,7 @@
 mod version_0x;
 mod wrapped_content;
 
-use crate::ci::job::Job;
+use crate::ci::CiConfig;
 use serde::Deserialize;
 use std::fs;
 use version_0x::Version0x;
@@ -97,7 +97,7 @@ impl Config {
         })
     }
 
-    pub fn load_into(&self, pipeline: &mut Vec<Job>) {
+    pub fn load_into(&self, pipeline: &mut CiConfig) {
         self.content.load_into(pipeline)
     }
 }
