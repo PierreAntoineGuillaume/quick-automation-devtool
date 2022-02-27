@@ -9,27 +9,86 @@ use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
 use term::StdoutTerminal;
 
-use super::super::term;
+pub struct CiDisplayDict {
+    pub ok: String,
+    pub ko: String,
+}
 
-mod dict {
-    pub const AWAIT: &str = "🔜";
-    pub const BLOCKED: &str = "🔐";
-    pub const CHECK: &str = "🆗";
-    pub const CROSS: &str = "✕";
-    pub const CRASH: &str = "↺";
+impl CiDisplayDict {
+    pub fn from_str(ok: &str, ko: &str) -> CiDisplayDict {
+        CiDisplayDict {
+            ok: ok.to_string(),
+            ko: ko.to_string(),
+        }
+    }
 }
 
 pub struct TermCiDisplay<'a> {
     spin: Spinner<'a>,
     term: Box<StdoutTerminal>,
     written_lines: u16,
+    dict: CiDisplayDict,
 }
 
 impl<'a> TermCiDisplay<'a> {
     pub fn finish(&mut self, tracker: &JobProgressTracker) {
         self.refresh(tracker, 0);
         self.clear();
-        print!("{tracker}")
+        for (job_name, progress_collector) in &tracker.states {
+            println!("Running tasks for job {job_name}");
+            for progress in &progress_collector.progresses {
+                match progress {
+                    Progress::Partial(instruction, job_output) => match job_output {
+                        JobOutput::Success(stdout, stderr)
+                        | JobOutput::JobError(stdout, stderr) => {
+                            let symbol = if job_output.succeeded() {
+                                &self.dict.ok
+                            } else {
+                                &self.dict.ko
+                            };
+                            print!(
+                                "{} {}",
+                                symbol,
+                                try_cleanup(format!(
+                                    "{}\n{}{}",
+                                    instruction,
+                                    try_cleanup(stdout.clone()),
+                                    try_cleanup(stderr.clone())
+                                ))
+                            );
+                        }
+                        JobOutput::ProcessError(stderr) => {
+                            print!(
+                                "{} {instruction}: {}",
+                                self.dict.ko,
+                                try_cleanup(stderr.clone())
+                            );
+                        }
+                    },
+                    Progress::Terminated(bool) => {
+                        let emoji: &str = if *bool { &self.dict.ok } else { &self.dict.ko };
+                        println!("{} all tasks done for job {}", emoji, job_name);
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let time = tracker
+            .end_time
+            .or_else(|| Some(SystemTime::now()))
+            .unwrap();
+        let elasped = time.duration_since(tracker.start_time).unwrap().as_millis() as f64;
+        let status = if !tracker.has_failed {
+            (&self.dict.ok, "succeeded")
+        } else {
+            (&self.dict.ko, "failed")
+        };
+        println!(
+            "\n{} ci {} in {:.2} seconds",
+            status.0,
+            status.1,
+            elasped / 1000f64
+        );
     }
 }
 
@@ -50,7 +109,7 @@ impl<'a> CiDisplay for TermCiDisplay<'a> {
             writeln!(
                 self.term,
                 "{}",
-                TempStatusLine::new(&spin, job_name, progress_collector)
+                TempStatusLine::new(&spin, job_name, progress_collector, &self.dict)
             )
             .unwrap();
             self.written_lines += 1;
@@ -67,30 +126,25 @@ struct TempStatusLine<'a> {
     spin: &'a Spinner<'a>,
     job_name: &'a str,
     progress_collector: &'a ProgressCollector,
+    dict: &'a CiDisplayDict,
 }
 
 impl Display for TempStatusLine<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        use dict::*;
         let progress = self.progress_collector.last().unwrap();
 
         match progress {
             Progress::Terminated(true) => {
-                write!(f, "{:12} {} {CHECK}", self.job_name, self.spin)
+                write!(f, "{:12} {} {}", self.job_name, self.spin, self.dict.ok)
             }
             Progress::Terminated(false) => {
-                write!(f, "{:12} {} {CROSS}", self.job_name, self.spin)
+                write!(f, "{:12} {} {}", self.job_name, self.spin, self.dict.ko)
             }
             Progress::Blocked => {
-                write!(
-                    f,
-                    "{:12} {}   {BLOCKED}",
-                    self.job_name,
-                    self.spin.blocked()
-                )
+                write!(f, "{:12} {}", self.job_name, self.spin.blocked(),)
             }
             _ => {
-                write!(f, "{:12} {} {AWAIT}", self.job_name, self.spin)
+                write!(f, "{:12} {}", self.job_name, self.spin)
             }
         }
     }
@@ -101,11 +155,13 @@ impl<'a> TempStatusLine<'a> {
         spin: &'a Spinner,
         job_name: &'a str,
         progress_collector: &'a ProgressCollector,
+        dict: &'a CiDisplayDict,
     ) -> Self {
         TempStatusLine {
             spin,
             job_name,
             progress_collector,
+            dict,
         }
     }
 }
@@ -120,11 +176,12 @@ impl<'a> TermCiDisplay<'a> {
         self.term.reset().unwrap();
         self.written_lines = 0;
     }
-    pub fn new(states: &'a Vec<String>, per_frame: usize) -> Self {
+    pub fn new(states: &'a Vec<String>, per_frame: usize, dict: CiDisplayDict) -> Self {
         TermCiDisplay {
             term: term::stdout().unwrap(),
             written_lines: 0,
             spin: Spinner::new(states, per_frame),
+            dict,
         }
     }
 }
@@ -135,66 +192,5 @@ fn try_cleanup(input: String) -> String {
         String::new()
     } else {
         format!("{cleaned}\n")
-    }
-}
-
-impl Display for JobProgressTracker {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for (job_name, progress_collector) in &self.states {
-            writeln!(f, "Running tasks for job {job_name}")?;
-            for progress in &progress_collector.progresses {
-                match progress {
-                    Progress::Partial(instruction, job_output) => match job_output {
-                        JobOutput::Success(stdout, stderr)
-                        | JobOutput::JobError(stdout, stderr) => {
-                            let symbol = if job_output.succeeded() {
-                                dict::CHECK
-                            } else {
-                                dict::CROSS
-                            };
-                            write!(
-                                f,
-                                "{} {}",
-                                symbol,
-                                try_cleanup(format!(
-                                    "{}\n{}{}",
-                                    instruction,
-                                    try_cleanup(stdout.clone()),
-                                    try_cleanup(stderr.clone())
-                                ))
-                            )?;
-                        }
-                        JobOutput::ProcessError(stderr) => {
-                            write!(
-                                f,
-                                "{} {instruction}: {}",
-                                dict::CRASH,
-                                try_cleanup(stderr.clone())
-                            )?;
-                        }
-                    },
-                    Progress::Terminated(bool) => {
-                        let emoji: &str = if *bool { dict::CHECK } else { dict::CROSS };
-                        writeln!(f, "{} all tasks done for job {}", emoji, job_name)?;
-                    }
-                    _ => {}
-                }
-            }
-        }
-        let time = self.end_time.or_else(|| Some(SystemTime::now())).unwrap();
-        let elasped = time.duration_since(self.start_time).unwrap().as_millis() as f64;
-        let status = if !self.has_failed {
-            (dict::CHECK, "succeeded")
-        } else {
-            (dict::CROSS, "failed")
-        };
-        writeln!(
-            f,
-            "\n{} ci {} in {:.2} seconds",
-            status.0,
-            status.1,
-            elasped / 1000f64
-        )?;
-        Ok(())
     }
 }

@@ -1,3 +1,4 @@
+use crate::ci::display::CiDisplayDict;
 use crate::ci::job::dag::Dag;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{JobRunner, JobStarter, Pipeline};
@@ -18,6 +19,7 @@ pub struct CiConfig {
     pub jobs: Vec<Job>,
     pub constraints: Vec<(String, String)>,
     pub spinner: (Vec<String>, usize),
+    pub icons: CiDisplayDict,
 }
 
 impl CiConfig {
@@ -32,6 +34,7 @@ impl CiConfig {
                     .collect(),
                 80,
             ),
+            icons: CiDisplayDict::from_str("✔", "✕"),
         }
     }
 }
@@ -45,7 +48,8 @@ impl Ci {
 
         let mut starter = ParrallelJobStarter::new();
 
-        let mut display = TermCiDisplay::new(&ci_config.spinner.0, ci_config.spinner.1);
+        let mut display =
+            TermCiDisplay::new(&ci_config.spinner.0, ci_config.spinner.1, ci_config.icons);
 
         let mut pipeline = Pipeline {};
 

@@ -6,7 +6,7 @@ pub type JobSet = std::collections::HashMap<String, Vec<String>>;
 pub type Constraints = std::collections::HashMap<String, Vec<String>>;
 
 #[derive(Deserialize, Debug, PartialEq)]
-struct Spinner {
+struct CiSpinner {
     frames: Vec<String>,
     finished: String,
     blocked: String,
@@ -14,10 +14,17 @@ struct Spinner {
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
+struct CiIcons {
+    ok: String,
+    ko: String,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
 pub struct Version0x {
     jobs: JobSet,
     constraints: Option<Constraints>,
-    spinner: Option<Spinner>
+    ci_spinner: Option<CiSpinner>,
+    ci_icons: Option<CiIcons>,
 }
 
 impl Version0x {
@@ -28,6 +35,7 @@ impl Version0x {
                 instructions: instruction.clone(),
             })
         }
+
         if let Some(constraint) = &self.constraints {
             for (blocker, blocked_jobs) in constraint {
                 for blocked in blocked_jobs {
@@ -37,11 +45,17 @@ impl Version0x {
                 }
             }
         }
-        if let Some(spinner) = &self.spinner {
+
+        if let Some(spinner) = &self.ci_spinner {
             let mut vec = spinner.frames.clone();
             vec.push(spinner.finished.clone());
             vec.push(spinner.blocked.clone());
             ci_config.spinner = (vec, spinner.per_frames)
+        }
+
+        if let Some(icons) = &self.ci_icons {
+            ci_config.icons.ok = icons.ok.clone();
+            ci_config.icons.ko = icons.ko.clone();
         }
     }
 }
@@ -54,7 +68,8 @@ mod tests {
             Version0x {
                 jobs: set,
                 constraints: None,
-                spinner: None
+                ci_spinner: None,
+                ci_icons: None,
             }
         }
     }
