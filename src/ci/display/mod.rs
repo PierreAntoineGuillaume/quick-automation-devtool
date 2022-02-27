@@ -120,7 +120,7 @@ impl<'a> TermCiDisplay<'a> {
         self.term.reset().unwrap();
         self.written_lines = 0;
     }
-    pub fn new(states: &'a [&str], per_frame: usize) -> Self {
+    pub fn new(states: &'a Vec<String>, per_frame: usize) -> Self {
         TermCiDisplay {
             term: term::stdout().unwrap(),
             written_lines: 0,

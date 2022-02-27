@@ -17,20 +17,35 @@ pub mod job;
 pub struct CiConfig {
     pub jobs: Vec<Job>,
     pub constraints: Vec<(String, String)>,
+    pub spinner: (Vec<String>, usize),
+}
+
+impl CiConfig {
+    fn new() -> Self {
+        CiConfig {
+            jobs: Vec::new(),
+            constraints: Vec::new(),
+            spinner: (
+                vec![".  ", " . ", "  .", " . ", "...", "   "]
+                    .iter()
+                    .map(|str| str.to_string())
+                    .collect(),
+                80,
+            ),
+        }
+    }
 }
 
 pub struct Ci {}
 
 impl Ci {
     pub fn run(&mut self, config: Config) -> Result<(), ()> {
-        let mut ci_config = CiConfig {
-            jobs: vec![],
-            constraints: vec![],
-        };
+        let mut ci_config = CiConfig::new();
         config.load_into(&mut ci_config);
 
         let mut starter = ParrallelJobStarter::new();
-        let mut display = TermCiDisplay::new(&[".  ", " . ", "  .", " . ", "...", "   "], 80);
+
+        let mut display = TermCiDisplay::new(&ci_config.spinner.0, ci_config.spinner.1);
 
         let mut pipeline = Pipeline {};
 

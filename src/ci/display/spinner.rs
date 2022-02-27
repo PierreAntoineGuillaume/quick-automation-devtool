@@ -4,7 +4,7 @@ pub struct Spinner<'a> {
     ticks: usize,
     roll: usize,
     finished: bool,
-    frames: &'a [&'a str],
+    frames: &'a Vec<String>,
     current_frame: usize,
     per_frame: usize,
 }
@@ -16,6 +16,7 @@ impl<'a> Spinner<'a> {
         } else {
             self.ticks as usize
         }]
+        .as_str()
     }
 
     pub fn finish(&mut self) {
@@ -23,10 +24,10 @@ impl<'a> Spinner<'a> {
     }
 
     pub fn blocked(&self) -> &'a str {
-        self.frames[self.roll + 1]
+        self.frames[self.roll + 1].as_str()
     }
 
-    pub fn new(frames: &'a [&str], per_frame: usize) -> Self {
+    pub fn new(frames: &'a Vec<String>, per_frame: usize) -> Self {
         Spinner {
             frames,
             finished: false,
@@ -79,7 +80,11 @@ mod tests {
 
     #[test]
     pub fn spin() {
-        let mut spinner = Spinner::new(&["titi", "tutu", "toto", "tata", "    "], 1);
+        let strings = vec!["titi", "tutu", "toto", "tata", "    "]
+            .iter()
+            .map(|str| str.to_string())
+            .collect();
+        let mut spinner = Spinner::new(&strings, 1);
 
         assert_eq!("titi", format!("{spinner}"));
         spinner.tick(1);
