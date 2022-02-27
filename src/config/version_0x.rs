@@ -6,9 +6,18 @@ pub type JobSet = std::collections::HashMap<String, Vec<String>>;
 pub type Constraints = std::collections::HashMap<String, Vec<String>>;
 
 #[derive(Deserialize, Debug, PartialEq)]
+struct Spinner {
+    frames: Vec<String>,
+    finished: String,
+    blocked: String,
+    per_frames: usize,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
 pub struct Version0x {
     jobs: JobSet,
     constraints: Option<Constraints>,
+    spinner: Option<Spinner>
 }
 
 impl Version0x {
@@ -28,6 +37,12 @@ impl Version0x {
                 }
             }
         }
+        if let Some(spinner) = &self.spinner {
+            let mut vec = spinner.frames.clone();
+            vec.push(spinner.finished.clone());
+            vec.push(spinner.blocked.clone());
+            ci_config.spinner = (vec, spinner.per_frames)
+        }
     }
 }
 
@@ -39,6 +54,7 @@ mod tests {
             Version0x {
                 jobs: set,
                 constraints: None,
+                spinner: None
             }
         }
     }
