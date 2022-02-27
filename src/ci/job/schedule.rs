@@ -50,17 +50,30 @@ pub fn schedule(
         job_starter.consume_some_jobs(&mut jobs, tx.clone());
 
         while let Some(progress) = read(&rx) {
+            let mut cancel_list: Vec<String> = vec![];
+            let name = progress.name();
             if let Progress::Terminated(success) = progress.1 {
                 jobs.record_event(
-                    progress.name(),
+                    name,
                     if success {
                         JobResult::Success
                     } else {
                         JobResult::Failure
                     },
                 );
+                if !success {
+                    cancel_list = jobs
+                        .enumerate()
+                        .iter()
+                        .filter(|job| matches!(job.state, JobState::Cancelled(_)))
+                        .map(|job| job.name.clone())
+                        .collect();
+                }
             }
             tracker.record(progress);
+            for cancel in cancel_list {
+                tracker.record(JobProgress::cancel(cancel))
+            }
         }
 
         if jobs.is_finished() {

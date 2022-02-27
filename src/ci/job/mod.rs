@@ -55,6 +55,7 @@ pub enum Progress {
     Available,
     Started(String),
     Blocked(Vec<String>),
+    Cancelled,
     Partial(String, JobOutput),
     Terminated(bool),
 }

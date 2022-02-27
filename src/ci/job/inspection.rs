@@ -2,11 +2,14 @@ use crate::ci::job::Progress;
 use indexmap::IndexMap;
 use std::time::SystemTime;
 
-pub struct JobProgress(String, pub(crate) Progress);
+pub struct JobProgress(String, pub Progress);
 
 impl JobProgress {
     pub fn new(job_name: &str, progress: Progress) -> Self {
         JobProgress(job_name.to_string(), progress)
+    }
+    pub fn cancel(job_name: String) -> Self {
+        JobProgress(job_name, Progress::Cancelled)
     }
 
     pub fn name(&self) -> &str {
@@ -18,14 +21,12 @@ impl JobProgress {
     }
 }
 
+#[derive(Default)]
 pub struct ProgressCollector {
     pub progresses: std::vec::Vec<Progress>,
 }
 
 impl ProgressCollector {
-    fn new() -> Self {
-        ProgressCollector { progresses: vec![] }
-    }
     fn push(&mut self, progress: Progress) {
         self.progresses.push(progress)
     }
@@ -55,7 +56,7 @@ impl JobProgressTracker {
         self.has_failed |= job_progress.failed();
         self.states
             .entry(job_progress.0)
-            .or_insert_with(ProgressCollector::new)
+            .or_insert_with(ProgressCollector::default)
             .push(job_progress.1);
     }
 

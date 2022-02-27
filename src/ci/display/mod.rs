@@ -12,6 +12,7 @@ use term::StdoutTerminal;
 pub struct CiDisplayDict {
     pub ok: String,
     pub ko: String,
+    pub cancelled: String,
 }
 
 impl Default for CiDisplayDict {
@@ -19,6 +20,7 @@ impl Default for CiDisplayDict {
         Self {
             ok: String::from("✔"),
             ko: String::from("✕"),
+            cancelled: String::from("? cancelled"),
         }
     }
 }
@@ -155,7 +157,9 @@ impl Display for TempStatusLine<'_> {
                 }
                 Ok(())
             }
-
+            Progress::Cancelled => {
+                write!(f, "{:12} {}", self.job_name, self.dict.cancelled)
+            }
             Progress::Started(command) => {
                 write!(f, "{:12} {} {}", self.job_name, command, self.spin)
             }
