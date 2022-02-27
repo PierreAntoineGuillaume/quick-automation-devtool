@@ -1,8 +1,8 @@
 version: 0.x
 jobs:
-  fmt: ['cargo fmt']
-  clippy: [ 'cargo clippy --tests' ]
-  tests: [ 'cargo test' ]
+  fmt: ["cargo fmt"]
+  clippy: [ 'cargo clippy --tests --color always' ]
+  tests: [ 'cargo test --color always' ]
 constraints:
   fmt: [ clippy, tests]
 ci_icons:
