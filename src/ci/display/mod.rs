@@ -12,19 +12,20 @@ use term::StdoutTerminal;
 use super::super::term;
 
 mod dict {
-    pub const AWAIT: &str = "�";
-    pub const CHECK: &str = "✔";
+    pub const AWAIT: &str = "🔜";
+    pub const BLOCKED: &str = "🔐";
+    pub const CHECK: &str = "🆗";
     pub const CROSS: &str = "✕";
     pub const CRASH: &str = "↺";
 }
 
-pub struct TermCiDisplay {
-    spin: Spinner,
+pub struct TermCiDisplay<'a> {
+    spin: Spinner<'a>,
     term: Box<StdoutTerminal>,
     written_lines: u16,
 }
 
-impl TermCiDisplay {
+impl<'a> TermCiDisplay<'a> {
     pub fn finish(&mut self, tracker: &JobProgressTracker) {
         self.refresh(tracker, 0);
         self.clear();
@@ -32,7 +33,7 @@ impl TermCiDisplay {
     }
 }
 
-impl CiDisplay for TermCiDisplay {
+impl<'a> CiDisplay for TermCiDisplay<'a> {
     fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
         let previous_written_lines = self.written_lines;
         self.written_lines = 0;
@@ -63,25 +64,35 @@ impl CiDisplay for TermCiDisplay {
 }
 
 struct TempStatusLine<'a> {
-    spin: &'a Spinner,
+    spin: &'a Spinner<'a>,
     job_name: &'a str,
     progress_collector: &'a ProgressCollector,
 }
 
 impl Display for TempStatusLine<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use dict::*;
         let progress = self.progress_collector.last().unwrap();
-        let pending = progress.is_pending();
 
-        let symbol = if pending {
-            dict::AWAIT
-        } else if progress.failed() {
-            dict::CROSS
-        } else {
-            dict::CHECK
-        };
-
-        write!(f, "{:12} {} {}", self.job_name, self.spin, symbol)
+        match progress {
+            Progress::Terminated(true) => {
+                write!(f, "{:12} {} {CHECK}", self.job_name, self.spin)
+            }
+            Progress::Terminated(false) => {
+                write!(f, "{:12} {} {CROSS}", self.job_name, self.spin)
+            }
+            Progress::Blocked => {
+                write!(
+                    f,
+                    "{:12} {}   {BLOCKED}",
+                    self.job_name,
+                    self.spin.blocked()
+                )
+            }
+            _ => {
+                write!(f, "{:12} {} {AWAIT}", self.job_name, self.spin)
+            }
+        }
     }
 }
 
@@ -99,7 +110,7 @@ impl<'a> TempStatusLine<'a> {
     }
 }
 
-impl TermCiDisplay {
+impl<'a> TermCiDisplay<'a> {
     fn clear(&mut self) {
         (0..self.written_lines as usize).for_each(|_| {
             self.term.cursor_up().unwrap();
@@ -109,11 +120,11 @@ impl TermCiDisplay {
         self.term.reset().unwrap();
         self.written_lines = 0;
     }
-    pub fn new() -> Self {
+    pub fn new(states: &'a [&str], per_frame: usize) -> Self {
         TermCiDisplay {
             term: term::stdout().unwrap(),
             written_lines: 0,
-            spin: Spinner::new(&[".  ", " . ", "  .", " . ", "..."], 80),
+            spin: Spinner::new(states, per_frame),
         }
     }
 }

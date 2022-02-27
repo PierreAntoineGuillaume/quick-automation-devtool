@@ -30,7 +30,7 @@ impl Ci {
         config.load_into(&mut ci_config);
 
         let mut starter = ParrallelJobStarter::new();
-        let mut display = TermCiDisplay::new();
+        let mut display = TermCiDisplay::new(&[".  ", " . ", "  .", " . ", "...", "   "], 80);
 
         let mut pipeline = Pipeline {};
 

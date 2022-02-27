@@ -1,63 +1,42 @@
 use std::fmt::{Display, Formatter};
 
-pub struct Spinner {
+pub struct Spinner<'a> {
     ticks: usize,
     roll: usize,
     finished: bool,
-    frames: &'static [&'static str],
+    frames: &'a [&'a str],
     current_frame: usize,
     per_frame: usize,
 }
 
-impl Spinner {
-    pub fn current(&self) -> &'static str {
+impl<'a> Spinner<'a> {
+    pub fn current(&self) -> &'a str {
         self.frames[if self.finished {
             self.roll
         } else {
             self.ticks as usize
         }]
     }
-}
 
-impl Spinner {
     pub fn finish(&mut self) {
         self.finished = true
     }
-}
 
-impl Spinner {
-    pub fn new(frames: &'static [&str], per_frame: usize) -> Self {
+    pub fn blocked(&self) -> &'a str {
+        self.frames[self.roll + 1]
+    }
+
+    pub fn new(frames: &'a [&str], per_frame: usize) -> Self {
         Spinner {
             frames,
             finished: false,
             ticks: 0,
-            roll: frames.len() - 1,
+            roll: frames.len() - 2,
             current_frame: 0,
             per_frame,
         }
     }
-}
 
-impl Display for Spinner {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.current())
-    }
-}
-
-impl Clone for Spinner {
-    fn clone(&self) -> Self {
-        Spinner {
-            ticks: self.ticks,
-            roll: self.roll,
-            finished: false,
-            frames: self.frames,
-            current_frame: self.current_frame,
-            per_frame: self.per_frame,
-        }
-    }
-}
-
-impl Spinner {
     pub fn tick(&mut self, frames: usize) {
         let up = self.current_frame + frames >= self.per_frame;
         self.ticks = if up {
@@ -75,13 +54,32 @@ impl Spinner {
     }
 }
 
+impl<'a> Display for Spinner<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.current())
+    }
+}
+
+impl<'a> Clone for Spinner<'a> {
+    fn clone(&self) -> Self {
+        Spinner {
+            ticks: self.ticks,
+            roll: self.roll,
+            finished: false,
+            frames: self.frames,
+            current_frame: self.current_frame,
+            per_frame: self.per_frame,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     pub fn spin() {
-        let mut spinner = Spinner::new(&["titi", "tutu", "toto", "tata"], 1);
+        let mut spinner = Spinner::new(&["titi", "tutu", "toto", "tata", "    "], 1);
 
         assert_eq!("titi", format!("{spinner}"));
         spinner.tick(1);
