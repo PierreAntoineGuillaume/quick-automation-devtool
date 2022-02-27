@@ -66,7 +66,7 @@ fn main() {
     }
 
     let envvar = std::env::var("DT_CONFIG_FILE")
-        .or_else::<String, _>(|_| Ok(String::from("dt.toml")))
+        .or_else::<String, _>(|_| Ok(String::from("dt")))
         .unwrap();
 
     let config = Config::parse(&envvar)

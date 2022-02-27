@@ -4,6 +4,7 @@ mod wrapped_content;
 use crate::ci::CiConfig;
 use serde::Deserialize;
 use std::fs;
+use std::path::Path;
 use version_0x::Version0x;
 use wrapped_content::WrappedContent;
 
@@ -27,7 +28,30 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn parse(filename: &str) -> Result<Config, String> {
+    pub fn parse(env: &str) -> Result<Config, String> {
+        let mut filename = None;
+
+        let all_filenames: Vec<String> = ["toml", "yaml", "yml"]
+            .iter()
+            .map(|str| format!("{}.{}", env, str))
+            .collect();
+
+        for file in &all_filenames {
+            if Path::new(file).exists() {
+                filename = Some(file);
+                break;
+            }
+        }
+
+        if filename.is_none() {
+            return Err(format!(
+                "no config file could be found (looked for {:?})",
+                all_filenames
+            ));
+        }
+
+        let filename = filename.unwrap();
+
         let content =
             fs::read_to_string(&filename).map_err(|_| format!("could not read {}", filename))?;
 
