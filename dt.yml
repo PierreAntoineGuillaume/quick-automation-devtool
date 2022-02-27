@@ -1,5 +1,10 @@
 version: 0.x
 jobs:
-  fmt: ['cargo fmt --check']
+  fmt: ['cargo fmt']
   clippy: [ 'cargo clippy --tests' ]
-
+  tests: [ 'cargo test' ]
+constraints:
+  fmt: [ clippy, tests]
+ci_icons:
+  ok: "🌺"
+  ko: "🥀"
