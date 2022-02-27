@@ -70,16 +70,17 @@ fn main() {
         .or_else::<String, _>(|_| Ok(String::from("dt")))
         .unwrap();
 
-    let config = Config::parse(&envvar)
-        .map_err(|error| {
-            eprintln!("dt: {}", error);
-            std::process::exit(1);
-        })
-        .unwrap();
+    let config = Config::from(&envvar);
 
     if let Subcommands::Ci(_) = command {
-        if (Ci {}).run(config).is_err() {
-            std::process::exit(1);
+        match (Ci {}).run(config) {
+            Ok(_) => {}
+            Err(str) => {
+                if let Some(msg) = str {
+                    eprintln!("{}", msg);
+                }
+                std::process::exit(1)
+            }
         }
     }
 }

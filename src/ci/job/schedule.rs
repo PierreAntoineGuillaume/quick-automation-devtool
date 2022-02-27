@@ -17,75 +17,71 @@ pub trait CiDisplay {
     fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize);
 }
 
-pub struct Pipeline {}
-impl Pipeline {
-    pub fn schedule(
-        &mut self,
-        mut jobs: Dag,
-        job_starter: &mut dyn JobStarter,
-        job_display: &mut dyn CiDisplay,
-    ) -> JobProgressTracker {
-        let mut tracker = JobProgressTracker::new();
+pub fn schedule(
+    mut jobs: Dag,
+    job_starter: &mut dyn JobStarter,
+    job_display: &mut dyn CiDisplay,
+) -> JobProgressTracker {
+    let mut tracker = JobProgressTracker::new();
+
+    if jobs.is_finished() {
+        tracker.try_finish();
+        return tracker;
+    }
+
+    for job in jobs.enumerate() {
+        tracker.record(JobProgress::new(
+            &job.name,
+            match job.state {
+                JobState::Pending => Progress::Available,
+                JobState::Blocked => Progress::Blocked(job.block.clone()),
+                _ => {
+                    panic!("This state is impossible with no poll yet")
+                }
+            },
+        ))
+    }
+
+    let (tx, rx) = channel();
+
+    let mut delay: usize = 0;
+
+    loop {
+        job_starter.consume_some_jobs(&mut jobs, tx.clone());
+
+        while let Some(progress) = read(&rx) {
+            if let Progress::Terminated(success) = progress.1 {
+                jobs.record_event(
+                    progress.name(),
+                    if success {
+                        JobResult::Success
+                    } else {
+                        JobResult::Failure
+                    },
+                );
+            }
+            tracker.record(progress);
+        }
 
         if jobs.is_finished() {
             tracker.try_finish();
-            return tracker;
+            break;
         }
-
-        for job in jobs.enumerate() {
-            tracker.record(JobProgress::new(
-                &job.name,
-                match job.state {
-                    JobState::Pending => Progress::Available,
-                    JobState::Blocked => Progress::Blocked(job.block.clone()),
-                    _ => {
-                        panic!("This state is impossible with no poll yet")
-                    }
-                },
-            ))
-        }
-
-        let (tx, rx) = channel();
-
-        let mut delay: usize = 0;
-
-        loop {
-            job_starter.consume_some_jobs(&mut jobs, tx.clone());
-
-            while let Some(progress) = self.read(&rx) {
-                if let Progress::Terminated(success) = progress.1 {
-                    jobs.record_event(
-                        progress.name(),
-                        if success {
-                            JobResult::Success
-                        } else {
-                            JobResult::Failure
-                        },
-                    );
-                }
-                tracker.record(progress);
-            }
-
-            if jobs.is_finished() {
-                tracker.try_finish();
-                break;
-            }
-            job_display.refresh(&tracker, delay);
-            delay = job_starter.delay();
-        }
-
-        job_starter.join();
-
-        tracker
+        job_display.refresh(&tracker, delay);
+        delay = job_starter.delay();
     }
 
-    pub fn read(&self, rx: &Receiver<JobProgress>) -> Option<JobProgress> {
-        match rx.try_recv() {
-            Ok(state) => Some(state),
-            Err(TryRecvError::Empty) => None,
-            Err(TryRecvError::Disconnected) => {
-                panic!("State receiver has been disconnected, try restarting the program");
-            }
+    job_starter.join();
+
+    tracker
+}
+
+pub fn read(rx: &Receiver<JobProgress>) -> Option<JobProgress> {
+    match rx.try_recv() {
+        Ok(state) => Some(state),
+        Err(TryRecvError::Empty) => None,
+        Err(TryRecvError::Disconnected) => {
+            panic!("State receiver has been disconnected, try restarting the program");
         }
     }
 }
@@ -110,9 +106,8 @@ mod tests {
     fn pipeline(jobs: &[Job]) -> JobProgressTracker {
         let mut job_start = TestJobStarter {};
         let mut job_display = NullCiDisplay {};
-        let mut scheduler = Pipeline {};
         let dag = Dag::new(jobs, &[]).unwrap();
-        scheduler.schedule(dag, &mut job_start, &mut job_display)
+        schedule(dag, &mut job_start, &mut job_display)
     }
 
     #[test]

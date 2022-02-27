@@ -14,11 +14,11 @@ pub struct CiDisplayDict {
     pub ko: String,
 }
 
-impl CiDisplayDict {
-    pub fn from_str(ok: &str, ko: &str) -> CiDisplayDict {
-        CiDisplayDict {
-            ok: ok.to_string(),
-            ko: ko.to_string(),
+impl Default for CiDisplayDict {
+    fn default() -> Self {
+        Self {
+            ok: String::from("✔"),
+            ko: String::from("✕"),
         }
     }
 }

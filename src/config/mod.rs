@@ -1,69 +1,22 @@
 mod version_0x;
-mod wrapped_content;
 
 use crate::ci::CiConfig;
 use serde::Deserialize;
 use std::fs;
 use std::path::Path;
 use version_0x::Version0x;
-use wrapped_content::WrappedContent;
 
 #[derive(Debug)]
 pub enum ConfigError {
     UnrecognizedFileformat,
     NoVersion(&'static str),
     BadVersion(String, &'static str),
-    ParseError(String),
+    ParseError(String, String),
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
-pub struct Version {
-    pub version: String,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Config {
-    pub version: Version,
-    pub content: WrappedContent,
-}
-
-impl Config {
-    pub fn parse(env: &str) -> Result<Config, String> {
-        let mut filename = None;
-
-        let all_filenames: Vec<String> = ["toml", "yaml", "yml"]
-            .iter()
-            .map(|str| format!("{}.{}", env, str))
-            .collect();
-
-        for file in &all_filenames {
-            if Path::new(file).exists() {
-                filename = Some(file);
-                break;
-            }
-        }
-
-        if filename.is_none() {
-            return Err(format!(
-                "no config file could be found (looked for {:?})",
-                all_filenames
-            ));
-        }
-
-        let filename = filename.unwrap();
-
-        let content =
-            fs::read_to_string(&filename).map_err(|_| format!("could not read {}", filename))?;
-
-        let content = if filename.ends_with(".toml") {
-            Config::parse_toml(&content)
-        } else if filename.ends_with(".yaml") || filename.ends_with(".yml") {
-            Config::parse_yaml(&content)
-        } else {
-            Err(ConfigError::UnrecognizedFileformat)
-        };
-
-        content.map_err(|error| match error {
+impl ConfigError {
+    fn explain(&self, filename: String) -> String {
+        match self {
             ConfigError::UnrecognizedFileformat => {
                 format!(
                     "{} could not be parsed, expected file types are .toml, .yml or .yaml",
@@ -82,13 +35,84 @@ impl Config {
                     version, filename, latest
                 )
             }
-            ConfigError::ParseError(version) => {
-                format!("could not parse {} with version {}", filename, version)
+            ConfigError::ParseError(version, prev) => {
+                format!(
+                    "could not parse {} with version {} ({})",
+                    filename, version, prev
+                )
             }
+        }
+    }
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+pub struct Version {
+    pub version: String,
+}
+
+pub struct Config {
+    possible_files: Vec<String>,
+}
+
+#[derive(Default)]
+pub struct ConfigPayload {
+    pub ci_config: CiConfig,
+}
+
+pub trait ConfigLoader {
+    fn load(&self, payload: &mut ConfigPayload);
+}
+
+impl Config {
+    pub fn from(env: &str) -> Self {
+        let possible_files: Vec<String> = ["toml", "yaml", "yml"]
+            .iter()
+            .map(|str| format!("{}.{}", env, str))
+            .collect();
+
+        Config { possible_files }
+    }
+
+    pub fn load(&self) -> Result<ConfigPayload, String> {
+        let filename = self.get_first_available_config_file()?;
+
+        let content =
+            fs::read_to_string(&filename).map_err(|_| format!("could not read {}", filename))?;
+
+        let loader = if filename.ends_with(".toml") {
+            Config::parse_toml(&content)
+        } else if filename.ends_with(".yaml") || filename.ends_with(".yml") {
+            Config::parse_yaml(&content)
+        } else {
+            Err(ConfigError::UnrecognizedFileformat)
+        }
+        .map_err(|error| error.explain(filename))?;
+
+        let mut default = ConfigPayload::default();
+
+        loader.load(&mut default);
+
+        Ok(default)
+    }
+
+    fn get_first_available_config_file(&self) -> Result<String, String> {
+        let mut filename = None;
+        for file in &self.possible_files {
+            if Path::new(file).exists() {
+                filename = Some(file.clone());
+                break;
+            }
+        }
+
+        filename.ok_or_else(|| {
+            format!(
+                "no config file could be found (looked for {:?})",
+                self.possible_files
+            )
         })
     }
 
-    fn parse_toml(content: &str) -> Result<Config, ConfigError> {
+    fn parse_toml(content: &str) -> Result<Box<dyn ConfigLoader>, ConfigError> {
         let version =
             toml::from_str::<Version>(content).map_err(|_| ConfigError::NoVersion("0.x"))?;
 
@@ -97,15 +121,12 @@ impl Config {
         }
 
         let v0x = toml::from_str::<Version0x>(content)
-            .map_err(|_| ConfigError::ParseError(version.version.clone()))?;
+            .map_err(|e| ConfigError::ParseError(version.version.clone(), e.to_string()))?;
 
-        Ok(Config {
-            version,
-            content: WrappedContent::V0x(v0x),
-        })
+        Ok(Box::new(v0x))
     }
 
-    fn parse_yaml(content: &str) -> Result<Config, ConfigError> {
+    fn parse_yaml(content: &str) -> Result<Box<dyn ConfigLoader>, ConfigError> {
         let version =
             serde_yaml::from_str::<Version>(content).map_err(|_| ConfigError::NoVersion("0.x"))?;
         if version.version != "0.x" {
@@ -113,70 +134,8 @@ impl Config {
         }
 
         let v0x = serde_yaml::from_str::<Version0x>(content)
-            .map_err(|_| ConfigError::ParseError(version.version.clone()))?;
+            .map_err(|e| ConfigError::ParseError(version.version.clone(), e.to_string()))?;
 
-        Ok(Config {
-            version,
-            content: WrappedContent::V0x(v0x),
-        })
-    }
-
-    pub fn load_into(&self, pipeline: &mut CiConfig) {
-        self.content.load_into(pipeline)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::str::FromStr;
-    use version_0x::JobSet;
-
-    impl FromStr for Version {
-        type Err = ();
-        fn from_str(s: &str) -> Result<Self, ()> {
-            Ok(Version {
-                version: s.to_string(),
-            })
-        }
-    }
-
-    #[test]
-    pub fn parse_good_v0x_toml() -> Result<(), ()> {
-        let mut job_set = JobSet::new();
-        job_set.insert(
-            String::from("jobname"),
-            vec![String::from("inst1"), String::from("inst2")],
-        );
-
-        assert_eq!(
-            Config::parse_toml("version = \"0.x\"\n[jobs]\njobname = [\"inst1\", \"inst2\"]")
-                .unwrap(),
-            Config {
-                version: "0.x".parse::<Version>()?,
-                content: WrappedContent::V0x(Version0x::new(job_set)),
-            }
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    pub fn parse_good_v0x_yaml() -> Result<(), ()> {
-        let mut job_set = JobSet::new();
-        job_set.insert(
-            String::from("jobname"),
-            vec![String::from("inst1"), String::from("inst2")],
-        );
-
-        assert_eq!(
-            Config::parse_yaml("{ version: 0.x, jobs: { jobname: [inst1, inst2] } }").unwrap(),
-            Config {
-                version: "0.x".parse::<Version>()?,
-                content: WrappedContent::V0x(Version0x::new(job_set)),
-            }
-        );
-
-        Ok(())
+        Ok(Box::new(v0x))
     }
 }

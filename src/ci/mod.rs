@@ -1,9 +1,10 @@
 use crate::ci::display::CiDisplayDict;
 use crate::ci::job::dag::Dag;
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::schedule::{JobRunner, JobStarter, Pipeline};
+use crate::ci::job::schedule::{schedule, JobRunner, JobStarter};
 use crate::ci::job::JobOutput;
-use crate::{Config, TermCiDisplay};
+use crate::config::Config;
+use crate::TermCiDisplay;
 use job::{Job, JobProgressConsumer};
 use regex::Regex;
 use std::process::Command;
@@ -22,8 +23,8 @@ pub struct CiConfig {
     pub icons: CiDisplayDict,
 }
 
-impl CiConfig {
-    fn new() -> Self {
+impl Default for CiConfig {
+    fn default() -> Self {
         CiConfig {
             jobs: Vec::new(),
             constraints: Vec::new(),
@@ -34,7 +35,7 @@ impl CiConfig {
                     .collect(),
                 80,
             ),
-            icons: CiDisplayDict::from_str("✔", "✕"),
+            icons: CiDisplayDict::default(),
         }
     }
 }
@@ -42,25 +43,21 @@ impl CiConfig {
 pub struct Ci {}
 
 impl Ci {
-    pub fn run(&mut self, config: Config) -> Result<(), ()> {
-        let mut ci_config = CiConfig::new();
-        config.load_into(&mut ci_config);
-
-        let mut starter = ParrallelJobStarter::new();
+    pub fn run(&mut self, config: Config) -> Result<(), Option<String>> {
+        let config = config.load()?;
+        let ci_config = config.ci_config;
 
         let mut display =
             TermCiDisplay::new(&ci_config.spinner.0, ci_config.spinner.1, ci_config.icons);
 
-        let mut pipeline = Pipeline {};
-
         let dag = Dag::new(&ci_config.jobs, &ci_config.constraints).unwrap();
 
-        let tracker = pipeline.schedule(dag, &mut starter, &mut display);
+        let tracker = schedule(dag, &mut ParrallelJobStarter::new(), &mut display);
 
         display.finish(&tracker);
 
         if tracker.has_failed {
-            Err(())
+            Err(None)
         } else {
             Ok(())
         }

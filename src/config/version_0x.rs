@@ -1,5 +1,5 @@
 use crate::ci::job::Job;
-use crate::ci::CiConfig;
+use crate::config::{ConfigLoader, ConfigPayload};
 use serde::Deserialize;
 
 pub type JobSet = std::collections::HashMap<String, Vec<String>>;
@@ -25,8 +25,9 @@ pub struct Version0x {
     ci_icons: Option<CiIcons>,
 }
 
-impl Version0x {
-    pub fn load_into(&self, ci_config: &mut CiConfig) {
+impl ConfigLoader for Version0x {
+    fn load(&self, payload: &mut ConfigPayload) {
+        let mut ci_config = &mut payload.ci_config;
         for (name, instruction) in &self.jobs {
             ci_config.jobs.push(Job {
                 name: name.clone(),
@@ -51,21 +52,6 @@ impl Version0x {
         if let Some(icons) = &self.ci_icons {
             ci_config.icons.ok = icons.ok.clone();
             ci_config.icons.ko = icons.ko.clone();
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    impl Version0x {
-        pub fn new(set: JobSet) -> Self {
-            Version0x {
-                jobs: set,
-                constraints: None,
-                ci_spinner: None,
-                ci_icons: None,
-            }
         }
     }
 }
