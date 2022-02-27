@@ -158,20 +158,17 @@ impl Eq for JobEnumeration {}
 impl PartialEq<Self> for JobEnumeration {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
-            && self.state == other.state
-            && self.block.len() == other.block.len()
-            && self.block == other.block
     }
 }
 
 impl PartialOrd<Self> for JobEnumeration {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(match self.state.cmp(&other.state) {
-            Ordering::Equal => match self.block.len().cmp(&other.block.len()) {
-                Ordering::Equal => self.name.cmp(&other.name),
-                ord => ord,
-            },
-            res => res,
+        if self.name == other.name {
+            return Some(Ordering::Equal);
+        }
+        Some(match self.block.cmp(&other.block) {
+            Ordering::Equal => self.name.cmp(&other.name),
+            ord => ord,
         })
     }
 }
@@ -477,8 +474,7 @@ mod tests {
         let actual = dag.enumerate();
 
         assert_eq!(
-            String::from("[build2(pending), build1(failure), test1(cancelled), test2(cancelled), deploy(cancelled)]")
-            ,
+            String::from("[build1(failure), build2(pending), test1(cancelled), test2(cancelled), deploy(cancelled)]"),
             format!("{actual:?}"));
 
         dag.poll();
@@ -487,8 +483,7 @@ mod tests {
         let actual = dag.enumerate();
 
         assert_eq!(
-            String::from("[build1(failure), build2(failure), test1(cancelled), test2(cancelled), deploy(cancelled)]")
-            ,
+            String::from("[build1(failure), build2(failure), test1(cancelled), test2(cancelled), deploy(cancelled)]"),
             format!("{actual:?}"));
     }
 
