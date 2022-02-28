@@ -36,8 +36,8 @@ fetch:
 clippy:
   image: rustlang/rust:nightly
   script:
-    - cargo clippy
     - cargo clippy --tests
+    - cargo clippy
 
 lint-commits:
   image: node
