@@ -79,7 +79,17 @@ changelog:
   image: alpine
   script:
     - apk add bash git
-    - ./tools/changelog
+    - |
+      {
+        echo "changelog:"
+        echo '```'
+        ./tools/changelog
+        echo '```'
+      } > description.env
+    - cat description.env
+  artifacts:
+    reports:
+      dotenv: description.env
 
 release:
   stage: release
