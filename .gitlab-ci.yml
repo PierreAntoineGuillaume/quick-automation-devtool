@@ -76,6 +76,12 @@ upload binary:
   script:
     - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file bin/dt-${CI_COMMIT_TAG} ${PACKAGE_REGISTRY_URL}'
 
+changelog:
+  stage: publish
+  image: alpine
+  script:
+    - apk add bash git
+    - ./tools/changelog
 
 release:
   stage: release
