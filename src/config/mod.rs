@@ -67,10 +67,11 @@ pub trait ConfigLoader {
 
 impl Config {
     pub fn from(env: &str) -> Self {
-        let possible_files: Vec<String> = ["toml", "yaml", "yml"]
-            .iter()
-            .map(|str| format!("{}.{}", env, str))
-            .collect();
+        let possible_files: Vec<String> =
+            ["toml.dist", "yaml.dist", "yml.dist", "toml", "yaml", "yml"]
+                .iter()
+                .map(|str| format!("{}.{}", env, str))
+                .collect();
 
         Config { possible_files }
     }
@@ -83,7 +84,11 @@ impl Config {
 
         let loader = if filename.ends_with(".toml") {
             Config::parse_toml(&content)
-        } else if filename.ends_with(".yaml") || filename.ends_with(".yml") {
+        } else if filename.ends_with(".yaml")
+            || filename.ends_with(".yml")
+            || filename.ends_with(".yaml.dist")
+            || filename.ends_with(".yml.dist")
+        {
             Config::parse_yaml(&content)
         } else {
             Err(ConfigError::UnrecognizedFileformat)
