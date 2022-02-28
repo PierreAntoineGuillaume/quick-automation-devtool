@@ -87,13 +87,13 @@ impl ConfigLoader for Version0y {
 
         if let Some(icons) = &self.display {
             if let Some(ok) = &icons.ok {
-                payload.ci.display.ok = ok.clone()
+                payload.ci.display.ok = ok.to_string()
             }
             if let Some(ko) = &icons.ko {
-                payload.ci.display.ko = ko.clone()
+                payload.ci.display.ko = ko.to_string()
             }
             if let Some(cancelled) = &icons.cancelled {
-                payload.ci.display.cancelled = cancelled.clone()
+                payload.ci.display.cancelled = cancelled.to_string()
             }
             if let Some(spinner) = &icons.spinner {
                 payload.ci.display.spinner = (spinner.frames.clone(), spinner.per_frames)
@@ -111,9 +111,9 @@ impl ConfigLoader for Version0y {
             .collect();
         self.constraints = Some(from_vec(&payload.ci.constraints));
         self.display = Some(Display {
-            ok: Some(payload.ci.display.ok.clone()),
-            ko: Some(payload.ci.display.ko.clone()),
-            cancelled: Some(payload.ci.display.cancelled.clone()),
+            ok: Some(payload.ci.display.ok.to_string()),
+            ko: Some(payload.ci.display.ko.to_string()),
+            cancelled: Some(payload.ci.display.cancelled.to_string()),
             show_command: Some(payload.ci.display.show_commands),
             display: None,
             spinner: Some(Spinner {
