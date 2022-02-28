@@ -36,7 +36,7 @@ fetch:
 clippy:
   image: rustlang/rust:nightly
   script:
-    - cargo clippy
+    - cargo clippy --tests --color=always
 
 lint-commits:
   image: node
@@ -55,7 +55,7 @@ fmt:
 rust-nightly:
   image: rustlang/rust:nightly
   script:
-    - cargo test --verbose
+    - cargo test -- --color=always
 
 shellcheck:
   image: koalaman/shellcheck-alpine:stable
