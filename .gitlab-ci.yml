@@ -20,7 +20,6 @@ fetch:
   image: rust:latest
   stage: build
   script:
-    - cargo build
     - cargo build --release
     - test "$CI_COMMIT_TAG" == "$(target/release/dt --version)"
     - mkdir bin
