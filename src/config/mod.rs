@@ -1,4 +1,5 @@
 mod version_0x;
+mod version_0y;
 
 use crate::ci::CiConfig;
 use serde::Deserialize;
@@ -56,11 +57,12 @@ pub struct Config {
 
 #[derive(Default)]
 pub struct ConfigPayload {
-    pub ci_config: CiConfig,
+    pub ci: CiConfig,
 }
 
 pub trait ConfigLoader {
     fn load(&self, payload: &mut ConfigPayload);
+    fn read(&mut self, origin: &ConfigPayload);
 }
 
 impl Config {

@@ -10,20 +10,31 @@ use std::cmp::max;
 use std::time::SystemTime;
 use term::StdoutTerminal;
 
-pub struct CiDisplayDict {
+pub struct CiDisplayConfig {
     pub ok: String,
     pub ko: String,
     pub cancelled: String,
-    pub display_command: bool,
+    pub show_commands: bool,
+    pub spinner: (Vec<String>, usize),
 }
 
-impl Default for CiDisplayDict {
+impl Default for CiDisplayConfig {
     fn default() -> Self {
         Self {
             ok: String::from("✔"),
             ko: String::from("✕"),
             cancelled: String::from("? cancelled"),
-            display_command: true,
+            show_commands: true,
+            spinner: (
+                vec![
+                    String::from(".  "),
+                    String::from(".. "),
+                    String::from("..."),
+                    String::from(".. "),
+                    String::from(".  "),
+                ],
+                80,
+            ),
         }
     }
 }
@@ -31,7 +42,7 @@ impl Default for CiDisplayDict {
 pub struct TermCiDisplay<'a> {
     spin: Spinner<'a>,
     term: TermWrapper,
-    dict: CiDisplayDict,
+    config: &'a CiDisplayConfig,
     max_job_name_len: usize,
 }
 
@@ -48,9 +59,9 @@ impl<'a> TermCiDisplay<'a> {
                         JobOutput::Success(stdout, stderr)
                         | JobOutput::JobError(stdout, stderr) => {
                             let symbol = if job_output.succeeded() {
-                                &self.dict.ok
+                                &self.config.ok
                             } else {
-                                &self.dict.ko
+                                &self.config.ko
                             };
                             print!(
                                 "{} {}",
@@ -66,13 +77,17 @@ impl<'a> TermCiDisplay<'a> {
                         JobOutput::ProcessError(stderr) => {
                             print!(
                                 "{} {instruction}: {}",
-                                self.dict.ko,
+                                self.config.ko,
                                 try_cleanup(stderr.clone())
                             );
                         }
                     },
                     Progress::Terminated(bool) => {
-                        let emoji: &str = if *bool { &self.dict.ok } else { &self.dict.ko };
+                        let emoji: &str = if *bool {
+                            &self.config.ok
+                        } else {
+                            &self.config.ko
+                        };
                         println!("{} all tasks done for job {}", emoji, job_name);
                     }
                     _ => {}
@@ -85,9 +100,9 @@ impl<'a> TermCiDisplay<'a> {
             .unwrap();
         let elasped = time.duration_since(tracker.start_time).unwrap().as_millis() as f64;
         let status = if !tracker.has_failed {
-            (&self.dict.ok, "succeeded")
+            (&self.config.ok, "succeeded")
         } else {
-            (&self.dict.ko, "failed")
+            (&self.config.ko, "failed")
         };
         println!(
             "\n{} ci {} in {:.2} seconds",
@@ -167,10 +182,10 @@ impl<'a> TermCiDisplay<'a> {
                 self.term.write("not started yet");
             }
             Progress::Terminated(true) => {
-                self.term.write(&format!(" {}", self.dict.ok));
+                self.term.write(&format!(" {}", self.config.ok));
             }
             Progress::Terminated(false) => {
-                self.term.write(&format!(" {}", self.dict.ko));
+                self.term.write(&format!(" {}", self.config.ko));
             }
             Progress::Partial(_, _) => {
                 self.term.write(&format!(" {}", self.spin));
@@ -187,10 +202,10 @@ impl<'a> TermCiDisplay<'a> {
                 }
             }
             Progress::Cancelled => {
-                self.term.write(&format!(" {}", self.dict.cancelled));
+                self.term.write(&format!(" {}", self.config.cancelled));
             }
             Progress::Started(command) => {
-                if self.dict.display_command {
+                if self.config.show_commands {
                     self.term.write(&format!(" {} {}", command, self.spin));
                 } else {
                     self.term.write(&format!(" {}", self.spin));
@@ -204,11 +219,11 @@ impl<'a> TermCiDisplay<'a> {
         self.term.clear()
     }
 
-    pub fn new(states: &'a Vec<String>, per_frame: usize, dict: CiDisplayDict) -> Self {
+    pub fn new(config: &'a CiDisplayConfig) -> Self {
         TermCiDisplay {
             term: TermWrapper::default(),
-            spin: Spinner::new(states, per_frame),
-            dict,
+            spin: Spinner::new(&config.spinner.0, config.spinner.1),
+            config,
             max_job_name_len: 0,
         }
     }

@@ -1,4 +1,4 @@
-use crate::ci::display::CiDisplayDict;
+use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::dag::Dag;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{schedule, JobRunner, JobStarter};
@@ -16,28 +16,11 @@ use std::time::{Duration, SystemTime};
 pub mod display;
 pub mod job;
 
+#[derive(Default)]
 pub struct CiConfig {
     pub jobs: Vec<Job>,
     pub constraints: Vec<(String, String)>,
-    pub spinner: (Vec<String>, usize),
-    pub icons: CiDisplayDict,
-}
-
-impl Default for CiConfig {
-    fn default() -> Self {
-        CiConfig {
-            jobs: Vec::new(),
-            constraints: Vec::new(),
-            spinner: (
-                vec![".  ", ".. ", "...", ".. ", "."]
-                    .iter()
-                    .map(|str| str.to_string())
-                    .collect(),
-                80,
-            ),
-            icons: CiDisplayDict::default(),
-        }
-    }
+    pub display: CiDisplayConfig,
 }
 
 pub struct Ci {}
@@ -45,10 +28,9 @@ pub struct Ci {}
 impl Ci {
     pub fn run(&mut self, config: Config) -> Result<(), Option<String>> {
         let config = config.load()?;
-        let ci_config = config.ci_config;
+        let ci_config = config.ci;
 
-        let mut display =
-            TermCiDisplay::new(&ci_config.spinner.0, ci_config.spinner.1, ci_config.icons);
+        let mut display = TermCiDisplay::new(&ci_config.display);
 
         let dag = Dag::new(&ci_config.jobs, &ci_config.constraints).unwrap();
 
