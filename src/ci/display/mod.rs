@@ -14,6 +14,7 @@ pub struct CiDisplayDict {
     pub ok: String,
     pub ko: String,
     pub cancelled: String,
+    pub display_command: bool,
 }
 
 impl Default for CiDisplayDict {
@@ -22,6 +23,7 @@ impl Default for CiDisplayDict {
             ok: String::from("✔"),
             ko: String::from("✕"),
             cancelled: String::from("? cancelled"),
+            display_command: true,
         }
     }
 }
@@ -188,7 +190,11 @@ impl<'a> TermCiDisplay<'a> {
                 self.term.write(&format!(" {}", self.dict.cancelled));
             }
             Progress::Started(command) => {
-                self.term.write(&format!(" {} {}", command, self.spin));
+                if self.dict.display_command {
+                    self.term.write(&format!(" {} {}", command, self.spin));
+                } else {
+                    self.term.write(&format!(" {}", self.spin));
+                }
             }
         }
         self.term.newline();

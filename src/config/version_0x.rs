@@ -16,6 +16,7 @@ struct CiIcons {
     ok: Option<String>,
     ko: Option<String>,
     cancelled: Option<String>,
+    display_commands: Option<bool>,
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
@@ -59,6 +60,9 @@ impl ConfigLoader for Version0x {
             }
             if let Some(cancelled) = &icons.cancelled {
                 ci_config.icons.cancelled = cancelled.clone()
+            }
+            if let Some(display_commands) = &icons.display_commands {
+                ci_config.icons.display_command = *display_commands
             }
         }
     }
