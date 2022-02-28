@@ -4,6 +4,7 @@ mod config;
 extern crate atty;
 extern crate indexmap;
 extern crate term;
+extern crate terminal_size;
 
 use crate::ci::display::TermCiDisplay;
 use crate::ci::Ci;

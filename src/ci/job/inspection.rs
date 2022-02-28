@@ -31,8 +31,8 @@ impl ProgressCollector {
         self.progresses.push(progress)
     }
 
-    pub fn last(&self) -> Option<&Progress> {
-        self.progresses.last()
+    pub fn last(&self) -> &Progress {
+        self.progresses.last().unwrap()
     }
 }
 
@@ -65,10 +65,8 @@ impl JobProgressTracker {
             return true;
         }
         for progress in self.states.values() {
-            if let Some(progress) = progress.last() {
-                if progress.is_pending() {
-                    return false;
-                }
+            if progress.last().is_pending() {
+                return false;
             }
         }
         self.end_time = Some(SystemTime::now());

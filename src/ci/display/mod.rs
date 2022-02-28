@@ -1,11 +1,12 @@
 mod spinner;
 
-use crate::ci::job::inspection::{JobProgressTracker, ProgressCollector};
+use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::schedule::CiDisplay;
 use crate::ci::job::JobOutput;
 use crate::ci::job::Progress;
+use crate::terminal_size::terminal_size;
 use spinner::Spinner;
-use std::fmt::{Display, Formatter};
+use std::cmp::max;
 use std::time::SystemTime;
 use term::StdoutTerminal;
 
@@ -27,15 +28,16 @@ impl Default for CiDisplayDict {
 
 pub struct TermCiDisplay<'a> {
     spin: Spinner<'a>,
-    term: Box<StdoutTerminal>,
-    written_lines: u16,
+    term: TermWrapper,
     dict: CiDisplayDict,
+    max_job_name_len: usize,
 }
 
 impl<'a> TermCiDisplay<'a> {
     pub fn finish(&mut self, tracker: &JobProgressTracker) {
         self.refresh(tracker, 0);
         self.clear();
+        self.term.flush();
         for (job_name, progress_collector) in &tracker.states {
             println!("Running tasks for job {job_name}");
             for progress in &progress_collector.progresses {
@@ -96,109 +98,112 @@ impl<'a> TermCiDisplay<'a> {
 
 impl<'a> CiDisplay for TermCiDisplay<'a> {
     fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
-        let previous_written_lines = self.written_lines;
-        self.written_lines = 0;
-        (0..previous_written_lines).for_each(|_| {
-            self.term.cursor_up().unwrap();
-        });
-        self.term.carriage_return().unwrap();
-        let mut spin = self.spin.plus_one();
-        for (job_name, progress_collector) in &tracker.states {
-            self.term.delete_line().unwrap();
-            writeln!(
-                self.term,
-                "{}",
-                TempStatusLine::new(&spin, job_name, progress_collector, &self.dict)
-            )
-            .unwrap();
-            self.written_lines += 1;
-            spin = spin.plus_one();
+        self.term.clear();
+        for (job_name, _) in &tracker.states {
+            self.max_job_name_len = max(self.max_job_name_len, job_name.len());
         }
-        (previous_written_lines..self.written_lines).for_each(|_| {
-            self.term.delete_line().unwrap();
-        });
+        for (job_name, progress_collector) in &tracker.states {
+            self.display(job_name, progress_collector.last());
+        }
+        self.term.flush();
         self.spin.tick(elapsed);
     }
 }
 
-struct TempStatusLine<'a> {
-    spin: &'a Spinner<'a>,
-    job_name: &'a str,
-    progress_collector: &'a ProgressCollector,
-    dict: &'a CiDisplayDict,
+struct TermWrapper {
+    term: Box<StdoutTerminal>,
+    written_lines: u16,
+    written_chars: usize,
 }
 
-impl Display for TempStatusLine<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let progress = self.progress_collector.last().unwrap();
-
-        match progress {
-            Progress::Available => {
-                write!(f, "{:12} not started yet", self.job_name)
-            }
-            Progress::Terminated(true) => {
-                write!(f, "{:12} {}", self.job_name, self.dict.ok)
-            }
-            Progress::Terminated(false) => {
-                write!(f, "{:12} {}", self.job_name, self.dict.ko)
-            }
-            Progress::Partial(_, _) => {
-                write!(f, "{:12} {}", self.job_name, self.spin)
-            }
-            Progress::Blocked(blocked_by) => {
-                write!(f, "{:12} blocked by ", self.job_name)?;
-                let mut len = blocked_by.len();
-                for job in blocked_by {
-                    write!(f, "{}", job)?;
-                    len -= 1;
-                    if len > 0 {
-                        write!(f, ", ")?;
-                    }
-                }
-                Ok(())
-            }
-            Progress::Cancelled => {
-                write!(f, "{:12} {}", self.job_name, self.dict.cancelled)
-            }
-            Progress::Started(command) => {
-                write!(f, "{:12} {} {}", self.job_name, command, self.spin)
-            }
+impl Default for TermWrapper {
+    fn default() -> Self {
+        Self {
+            term: term::stdout().unwrap(),
+            written_lines: 0,
+            written_chars: 0,
         }
     }
 }
 
-impl<'a> TempStatusLine<'a> {
-    fn new(
-        spin: &'a Spinner,
-        job_name: &'a str,
-        progress_collector: &'a ProgressCollector,
-        dict: &'a CiDisplayDict,
-    ) -> Self {
-        TempStatusLine {
-            spin,
-            job_name,
-            progress_collector,
-            dict,
+impl TermWrapper {
+    pub fn newline(&mut self) {
+        self.written_lines += 1;
+        self.written_chars = 0;
+        writeln!(self.term).unwrap();
+    }
+    pub fn write(&mut self, message: &str) {
+        let termsize = terminal_size().unwrap().0 .0 as usize;
+        write!(self.term, "{}", message).unwrap();
+        self.written_chars += message.len();
+        if self.written_chars > termsize {
+            self.written_chars %= termsize;
+            self.written_lines += 1;
         }
     }
-}
-
-impl<'a> TermCiDisplay<'a> {
-    fn clear(&mut self) {
+    pub fn clear(&mut self) {
         (0..self.written_lines as usize).for_each(|_| {
             self.term.cursor_up().unwrap();
             self.term.carriage_return().unwrap();
             self.term.delete_line().unwrap();
         });
-        self.term.reset().unwrap();
         self.written_lines = 0;
+        self.written_chars = 0;
     }
+
+    pub fn flush(&mut self) {
+        self.term.reset().unwrap();
+    }
+}
+
+impl<'a> TermCiDisplay<'a> {
+    fn display(&mut self, job_name: &str, progress: &Progress) {
+        self.term
+            .write(&format!("{:1$}", job_name, self.max_job_name_len));
+        match progress {
+            Progress::Available => {
+                self.term.write("not started yet");
+            }
+            Progress::Terminated(true) => {
+                self.term.write(&format!(" {}", self.dict.ok));
+            }
+            Progress::Terminated(false) => {
+                self.term.write(&format!(" {}", self.dict.ko));
+            }
+            Progress::Partial(_, _) => {
+                self.term.write(&format!(" {}", self.spin));
+            }
+            Progress::Blocked(blocked_by) => {
+                self.term.write(" blocked by ");
+                let mut len = blocked_by.len();
+                for job in blocked_by {
+                    self.term.write(job);
+                    len -= 1;
+                    if len > 0 {
+                        self.term.write(", ");
+                    }
+                }
+            }
+            Progress::Cancelled => {
+                self.term.write(&format!(" {}", self.dict.cancelled));
+            }
+            Progress::Started(command) => {
+                self.term.write(&format!(" {} {}", command, self.spin));
+            }
+        }
+        self.term.newline();
+    }
+
+    fn clear(&mut self) {
+        self.term.clear()
+    }
+
     pub fn new(states: &'a Vec<String>, per_frame: usize, dict: CiDisplayDict) -> Self {
         TermCiDisplay {
-            term: term::stdout().unwrap(),
-            written_lines: 0,
+            term: TermWrapper::default(),
             spin: Spinner::new(states, per_frame),
             dict,
+            max_job_name_len: 0,
         }
     }
 }

@@ -32,12 +32,6 @@ impl<'a> Spinner<'a> {
         };
         self.current_frame = if up { 0 } else { self.current_frame + frames };
     }
-
-    pub fn plus_one(&self) -> Self {
-        let mut clone = self.clone();
-        clone.tick(self.per_frame);
-        clone
-    }
 }
 
 impl<'a> Display for Spinner<'a> {
@@ -77,8 +71,5 @@ mod tests {
         assert_eq!("toto", format!("{spinner}"));
         spinner.tick(1);
         assert_eq!("tata", format!("{spinner}"));
-
-        let other_spinner = spinner.plus_one();
-        assert_eq!("titi", format!("{other_spinner}"));
     }
 }
