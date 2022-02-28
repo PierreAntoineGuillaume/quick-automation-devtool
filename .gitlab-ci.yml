@@ -36,7 +36,6 @@ fetch:
 clippy:
   image: rustlang/rust:nightly
   script:
-    - cargo clippy --tests
     - cargo clippy
 
 lint-commits:
@@ -56,7 +55,6 @@ fmt:
 rust-nightly:
   image: rustlang/rust:nightly
   script:
-    - cargo build --verbose
     - cargo test --verbose
 
 shellcheck:
