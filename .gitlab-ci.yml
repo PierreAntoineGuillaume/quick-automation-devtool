@@ -1,7 +1,7 @@
 variables:
   RUSTFLAGS: "-D warnings"
   CARGO_HOME: "$CI_PROJECT_DIR/.cargo"
-  PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/dt/${CI_COMMIT_TAG}/dt-${CI_COMMIT_TAG}"
+  PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/dt/${CI_COMMIT_TAG}/dt"
 
 stages:
   - build
@@ -23,7 +23,7 @@ fetch:
     - cargo build --release
     - test "$CI_COMMIT_TAG" == "$(target/release/dt --version)"
     - mkdir bin
-    - cp target/release/dt bin/dt-${CI_COMMIT_TAG}
+    - cp target/release/dt bin/dt
   artifacts:
     paths:
       - bin
@@ -72,10 +72,10 @@ upload binary:
   rules:
     - if: $CI_COMMIT_TAG
   script:
-    - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file bin/dt-${CI_COMMIT_TAG} ${PACKAGE_REGISTRY_URL}'
+    - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file bin/dt ${PACKAGE_REGISTRY_URL}'
 
 changelog:
-#  stage: publish
+  stage: publish
   image: alpine
   script:
     - apk add bash git
@@ -83,12 +83,6 @@ changelog:
   artifacts:
     reports:
       dotenv: description.env
-
-print changelog:
-  stage: publish
-  image: alpine
-  script:
-    - echo $CHANGELOG
 
 release:
   stage: release
@@ -102,10 +96,11 @@ release:
     - echo "releasing dt..."
   release:
     name: 'Release $CI_COMMIT_TAG'
-    description: 'automated release of dt for tag $CI_COMMIT_TAG'
+    description: '$CHANGELOG'
     tag_name: '$CI_COMMIT_TAG'
     ref: '$CI_COMMIT_TAG'
     assets:
       links:
         - name: 'dt-${CI_COMMIT_TAG}'
           url: "${PACKAGE_REGISTRY_URL}"
+          link_type: package
