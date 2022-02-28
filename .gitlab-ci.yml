@@ -68,7 +68,7 @@ test-autocomplete:
   script:
     - tools/bash-unit-tests.sh
 
-upload:
+upload binary:
   stage: publish
   image: curlimages/curl:latest
   rules:
