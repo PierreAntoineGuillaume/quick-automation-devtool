@@ -75,21 +75,20 @@ upload binary:
     - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file bin/dt-${CI_COMMIT_TAG} ${PACKAGE_REGISTRY_URL}'
 
 changelog:
-  stage: publish
+#  stage: publish
   image: alpine
   script:
     - apk add bash git
-    - |
-      {
-        echo "changelog:"
-        echo '```'
-        ./tools/changelog
-        echo '```'
-      } > description.env
-    - cat description.env
+    - ./tools/changelog --as-web > description.env
   artifacts:
     reports:
       dotenv: description.env
+
+print changelog:
+  stage: publish
+  image: alpine
+  script:
+    - echo $CHANGELOG
 
 release:
   stage: release

@@ -4,7 +4,23 @@ set -euo pipefail
 
 latest_tag=$(git tag | tail -n 1)
 
+format=
+while (( $# )); do
+  case "$1" in
+    --as-web)
+      format=web
+      ;;
+  esac
+  shift
+done
+
 mapfile -t commits < <(git log "$latest_tag..HEAD" --format="%s" --no-merges )
 
-printf -- "%s\n" "${commits[@]}"
+if [ -n "$format" ]; then
+  printf 'CHANGELOG="'
+fi
+printf -- "%s<br>" "${commits[@]}"
 
+if [ -n "$format" ]; then
+  echo '"'
+fi
