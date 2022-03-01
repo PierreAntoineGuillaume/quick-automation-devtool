@@ -1,10 +1,17 @@
-version: 0.x
+version: 0.y
 jobs:
   fmt: ["cargo fmt"]
   clippy: [ 'cargo clippy --tests --color always' ]
   tests: [ 'cargo test --color always' ]
 constraints:
-  fmt: [ clippy, tests]
-ci_icons:
+  blocks:
+    fmt: [ clippy, tests]
+  needs:
+display:
   ok: "🌺"
   ko: "🥀"
+  cancelled: "!"
+  show_command: false
+  spinner:
+    frames: [".  ", ".. ", "...", ".. ", ".  "]
+    per_frames: 80

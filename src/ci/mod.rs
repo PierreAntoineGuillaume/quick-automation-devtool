@@ -1,9 +1,9 @@
-use crate::ci::display::CiDisplayConfig;
+use crate::ci::display::{CiDisplayConfig, NullCiDisplay};
 use crate::ci::job::dag::Dag;
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::schedule::{schedule, JobRunner, JobStarter};
+use crate::ci::job::schedule::{schedule, CiDisplay, JobRunner, JobStarter};
 use crate::ci::job::JobOutput;
-use crate::config::Config;
+use crate::config::{Config, ConfigPayload};
 use crate::TermCiDisplay;
 use job::{Job, JobProgressConsumer};
 use regex::Regex;
@@ -27,14 +27,19 @@ pub struct Ci {}
 
 impl Ci {
     pub fn run(&mut self, config: Config) -> Result<(), Option<String>> {
-        let config = config.load()?;
-        let ci_config = config.ci;
+        let mut payload = ConfigPayload::default();
+        config.load_with_args_into(&mut payload)?;
+        let ci_config = payload.ci;
 
-        let mut display = TermCiDisplay::new(&ci_config.display);
+        let mut display: Box<dyn CiDisplay> = if payload.quiet {
+            Box::new(NullCiDisplay {})
+        } else {
+            Box::new(TermCiDisplay::new(&ci_config.display))
+        };
 
         let dag = Dag::new(&ci_config.jobs, &ci_config.constraints).unwrap();
 
-        let tracker = schedule(dag, &mut ParrallelJobStarter::new(), &mut display);
+        let tracker = schedule(dag, &mut ParrallelJobStarter::new(), &mut *display);
 
         display.finish(&tracker);
 

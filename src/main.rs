@@ -8,42 +8,17 @@ extern crate terminal_size;
 
 use crate::ci::display::TermCiDisplay;
 use crate::ci::Ci;
-use crate::config::Config;
-use argh::FromArgs;
+use crate::config::argh::{Args, Subcommands};
+use crate::config::{Config, OptionConfigPayload};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[derive(FromArgs, PartialEq, Debug)]
-#[argh(description = "dt is a tool to help with testing, and dev-related tasks")]
-struct Args {
-    #[argh(switch, short = 'v', description = "show the executable version")]
-    version: bool,
-
-    #[argh(subcommand)]
-    nested: Option<Subcommands>,
-}
-
-#[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand)]
-enum Subcommands {
-    Ci(CiArgs),
-    Autocomplete(AutocompleteArgs),
-}
-
-#[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "ci", description = "play the ci")]
-struct CiArgs {}
-
-#[derive(FromArgs, PartialEq, Debug)]
-#[argh(
-    subcommand,
-    name = "autocomplete",
-    description = "generate bash completion script"
-)]
-struct AutocompleteArgs {}
-
 fn main() {
     let args: Args = argh::from_env();
+
+    let mut option_config = OptionConfigPayload::default();
+
+    args.fill(&mut option_config);
 
     if args.version {
         println!("v{}", VERSION);
@@ -71,7 +46,7 @@ fn main() {
         .or_else::<String, _>(|_| Ok(String::from("dt")))
         .unwrap();
 
-    let config = Config::from(&envvar);
+    let config = Config::from(option_config, &envvar);
 
     if let Subcommands::Ci(_) = command {
         match (Ci {}).run(config) {

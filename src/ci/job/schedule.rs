@@ -15,6 +15,7 @@ pub trait JobStarter {
 
 pub trait CiDisplay {
     fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize);
+    fn finish(&mut self, tracker: &JobProgressTracker);
 }
 
 pub fn schedule(
@@ -102,6 +103,7 @@ pub fn read(rx: &Receiver<JobProgress>) -> Option<JobProgress> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ci::display::NullCiDisplay;
     use crate::ci::job::Job;
 
     impl Job {
@@ -151,11 +153,6 @@ mod tests {
         fn delay(&mut self) -> usize {
             0
         }
-    }
-
-    pub struct NullCiDisplay {}
-    impl CiDisplay for NullCiDisplay {
-        fn refresh(&mut self, _: &JobProgressTracker, _: usize) {}
     }
 
     pub struct TestJobRunner {}

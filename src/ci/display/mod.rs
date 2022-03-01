@@ -39,6 +39,12 @@ impl Default for CiDisplayConfig {
     }
 }
 
+pub struct NullCiDisplay {}
+impl CiDisplay for NullCiDisplay {
+    fn refresh(&mut self, _: &JobProgressTracker, _: usize) {}
+    fn finish(&mut self, _: &JobProgressTracker) {}
+}
+
 pub struct TermCiDisplay<'a> {
     spin: Spinner<'a>,
     term: TermWrapper,
@@ -46,8 +52,19 @@ pub struct TermCiDisplay<'a> {
     max_job_name_len: usize,
 }
 
-impl<'a> TermCiDisplay<'a> {
-    pub fn finish(&mut self, tracker: &JobProgressTracker) {
+impl<'a> CiDisplay for TermCiDisplay<'a> {
+    fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
+        self.term.clear();
+        for (job_name, _) in &tracker.states {
+            self.max_job_name_len = max(self.max_job_name_len, job_name.len());
+        }
+        for (job_name, progress_collector) in &tracker.states {
+            self.display(job_name, progress_collector.last());
+        }
+        self.term.flush();
+        self.spin.tick(elapsed);
+    }
+    fn finish(&mut self, tracker: &JobProgressTracker) {
         self.refresh(tracker, 0);
         self.clear();
         self.term.flush();
@@ -110,20 +127,6 @@ impl<'a> TermCiDisplay<'a> {
             status.1,
             elasped / 1000f64
         );
-    }
-}
-
-impl<'a> CiDisplay for TermCiDisplay<'a> {
-    fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
-        self.term.clear();
-        for (job_name, _) in &tracker.states {
-            self.max_job_name_len = max(self.max_job_name_len, job_name.len());
-        }
-        for (job_name, progress_collector) in &tracker.states {
-            self.display(job_name, progress_collector.last());
-        }
-        self.term.flush();
-        self.spin.tick(elapsed);
     }
 }
 
