@@ -2,6 +2,7 @@ mod version_0x;
 mod version_0y;
 
 use crate::ci::CiConfig;
+use crate::config::version_0y::Version0y;
 use regex::Regex;
 use serde::Deserialize;
 use std::fs;
@@ -121,28 +122,35 @@ impl Config {
 
     fn parse_toml(content: &str) -> Result<Box<dyn ConfigLoader>, ConfigError> {
         let version =
-            toml::from_str::<Version>(content).map_err(|_| ConfigError::NoVersion("0.x"))?;
+            toml::from_str::<Version>(content).map_err(|_| ConfigError::NoVersion("0.y"))?;
 
-        if version.version != "0.x" {
-            return Err(ConfigError::BadVersion(version.version, "0.x"));
-        }
-
-        let v0x = toml::from_str::<Version0x>(content)
-            .map_err(|e| ConfigError::ParseError(version.version.clone(), e.to_string()))?;
-
-        Ok(Box::new(v0x))
+        Ok(match version.version.as_str() {
+            "0.x" => Box::new(
+                toml::from_str::<Version0x>(content)
+                    .map_err(|e| ConfigError::ParseError(version.version.clone(), e.to_string()))?,
+            ),
+            "0.y" => Box::new(
+                toml::from_str::<Version0y>(content)
+                    .map_err(|e| ConfigError::ParseError(version.version.clone(), e.to_string()))?,
+            ),
+            _ => return Err(ConfigError::BadVersion(version.version, "0.y")),
+        })
     }
 
     fn parse_yaml(content: &str) -> Result<Box<dyn ConfigLoader>, ConfigError> {
         let version =
-            serde_yaml::from_str::<Version>(content).map_err(|_| ConfigError::NoVersion("0.x"))?;
-        if version.version != "0.x" {
-            return Err(ConfigError::BadVersion(version.version, "0.x"));
-        }
+            serde_yaml::from_str::<Version>(content).map_err(|_| ConfigError::NoVersion("0.y"))?;
 
-        let v0x = serde_yaml::from_str::<Version0x>(content)
-            .map_err(|e| ConfigError::ParseError(version.version.clone(), e.to_string()))?;
-
-        Ok(Box::new(v0x))
+        Ok(match version.version.as_str() {
+            "0.x" => Box::new(
+                serde_yaml::from_str::<Version0x>(content)
+                    .map_err(|e| ConfigError::ParseError(version.version.clone(), e.to_string()))?,
+            ),
+            "0.y" => Box::new(
+                serde_yaml::from_str::<Version0y>(content)
+                    .map_err(|e| ConfigError::ParseError(version.version.clone(), e.to_string()))?,
+            ),
+            _ => return Err(ConfigError::BadVersion(version.version, "0.y")),
+        })
     }
 }
