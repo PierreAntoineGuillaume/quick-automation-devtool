@@ -2,6 +2,7 @@ mod version_0x;
 mod version_0y;
 
 use crate::ci::CiConfig;
+use regex::Regex;
 use serde::Deserialize;
 use std::fs;
 use std::path::Path;
@@ -82,12 +83,11 @@ impl Config {
         let content =
             fs::read_to_string(&filename).map_err(|_| format!("could not read {}", filename))?;
 
-        let loader = if filename.ends_with(".toml") {
+        let loader = if Regex::new(r"\.toml(\.dist)?$").unwrap().is_match(&filename) {
             Config::parse_toml(&content)
-        } else if filename.ends_with(".yaml")
-            || filename.ends_with(".yml")
-            || filename.ends_with(".yaml.dist")
-            || filename.ends_with(".yml.dist")
+        } else if Regex::new(r"\.ya?ml(\.dist)?$")
+            .unwrap()
+            .is_match(&filename)
         {
             Config::parse_yaml(&content)
         } else {
