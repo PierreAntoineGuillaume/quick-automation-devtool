@@ -254,7 +254,7 @@ impl Dag {
 
         if let Some(watcher) = self.all_jobs.get_mut(job) {
             if !matches!(watcher.state, JobState::Started) {
-                panic!(
+                unreachable!(
                     "bad state {:?} for job {:?} should be {:?}",
                     &watcher.state,
                     watcher.job.name,
@@ -264,7 +264,7 @@ impl Dag {
 
             watcher.state = JobState::Terminated(result);
         } else {
-            panic!("recorded job not in all_jobs");
+            unreachable!("recorded job not in all_jobs");
         }
 
         if job_went_wrong {
@@ -355,7 +355,7 @@ impl Dag {
                     vec
                 }
                 _ => {
-                    panic!("This statement cannot happen")
+                    unreachable!("This statement cannot happen")
                 }
             };
             blocked_job.state = JobState::Cancelled(list)

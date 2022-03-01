@@ -36,7 +36,7 @@ pub fn schedule(
                 JobState::Pending => Progress::Available,
                 JobState::Blocked => Progress::Blocked(job.block.clone()),
                 _ => {
-                    panic!("This state is impossible with no poll yet")
+                    unreachable!("This state is impossible with no poll yet")
                 }
             },
         ))
@@ -168,7 +168,7 @@ mod tests {
             } else if let Some(stripped) = job.strip_prefix("crash:") {
                 JobOutput::ProcessError(stripped.into())
             } else {
-                panic!("Job should begin with ok:, ko, or crash:")
+                unreachable!("Job should begin with ok:, ko, or crash:")
             }
         }
     }
