@@ -2,25 +2,23 @@
 
 set -euo pipefail
 
-latest_tag=$(git tag | tail -n 1)
+latest_tag=$(git tag --no-contains HEAD | tail -n 1)
 
 format=
-while (( $# )); do
+while (($#)); do
   case "$1" in
-    --as-web)
-      format=web
-      ;;
+  --format)
+    format=$2
+    shift
+    ;;
   esac
   shift
 done
 
-mapfile -t commits < <(git log "$latest_tag..HEAD" --format="%s" --no-merges )
+mapfile -t commits < <(git log "$latest_tag..HEAD" --format="%s" --no-merges)
 
-if [ -n "$format" ]; then
-  printf 'CHANGELOG="'
-fi
-printf -- "%s<br>" "${commits[@]}"
-
-if [ -n "$format" ]; then
-  echo '"'
+if [ "$format" == "web" ]; then
+  printf -- "%s<br>" "${commits[@]}"
+else
+  printf -- "%s\n" "${commits[@]}"
 fi
