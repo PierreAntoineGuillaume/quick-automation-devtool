@@ -81,7 +81,7 @@ changelog:
     - if: $CI_COMMIT_TAG
   script:
     - apk add bash git
-    - printf 'CHANGELOG="%s"\n' "$(./tools/changelog --format web)" > description.env
+    - printf 'CHANGELOG=%s\n' "$(./tools/changelog --format web)" > description.env
   artifacts:
     reports:
       dotenv: description.env
