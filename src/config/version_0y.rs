@@ -100,26 +100,30 @@ impl ConfigLoader for Version0y {
             }
         }
     }
+}
 
-    fn read(&mut self, payload: &ConfigPayload) {
-        self.jobs = payload
-            .ci
-            .jobs
-            .iter()
-            .cloned()
-            .map(|job| (job.name, job.instructions))
-            .collect();
-        self.constraints = Some(from_vec(&payload.ci.constraints));
-        self.display = Some(Display {
-            ok: Some(payload.ci.display.ok.to_string()),
-            ko: Some(payload.ci.display.ko.to_string()),
-            cancelled: Some(payload.ci.display.cancelled.to_string()),
-            show_command: Some(payload.ci.display.show_commands),
-            display: None,
-            spinner: Some(Spinner {
-                frames: payload.ci.display.spinner.0.clone(),
-                per_frames: payload.ci.display.spinner.1,
+impl Version0y {
+    pub fn from(payload: ConfigPayload) -> Self {
+        Self {
+            jobs: payload
+                .ci
+                .jobs
+                .iter()
+                .cloned()
+                .map(|job| (job.name, job.instructions))
+                .collect(),
+            constraints: Some(from_vec(&payload.ci.constraints)),
+            display: Some(Display {
+                ok: Some(payload.ci.display.ok.to_string()),
+                ko: Some(payload.ci.display.ko.to_string()),
+                cancelled: Some(payload.ci.display.cancelled.to_string()),
+                show_command: Some(payload.ci.display.show_commands),
+                display: None,
+                spinner: Some(Spinner {
+                    frames: payload.ci.display.spinner.0.clone(),
+                    per_frames: payload.ci.display.spinner.1,
+                }),
             }),
-        });
+        }
     }
 }

@@ -17,11 +17,14 @@ unit() {
   fi
 }
 
-unit "dt " "autocomplete" "ci"
+unit "dt " "autocomplete" "ci" "config" "-q" "--quiet" "--version" "--help"
 unit "dt az" ""
 unit "dt a" "autocomplete"
 unit "dt auto" "autocomplete"
 unit "dt c" "ci"
 unit "dt ci " ""
+unit "dt co" "config"
+unit "dt config " "migrate" "--help"
+unit "dt config m" "migrate"
 
 exit "$err_counter"

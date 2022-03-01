@@ -1,6 +1,6 @@
 use crate::ci::job::Job;
 use crate::config::{ConfigLoader, ConfigPayload};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub type JobSet = HashMap<String, Vec<String>>;
@@ -14,13 +14,13 @@ fn from_vec(constraints: &[(String, String)]) -> Constraints {
     map
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct CiSpinner {
     frames: Vec<String>,
     per_frames: usize,
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct CiIcons {
     ok: Option<String>,
     ko: Option<String>,
@@ -28,7 +28,7 @@ struct CiIcons {
     display_commands: Option<bool>,
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Version0x {
     jobs: JobSet,
     constraints: Option<Constraints>,
@@ -75,25 +75,29 @@ impl ConfigLoader for Version0x {
             }
         }
     }
+}
 
-    fn read(&mut self, payload: &ConfigPayload) {
-        self.jobs = payload
-            .ci
-            .jobs
-            .iter()
-            .cloned()
-            .map(|job| (job.name, job.instructions))
-            .collect();
-        self.constraints = Some(from_vec(&payload.ci.constraints));
-        self.ci_spinner = Some(CiSpinner {
-            frames: payload.ci.display.spinner.0.clone(),
-            per_frames: payload.ci.display.spinner.1,
-        });
-        self.ci_icons = Some(CiIcons {
-            ok: Some(payload.ci.display.ok.clone()),
-            ko: Some(payload.ci.display.ko.clone()),
-            cancelled: Some(payload.ci.display.cancelled.clone()),
-            display_commands: Some(payload.ci.display.show_commands),
-        })
+impl Version0x {
+    pub fn from(payload: ConfigPayload) -> Self {
+        Self {
+            jobs: payload
+                .ci
+                .jobs
+                .iter()
+                .cloned()
+                .map(|job| (job.name, job.instructions))
+                .collect(),
+            constraints: Some(from_vec(&payload.ci.constraints)),
+            ci_spinner: Some(CiSpinner {
+                frames: payload.ci.display.spinner.0.clone(),
+                per_frames: payload.ci.display.spinner.1,
+            }),
+            ci_icons: Some(CiIcons {
+                ok: Some(payload.ci.display.ok.clone()),
+                ko: Some(payload.ci.display.ko.clone()),
+                cancelled: Some(payload.ci.display.cancelled.clone()),
+                display_commands: Some(payload.ci.display.show_commands),
+            }),
+        }
     }
 }

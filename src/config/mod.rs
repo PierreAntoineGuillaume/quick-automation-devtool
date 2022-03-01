@@ -1,7 +1,8 @@
 pub(crate) mod argh;
+pub mod migrate;
 mod toml_parser;
-mod version_0x;
-mod version_0y;
+pub mod version_0x;
+pub mod version_0y;
 mod yaml_parser;
 
 use crate::ci::CiConfig;
@@ -70,7 +71,7 @@ pub struct OptionConfigPayload {
 
 impl OptionConfigPayload {
     pub fn load_into(&self, config: &mut ConfigPayload) {
-        if let Some(_) = self.display {
+        if self.display.is_some() {
             config.quiet = true;
         }
     }
@@ -78,7 +79,6 @@ impl OptionConfigPayload {
 
 pub trait ConfigLoader {
     fn load(&self, payload: &mut ConfigPayload);
-    fn read(&mut self, origin: &ConfigPayload);
 }
 
 pub trait FormatParser {

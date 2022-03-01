@@ -24,6 +24,7 @@ impl Args {
 pub enum Subcommands {
     Ci(CiArgs),
     Autocomplete(AutocompleteArgs),
+    Config(ConfigArgs),
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -37,3 +38,46 @@ pub struct CiArgs {}
     description = "generate bash completion script"
 )]
 pub struct AutocompleteArgs {}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(
+    subcommand,
+    name = "config",
+    description = "interract with configuration"
+)]
+pub struct ConfigArgs {
+    #[argh(subcommand)]
+    pub command: ConfigSubcommands,
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand)]
+pub enum ConfigSubcommands {
+    Migrate(MigrateArgs),
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(
+    subcommand,
+    name = "migrate",
+    description = "migrate to and from config"
+)]
+pub struct MigrateArgs {
+    #[argh(subcommand)]
+    pub to: MigrateToSubCommands,
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand)]
+pub enum MigrateToSubCommands {
+    V0y(V0yArgs),
+    V0x(V0xArgs),
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "0.y", description = "migrate config to 0.y")]
+pub struct V0yArgs {}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "0.x", description = "migrate config to 0.x")]
+pub struct V0xArgs {}
