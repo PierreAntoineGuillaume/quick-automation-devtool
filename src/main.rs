@@ -10,8 +10,8 @@ extern crate textwrap;
 use crate::ci::display::TermCiDisplay;
 use crate::ci::Ci;
 use crate::config::argh::{Args, ConfigSubcommands, MigrateToSubCommands, Subcommands};
-use crate::config::migrate::{Migrate, Migration};
-use crate::config::{Config, ConfigPayload, OptionConfigPayload};
+use crate::config::migrate::Migrate;
+use crate::config::{Config, ConfigPayload, Format, OptionConfigPayload};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -68,21 +68,29 @@ fn main() {
                     eprintln!("dt: could not read config: {}", err);
                     std::process::exit(1);
                 } else {
+                    let used_conf_file = config
+                        .get_first_available_config_file()
+                        .expect("Error passed before");
+                    let format = config
+                        .get_parser(&used_conf_file)
+                        .expect("Error passed before")
+                        .format();
+
                     let migrate = Migrate::new(config);
-                    match match version.to {
+                    let migration = match version.to {
                         MigrateToSubCommands::V0y(_) => migrate.to0y(),
                         MigrateToSubCommands::V0x(_) => migrate.to0x(),
-                    } {
-                        Ok(serializable) => match serializable {
-                            Migration::Version0x(version) => {
-                                println!("{}", toml::to_string(&version).unwrap())
-                            }
-                            Migration::Version0y(version) => {
-                                println!("{}", toml::to_string(&version).unwrap())
-                            }
-                        },
-                        Err(message) => eprintln!("dt: {}", message),
+                    };
+                    if migration.is_err() {
+                        eprintln!("dt: {}", migration.unwrap_err());
+                        std::process::exit(1)
                     }
+
+                    let serialization = match (format, migration.unwrap()) {
+                        (Format::Yaml, serializable) => migrate.yaml(serializable),
+                        (Format::Toml, serializable) => migrate.toml(serializable),
+                    };
+                    println!("{}", serialization)
                 }
             }
         },

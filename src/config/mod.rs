@@ -1,4 +1,4 @@
-pub(crate) mod argh;
+pub mod argh;
 pub mod migrate;
 mod toml_parser;
 pub mod version_0x;
@@ -8,7 +8,7 @@ mod yaml_parser;
 use crate::ci::CiConfig;
 use crate::config::toml_parser::TomlParser;
 use crate::config::yaml_parser::YamlParser;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
@@ -45,6 +45,18 @@ impl ConfigError {
                 )
             }
         }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialOrd, PartialEq, Clone)]
+pub enum Format {
+    Yaml,
+    Toml,
+}
+
+impl Default for Format {
+    fn default() -> Self {
+        Self::Toml
     }
 }
 
@@ -86,10 +98,11 @@ pub trait FormatParser {
     fn version(&self, text: &str) -> Result<Version, ()>;
     fn version0x(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
     fn version0y(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
+    fn format(&self) -> Format;
 }
 
 impl Config {
-    fn get_first_available_config_file(&self) -> Result<String, String> {
+    pub fn get_first_available_config_file(&self) -> Result<String, String> {
         let mut filename = None;
         for file in &self.possible_files {
             if Path::new(file).exists() {
@@ -133,30 +146,36 @@ impl Config {
         Ok(())
     }
 
+    pub fn get_parser(&self, filename: &str) -> Option<Box<dyn FormatParser>> {
+        let parsers = [YamlParser::boxed(), TomlParser::boxed()];
+        for parser in parsers {
+            if !parser.supports(filename) {
+                continue;
+            }
+            return Some(parser);
+        }
+        None
+    }
+
     pub fn parse(
         &self,
         filename: &str,
         content: &str,
     ) -> Result<Box<dyn ConfigLoader>, ConfigError> {
-        let parsers = [YamlParser::boxed(), TomlParser::boxed()];
+        let parser = self
+            .get_parser(filename)
+            .expect("This could not be reached, else no content would be provided in parse");
+        let version = parser
+            .version(content)
+            .map_err(|_| ConfigError::NoVersion("0.y"))?;
 
-        for parser in &parsers {
-            if !parser.supports(filename) {
-                continue;
-            }
-            let version = parser
-                .version(content)
-                .map_err(|_| ConfigError::NoVersion("0.y"))?;
-
-            let ver = match version.version.as_str() {
-                "0.x" => parser.version0x(content),
-                "0.y" => parser.version0y(content),
-                _ => return Err(ConfigError::BadVersion(version.version, "0.y")),
-            }
-            .map_err(|parse_error| ConfigError::ParseError(version.version.clone(), parse_error))?;
-
-            return Ok(ver);
+        let ver = match version.version.as_str() {
+            "0.x" => parser.version0x(content),
+            "0.y" => parser.version0y(content),
+            _ => return Err(ConfigError::BadVersion(version.version, "0.y")),
         }
-        unreachable!("This could not be reached, else no content would be provided in parse");
+        .map_err(|parse_error| ConfigError::ParseError(version.version.clone(), parse_error))?;
+
+        Ok(ver)
     }
 }

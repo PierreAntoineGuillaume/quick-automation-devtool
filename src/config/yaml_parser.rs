@@ -1,6 +1,7 @@
 use crate::config::version_0x::Version0x;
 use crate::config::version_0y::Version0y;
 use crate::config::{ConfigLoader, FormatParser, Version};
+use crate::Format;
 use regex::Regex;
 
 #[derive(Default)]
@@ -31,5 +32,9 @@ impl FormatParser for YamlParser {
         Ok(Box::new(
             serde_yaml::from_str::<Version0y>(text).map_err(|error| error.to_string())?,
         ))
+    }
+
+    fn format(&self) -> Format {
+        Format::Yaml
     }
 }

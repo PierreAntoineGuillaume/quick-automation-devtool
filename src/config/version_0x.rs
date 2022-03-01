@@ -30,6 +30,7 @@ struct CiIcons {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Version0x {
+    version: String,
     jobs: JobSet,
     constraints: Option<Constraints>,
     ci_spinner: Option<CiSpinner>,
@@ -80,6 +81,7 @@ impl ConfigLoader for Version0x {
 impl Version0x {
     pub fn from(payload: ConfigPayload) -> Self {
         Self {
+            version: String::from("0.x"),
             jobs: payload
                 .ci
                 .jobs

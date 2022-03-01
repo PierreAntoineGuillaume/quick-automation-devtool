@@ -6,6 +6,7 @@ pub struct Migrate {
     config: Config,
 }
 
+#[derive(Debug)]
 pub enum Migration {
     Version0x(Version0x),
     Version0y(Version0y),
@@ -26,5 +27,25 @@ impl Migrate {
         let mut payload = ConfigPayload::default();
         self.config.load_into(&mut payload)?;
         Ok(Migration::Version0y(Version0y::from(payload)))
+    }
+
+    pub fn toml(&self, migration: Migration) -> String {
+        let str = match migration {
+            Migration::Version0x(version) => toml::to_string(&version),
+            Migration::Version0y(version) => toml::to_string(&version),
+        };
+        if str.is_err() {
+            eprintln!("dt serialization error: {}", str.unwrap_err());
+            std::process::exit(1);
+        }
+
+        str.unwrap()
+    }
+
+    pub fn yaml(&self, migration: Migration) -> String {
+        match migration {
+            Migration::Version0x(version) => serde_yaml::to_string(&version).unwrap(),
+            Migration::Version0y(version) => serde_yaml::to_string(&version).unwrap(),
+        }
     }
 }

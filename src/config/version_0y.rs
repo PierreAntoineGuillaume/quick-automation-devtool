@@ -48,6 +48,7 @@ struct Display {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Version0y {
+    version: String,
     jobs: JobSet,
     constraints: Option<Constraints>,
     display: Option<Display>,
@@ -105,6 +106,7 @@ impl ConfigLoader for Version0y {
 impl Version0y {
     pub fn from(payload: ConfigPayload) -> Self {
         Self {
+            version: String::from("0.y"),
             jobs: payload
                 .ci
                 .jobs
