@@ -68,7 +68,7 @@ pub trait ConfigLoader {
 impl Config {
     pub fn from(env: &str) -> Self {
         let possible_files: Vec<String> =
-            ["toml.dist", "yaml.dist", "yml.dist", "toml", "yaml", "yml"]
+            ["toml", "yaml", "yml", "toml.dist", "yaml.dist", "yml.dist"]
                 .iter()
                 .map(|str| format!("{}.{}", env, str))
                 .collect();
