@@ -1,4 +1,4 @@
-use crate::OptionConfigPayload;
+use crate::{Format, OptionConfigPayload};
 use argh::FromArgs;
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -75,9 +75,39 @@ pub enum MigrateToSubCommands {
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand)]
+pub enum MigrateFormatSubCommand {
+    Toml(TomlArgs),
+    Yaml(YamlArgs),
+}
+
+impl MigrateFormatSubCommand {
+    pub fn map(&self) -> Format {
+        match self {
+            MigrateFormatSubCommand::Toml(_) => Format::Toml,
+            MigrateFormatSubCommand::Yaml(_) => Format::Yaml,
+        }
+    }
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "0.y", description = "migrate config to 0.y")]
-pub struct V0yArgs {}
+pub struct V0yArgs {
+    #[argh(subcommand)]
+    pub format: Option<MigrateFormatSubCommand>,
+}
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "0.x", description = "migrate config to 0.x")]
-pub struct V0xArgs {}
+pub struct V0xArgs {
+    #[argh(subcommand)]
+    pub format: Option<MigrateFormatSubCommand>,
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "to-toml", description = "migrate config to toml")]
+pub struct TomlArgs {}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "to-yaml", description = "migrate config to yaml")]
+pub struct YamlArgs {}

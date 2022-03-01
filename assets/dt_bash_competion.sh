@@ -35,6 +35,13 @@ _dt() {
     fi
     return 0
   fi
+  if [ "$COMP_CWORD" == 4 ]; then
+    if [ "${COMP_WORDS[1]}" == "config" ] && [ "${COMP_WORDS[2]}" == "migrate" ]; then
+      mapfile -t COMPREPLY < <(compgen -W "to-toml to-yaml --help" -- "${cur}")
+      return 0
+    fi
+    return 0
+  fi
   return 0
 }
 

@@ -71,15 +71,25 @@ fn main() {
                     let used_conf_file = config
                         .get_first_available_config_file()
                         .expect("Error passed before");
-                    let format = config
+                    let mut format = config
                         .get_parser(&used_conf_file)
                         .expect("Error passed before")
                         .format();
 
                     let migrate = Migrate::new(config);
                     let migration = match version.to {
-                        MigrateToSubCommands::V0y(_) => migrate.to0y(),
-                        MigrateToSubCommands::V0x(_) => migrate.to0x(),
+                        MigrateToSubCommands::V0y(sub) => {
+                            if let Some(new_format) = sub.format {
+                                format = new_format.map()
+                            }
+                            migrate.to0y()
+                        }
+                        MigrateToSubCommands::V0x(sub) => {
+                            if let Some(new_format) = sub.format {
+                                format = new_format.map()
+                            }
+                            migrate.to0x()
+                        }
                     };
                     if migration.is_err() {
                         eprintln!("dt: {}", migration.unwrap_err());
