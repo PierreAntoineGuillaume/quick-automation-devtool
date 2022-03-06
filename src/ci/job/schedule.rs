@@ -4,7 +4,7 @@ use crate::ci::job::{JobOutput, JobProgressTracker, Progress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
 pub trait JobRunner {
-    fn run(&self, job: &str) -> JobOutput;
+    fn run(&self, instruction: &str) -> JobOutput;
 }
 
 pub trait JobStarter {
@@ -157,12 +157,12 @@ mod tests {
 
     pub struct TestJobRunner {}
     impl JobRunner for TestJobRunner {
-        fn run(&self, job: &str) -> JobOutput {
-            if let Some(stripped) = job.strip_prefix("ok:") {
+        fn run(&self, instruction: &str) -> JobOutput {
+            if let Some(stripped) = instruction.strip_prefix("ok:") {
                 JobOutput::Success(stripped.into(), "".into())
-            } else if let Some(stripped) = job.strip_prefix("ko:") {
+            } else if let Some(stripped) = instruction.strip_prefix("ko:") {
                 JobOutput::JobError(stripped.into(), "".into())
-            } else if let Some(stripped) = job.strip_prefix("crash:") {
+            } else if let Some(stripped) = instruction.strip_prefix("crash:") {
                 JobOutput::ProcessError(stripped.into())
             } else {
                 unreachable!("Job should begin with ok:, ko, or crash:")

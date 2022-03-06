@@ -111,8 +111,8 @@ impl CommandJobRunner {
 }
 
 impl JobRunner for CommandJobRunner {
-    fn run(&self, job: &str) -> JobOutput {
-        let mut parts = job.split(' ');
+    fn run(&self, instruction: &str) -> JobOutput {
+        let mut parts = instruction.split(' ');
         if let Some(program) = parts.next() {
             let args: Vec<&str> = parts.into_iter().collect();
             match Command::new(&program).args(&args).output() {
@@ -125,7 +125,7 @@ impl JobRunner for CommandJobRunner {
                         JobOutput::JobError(stdout, stderr)
                     }
                 }
-                Err(e) => JobOutput::ProcessError(format!("{}: {}", job, e)),
+                Err(e) => JobOutput::ProcessError(format!("{}: {}", instruction, e)),
             }
         } else {
             JobOutput::ProcessError(String::from("No jobs to be ran"))
