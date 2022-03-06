@@ -1,10 +1,10 @@
 use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::{JobOutput, JobProgressTracker, Progress};
+use crate::ci::job::{Job, JobOutput, JobProgressTracker, Progress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
 pub trait JobRunner {
-    fn run(&self, instruction: &str) -> JobOutput;
+    fn run(&self, job: &Job, instruction: &str) -> JobOutput;
 }
 
 pub trait JobStarter {
@@ -157,7 +157,7 @@ mod tests {
 
     pub struct TestJobRunner {}
     impl JobRunner for TestJobRunner {
-        fn run(&self, instruction: &str) -> JobOutput {
+        fn run(&self, job: &Job, instruction: &str) -> JobOutput {
             if let Some(stripped) = instruction.strip_prefix("ok:") {
                 JobOutput::Success(stripped.into(), "".into())
             } else if let Some(stripped) = instruction.strip_prefix("ko:") {
@@ -165,7 +165,7 @@ mod tests {
             } else if let Some(stripped) = instruction.strip_prefix("crash:") {
                 JobOutput::ProcessError(stripped.into())
             } else {
-                unreachable!("Job should begin with ok:, ko, or crash:")
+                unreachable!("Job {} should begin with ok:, ko, or crash:", job.name)
             }
         }
     }

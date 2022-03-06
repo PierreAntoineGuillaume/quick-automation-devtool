@@ -111,7 +111,7 @@ impl CommandJobRunner {
 }
 
 impl JobRunner for CommandJobRunner {
-    fn run(&self, instruction: &str) -> JobOutput {
+    fn run(&self, _: &Job, instruction: &str) -> JobOutput {
         let mut parts = instruction.split(' ');
         if let Some(program) = parts.next() {
             let args: Vec<&str> = parts.into_iter().collect();

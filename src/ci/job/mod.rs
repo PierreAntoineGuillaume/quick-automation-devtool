@@ -38,7 +38,7 @@ impl Job {
                 &self.name,
                 Progress::Started(instruction.clone()),
             ));
-            let output = runner.run(instruction);
+            let output = runner.run(self, instruction);
             success = output.succeeded();
             let partial = Progress::Partial(instruction.clone(), output);
             consumer.consume(JobProgress::new(&self.name, partial));
