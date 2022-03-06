@@ -1,4 +1,5 @@
 use crate::ci::job::Job;
+use crate::config::instructions::InstructionCompiler;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -57,9 +58,13 @@ pub struct Version0y {
 impl ConfigLoader for Version0y {
     fn load(&self, payload: &mut ConfigPayload) {
         for (name, instruction) in &self.jobs {
+            let compiler = InstructionCompiler::default();
             payload.ci.jobs.push(Job {
                 name: name.clone(),
-                instructions: instruction.clone(),
+                instructions: instruction
+                    .iter()
+                    .map(|str| compiler.compile(str))
+                    .collect(),
             })
         }
 

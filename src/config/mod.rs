@@ -1,4 +1,5 @@
 pub mod argh;
+pub mod instructions;
 pub mod migrate;
 mod toml_parser;
 pub mod version_0x;

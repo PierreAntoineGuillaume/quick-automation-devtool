@@ -6,7 +6,6 @@ use crate::ci::job::JobOutput;
 use crate::config::{Config, ConfigPayload};
 use crate::TermCiDisplay;
 use job::{Job, JobProgressConsumer};
-use regex::Regex;
 use std::process::Command;
 use std::sync::mpsc::Sender;
 use std::thread;
@@ -113,8 +112,7 @@ impl CommandJobRunner {
 
 impl JobRunner for CommandJobRunner {
     fn run(&self, job: &str) -> JobOutput {
-        let regex = Regex::new(r"\s+").unwrap();
-        let mut parts = regex.split(job);
+        let mut parts = job.split(' ');
         if let Some(program) = parts.next() {
             let args: Vec<&str> = parts.into_iter().collect();
             match Command::new(&program).args(&args).output() {
