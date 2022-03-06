@@ -1,4 +1,4 @@
-version: 0.y
+version: unstable
 jobs:
   fmt: ["cargo fmt"]
   clippy: [ 'cargo clippy --tests --color always' ]

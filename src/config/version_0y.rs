@@ -106,7 +106,7 @@ impl ConfigLoader for Version0y {
 impl Version0y {
     pub fn from(payload: ConfigPayload) -> Self {
         Self {
-            version: String::from("0.y"),
+            version: String::from("unstable"),
             jobs: payload
                 .ci
                 .jobs

@@ -26,6 +26,6 @@ unit "dt ci " ""
 unit "dt co" "config"
 unit "dt config " "migrate" "--help"
 unit "dt config m" "migrate"
-unit "dt config migrate 0.y " "to-toml" "to-yaml --help"
+unit "dt config migrate unstable " "to-toml" "to-yaml --help"
 
 exit "$err_counter"

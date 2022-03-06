@@ -167,12 +167,12 @@ impl Config {
             .expect("This could not be reached, else no content would be provided in parse");
         let version = parser
             .version(content)
-            .map_err(|_| ConfigError::NoVersion("0.y"))?;
+            .map_err(|_| ConfigError::NoVersion("unstable"))?;
 
         let ver = match version.version.as_str() {
             "0.x" => parser.version0x(content),
-            "0.y" => parser.version0y(content),
-            _ => return Err(ConfigError::BadVersion(version.version, "0.y")),
+            "unstable" => parser.version0y(content),
+            _ => return Err(ConfigError::BadVersion(version.version, "unstable")),
         }
         .map_err(|parse_error| ConfigError::ParseError(version.version.clone(), parse_error))?;
 

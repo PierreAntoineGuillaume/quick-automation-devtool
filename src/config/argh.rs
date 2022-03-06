@@ -91,7 +91,11 @@ impl MigrateFormatSubCommand {
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "0.y", description = "migrate config to 0.y")]
+#[argh(
+    subcommand,
+    name = "unstable",
+    description = "migrate config to unstable"
+)]
 pub struct V0yArgs {
     #[argh(subcommand)]
     pub format: Option<MigrateFormatSubCommand>,
