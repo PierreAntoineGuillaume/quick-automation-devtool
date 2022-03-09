@@ -1,5 +1,5 @@
-use std::fmt::{Display, Formatter};
 use super::*;
+use std::fmt::{Display, Formatter};
 
 #[derive(Default)]
 struct JobTester {
@@ -17,7 +17,6 @@ impl JobTester {
             instructions: vec![],
         };
 
-
         job.run(instruction, &mut tester);
 
         format!("{tester}")
@@ -31,7 +30,7 @@ impl Display for JobTester {
         let mut len = self.args.len();
         for arg in &self.args {
             write!(f, "{}", arg)?;
-            len-=1;
+            len -= 1;
             if len > 0 {
                 write!(f, ", ")?;
             }
@@ -40,9 +39,8 @@ impl Display for JobTester {
     }
 }
 
-
 impl JobRunner for JobTester {
-    fn run(&mut self, program: &str, args: &[&str], _: &str) -> JobOutput {
+    fn run(&mut self, program: &str, args: &[&str]) -> JobOutput {
         self.program = program.to_string();
         self.args = args.iter().map(|str| str.to_string()).collect();
         JobOutput::ProcessError(String::default())
@@ -51,16 +49,13 @@ impl JobRunner for JobTester {
 
 #[test]
 pub fn simple_job() {
-    assert_eq!(
-        JobTester::run_job("task", None, None).to_string(),
-        "task\n[]"
-    );
+    assert_eq!(JobTester::run_job("task", None, None), "task\n[]");
 }
 
 #[test]
 pub fn simple_jobs_with_args() {
     assert_eq!(
-        JobTester::run_job("task with args", None, None).to_string(),
+        JobTester::run_job("task with args", None, None),
         "task\n[with, args]"
     )
 }
@@ -68,8 +63,16 @@ pub fn simple_jobs_with_args() {
 #[test]
 pub fn bash_jobs_with_args() {
     assert_eq!(
-        JobTester::run_job("task with args", Some("bash".to_string()), None).to_string(),
+        JobTester::run_job("task with args", Some("bash".to_string()), None),
         "bash\n[-c, task with args]"
+    )
+}
+
+#[test]
+pub fn docker_jobs_with_args() {
+    assert_eq!(
+        JobTester::run_job("task with args", None, Some("alpine".to_string())),
+        "docker\n[run, --rm, --user, $USER:$GROUPS, --volume, $PWD:$PWD, --workdir, $PWD, alpine, task, with, args]"
     )
 }
 

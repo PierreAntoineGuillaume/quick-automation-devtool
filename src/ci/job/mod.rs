@@ -52,6 +52,22 @@ impl Job {
     }
 
     fn run(&self, instruction: &str, runner: &mut dyn JobRunner) -> JobOutput {
+        if let Some(image) = &self.image {
+            let mut args = vec![
+                "run",
+                "--rm",
+                "--user",
+                "$USER:$GROUPS",
+                "--volume",
+                "$PWD:$PWD",
+                "--workdir",
+                "$PWD",
+                image.as_str(),
+            ];
+            args.extend(instruction.split(' ').into_iter());
+            return runner.run("docker", &args);
+        }
+
         if let Some(shell_string) = &self.shell {
             let mut shell_string = shell_string.clone();
             if shell_string == "bash" {
@@ -61,13 +77,12 @@ impl Job {
             let shell = parts.next().expect("no shells");
             let mut args: Vec<&str> = parts.into_iter().collect();
             args.push(instruction);
-            runner.run(shell, &args, instruction)
-        } else {
-            let mut parts = instruction.split(' ');
-            let program = parts.next().expect("no instructions");
-            let args: Vec<&str> = parts.into_iter().collect();
-            runner.run(program, &args, instruction)
+            return runner.run(shell, &args);
         }
+        let mut parts = instruction.split(' ');
+        let program = parts.next().expect("no instructions");
+        let args: Vec<&str> = parts.into_iter().collect();
+        runner.run(program, &args)
     }
 }
 

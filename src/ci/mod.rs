@@ -102,16 +102,41 @@ impl JobStarter for ParrallelJobStarter {
     }
 }
 
-pub struct CommandJobRunner {}
+pub struct CommandJobRunner {
+    uid: String,
+    gid: String,
+    pwd: String,
+}
 
 impl CommandJobRunner {
+    fn id(flag: &str) -> String {
+        let output = Command::new("id")
+            .args(vec![flag])
+            .output()
+            .expect("id -u cannot fail");
+        String::from(std::str::from_utf8(&output.stdout).expect("This is an int"))
+            .trim()
+            .to_string()
+    }
+
     pub fn new() -> CommandJobRunner {
-        CommandJobRunner {}
+        let uid = Self::id("-u");
+        let gid = Self::id("-g");
+        let pwd = std::env::var("PWD").expect("PWD always exists");
+        CommandJobRunner { uid, gid, pwd }
     }
 }
 
 impl JobRunner for CommandJobRunner {
-    fn run(&mut self, program: &str, args: &[&str], instruction: &str) -> JobOutput {
+    fn run(&mut self, program: &str, args: &[&str]) -> JobOutput {
+        let args: Vec<String> = args
+            .iter()
+            .map(|arg| {
+                arg.replace("$USER", self.uid.as_str())
+                    .replace("$GROUPS", self.gid.as_str())
+                    .replace("$PWD", self.pwd.as_str())
+            })
+            .collect();
         match Command::new(program).args(args).output() {
             Ok(output) => {
                 let stdout = String::from(std::str::from_utf8(&output.stdout).unwrap());
@@ -122,7 +147,7 @@ impl JobRunner for CommandJobRunner {
                     JobOutput::JobError(stdout, stderr)
                 }
             }
-            Err(e) => JobOutput::ProcessError(format!("{}: {}", instruction, e)),
+            Err(e) => JobOutput::ProcessError(format!("{}", e)),
         }
     }
 }
