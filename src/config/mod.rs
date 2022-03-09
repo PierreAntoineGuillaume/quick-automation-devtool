@@ -112,7 +112,12 @@ impl Config {
             }
         }
 
-        filename.ok_or_else(|| String::from("no config file could be found (looked for {:?})"))
+        filename.ok_or_else(|| {
+            format!(
+                "no config file could be found (looked in files {:?})",
+                self.possible_files
+            )
+        })
     }
 
     pub fn from(options: OptionConfigPayload, env: &str) -> Self {

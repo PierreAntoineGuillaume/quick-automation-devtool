@@ -28,7 +28,7 @@ fn main() {
     }
 
     let command = args.nested.unwrap_or_else(|| {
-        println!("No args given");
+        println!("dt: no args given");
         std::process::exit(0);
     });
 
@@ -45,7 +45,7 @@ fn main() {
             Ok(_) => {}
             Err(str) => {
                 if let Some(msg) = str {
-                    eprintln!("{}", msg);
+                    eprintln!("dt: {}", msg);
                 }
                 std::process::exit(1)
             }
