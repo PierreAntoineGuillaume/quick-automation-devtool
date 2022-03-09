@@ -160,12 +160,12 @@ mod tests {
     pub struct TestJobRunner {}
     impl JobRunner for TestJobRunner {
         fn run(&mut self, program: &str, _: &[&str]) -> JobOutput {
-            let instruction = program.to_string();
-            if let Some(stripped) = instruction.strip_prefix("ok:") {
+            let job = program.to_string();
+            if let Some(stripped) = job.strip_prefix("ok:") {
                 JobOutput::Success(stripped.into(), "".into())
-            } else if let Some(stripped) = instruction.strip_prefix("ko:") {
+            } else if let Some(stripped) = job.strip_prefix("ko:") {
                 JobOutput::JobError(stripped.into(), "".into())
-            } else if let Some(stripped) = instruction.strip_prefix("crash:") {
+            } else if let Some(stripped) = job.strip_prefix("crash:") {
                 JobOutput::ProcessError(stripped.into())
             } else {
                 unreachable!("Job should begin with ok:, ko, or crash:")
