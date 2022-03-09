@@ -4,7 +4,14 @@ use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-pub type JobSet = std::collections::HashMap<String, Vec<String>>;
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct FullJobDesc {
+    script: Vec<String>,
+    shell: Option<String>,
+    image: Option<String>,
+}
+
+pub type JobSet = std::collections::HashMap<String, FullJobDesc>;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Constraints {
@@ -57,14 +64,23 @@ pub struct Version0y {
 
 impl ConfigLoader for Version0y {
     fn load(&self, payload: &mut ConfigPayload) {
-        for (name, instruction) in &self.jobs {
+        for (name, full_desc) in &self.jobs {
             let compiler = InstructionCompiler::default();
-            payload.ci.jobs.push(Job {
-                name: name.clone(),
-                instructions: instruction
+            let instructions = if full_desc.shell.is_none() {
+                full_desc
+                    .script
                     .iter()
                     .map(|str| compiler.compile(str))
-                    .collect(),
+                    .collect()
+            } else {
+                full_desc.script.clone()
+            };
+            let name = name.clone();
+            payload.ci.jobs.push(Job {
+                name,
+                shell: full_desc.shell.clone(),
+                image: full_desc.image.clone(),
+                instructions,
             })
         }
 
@@ -110,15 +126,23 @@ impl ConfigLoader for Version0y {
 
 impl Version0y {
     pub fn from(payload: ConfigPayload) -> Self {
+        let job_ref = payload.ci.jobs;
+        let jobs = job_ref
+            .iter()
+            .map(|job| {
+                (
+                    job.name.clone(),
+                    FullJobDesc {
+                        script: job.instructions.clone(),
+                        shell: job.shell.clone(),
+                        image: job.image.clone(),
+                    },
+                )
+            })
+            .collect();
         Self {
             version: String::from("unstable"),
-            jobs: payload
-                .ci
-                .jobs
-                .iter()
-                .cloned()
-                .map(|job| (job.name, job.instructions))
-                .collect(),
+            jobs,
             constraints: Some(from_vec(&payload.ci.constraints)),
             display: Some(Display {
                 ok: Some(payload.ci.display.ok.to_string()),

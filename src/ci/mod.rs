@@ -77,7 +77,7 @@ impl JobStarter for ParrallelJobStarter {
         while let Some(job) = jobs.poll() {
             let consumer = tx.clone();
             self.threads.push(thread::spawn(move || {
-                job.start(&CommandJobRunner::new(), &consumer);
+                job.start(&mut CommandJobRunner::new(), &consumer);
             }));
         }
     }
@@ -111,24 +111,18 @@ impl CommandJobRunner {
 }
 
 impl JobRunner for CommandJobRunner {
-    fn run(&self, _: &Job, instruction: &str) -> JobOutput {
-        let mut parts = instruction.split(' ');
-        if let Some(program) = parts.next() {
-            let args: Vec<&str> = parts.into_iter().collect();
-            match Command::new(&program).args(&args).output() {
-                Ok(output) => {
-                    let stdout = String::from(std::str::from_utf8(&output.stdout).unwrap());
-                    let stderr = String::from(std::str::from_utf8(&output.stderr).unwrap());
-                    if output.status.success() {
-                        JobOutput::Success(stdout, stderr)
-                    } else {
-                        JobOutput::JobError(stdout, stderr)
-                    }
+    fn run(&mut self, program: &str, args: &[&str], instruction: &str) -> JobOutput {
+        match Command::new(program).args(args).output() {
+            Ok(output) => {
+                let stdout = String::from(std::str::from_utf8(&output.stdout).unwrap());
+                let stderr = String::from(std::str::from_utf8(&output.stderr).unwrap());
+                if output.status.success() {
+                    JobOutput::Success(stdout, stderr)
+                } else {
+                    JobOutput::JobError(stdout, stderr)
                 }
-                Err(e) => JobOutput::ProcessError(format!("{}: {}", instruction, e)),
             }
-        } else {
-            JobOutput::ProcessError(String::from("No jobs to be ran"))
+            Err(e) => JobOutput::ProcessError(format!("{}: {}", instruction, e)),
         }
     }
 }

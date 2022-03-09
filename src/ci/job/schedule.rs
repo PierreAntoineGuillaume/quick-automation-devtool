@@ -1,10 +1,10 @@
 use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::{Job, JobOutput, JobProgressTracker, Progress};
+use crate::ci::job::{JobOutput, JobProgressTracker, Progress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 
 pub trait JobRunner {
-    fn run(&self, job: &Job, instruction: &str) -> JobOutput;
+    fn run(&mut self, program: &str, args: &[&str], instruction: &str) -> JobOutput;
 }
 
 pub trait JobStarter {
@@ -110,6 +110,8 @@ mod tests {
         pub fn new(name: &str, instructions: &[&str]) -> Self {
             Job {
                 name: name.to_string(),
+                shell: None,
+                image: None,
                 instructions: instructions
                     .iter()
                     .map(|item| String::from(*item))
@@ -144,7 +146,7 @@ mod tests {
     impl JobStarter for TestJobStarter {
         fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>) {
             while let Some(job) = jobs.poll() {
-                job.start(&TestJobRunner {}, &tx.clone());
+                job.start(&mut TestJobRunner {}, &tx.clone());
             }
         }
 
@@ -157,7 +159,7 @@ mod tests {
 
     pub struct TestJobRunner {}
     impl JobRunner for TestJobRunner {
-        fn run(&self, job: &Job, instruction: &str) -> JobOutput {
+        fn run(&mut self, _: &str, _: &[&str], instruction: &str) -> JobOutput {
             if let Some(stripped) = instruction.strip_prefix("ok:") {
                 JobOutput::Success(stripped.into(), "".into())
             } else if let Some(stripped) = instruction.strip_prefix("ko:") {
@@ -165,7 +167,7 @@ mod tests {
             } else if let Some(stripped) = instruction.strip_prefix("crash:") {
                 JobOutput::ProcessError(stripped.into())
             } else {
-                unreachable!("Job {} should begin with ok:, ko, or crash:", job.name)
+                unreachable!("Job should begin with ok:, ko, or crash:")
             }
         }
     }

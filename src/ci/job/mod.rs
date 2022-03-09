@@ -27,18 +27,20 @@ pub trait JobProgressConsumer {
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Job {
     pub name: String,
+    pub shell: Option<String>,
+    pub image: Option<String>,
     pub instructions: Vec<String>,
 }
 
 impl Job {
-    pub fn start(&self, runner: &dyn JobRunner, consumer: &dyn JobProgressConsumer) {
+    pub fn start(&self, runner: &mut dyn JobRunner, consumer: &dyn JobProgressConsumer) {
         let mut success = true;
         for instruction in &self.instructions {
             consumer.consume(JobProgress::new(
                 &self.name,
                 Progress::Started(instruction.clone()),
             ));
-            let output = runner.run(self, instruction);
+            let output = self.run(instruction, runner);
             success = output.succeeded();
             let partial = Progress::Partial(instruction.clone(), output);
             consumer.consume(JobProgress::new(&self.name, partial));
@@ -47,6 +49,25 @@ impl Job {
             }
         }
         consumer.consume(JobProgress::new(&self.name, Progress::Terminated(success)));
+    }
+
+    fn run(&self, instruction: &str, runner: &mut dyn JobRunner) -> JobOutput {
+        if let Some(shell_string) = &self.shell {
+            let mut shell_string = shell_string.clone();
+            if shell_string == "bash" {
+                shell_string = String::from("bash -c");
+            }
+            let mut parts = shell_string.split(' ');
+            let shell = parts.next().expect("no shells");
+            let mut args: Vec<&str> = parts.into_iter().collect();
+            args.push(instruction);
+            runner.run(shell, &args, instruction)
+        } else {
+            let mut parts = instruction.split(' ');
+            let program = parts.next().expect("no instructions");
+            let args: Vec<&str> = parts.into_iter().collect();
+            runner.run(program, &args, instruction)
+        }
     }
 }
 

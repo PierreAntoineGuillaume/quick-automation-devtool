@@ -43,6 +43,8 @@ impl ConfigLoader for Version0x {
         for (name, instruction) in &self.jobs {
             ci_config.jobs.push(Job {
                 name: name.clone(),
+                shell: None,
+                image: None,
                 instructions: instruction.clone(),
             })
         }

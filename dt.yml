@@ -1,16 +1,19 @@
 version: unstable
 jobs:
-  fmt: ["cargo fmt"]
-  clippy: [ 'cargo clippy --tests --color always' ]
-  tests: [ 'cargo test --color always' ]
+  fmt:
+    script:
+      - cargo fmt
+  clippy:
+    script:
+      - cargo clippy --tests --color always
+  tests:
+    script:
+      - cargo test --color always
 constraints:
   blocks:
     fmt: [ clippy, tests]
   needs:
 display:
-  ok: "🌺"
-  ko: "🥀"
-  cancelled: "!"
   show_command: false
   spinner:
     frames: [".  ", ".. ", "...", ".. ", ".  "]
