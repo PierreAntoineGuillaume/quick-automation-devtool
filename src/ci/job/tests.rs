@@ -1,10 +1,16 @@
 use super::*;
+use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 
 #[derive(Default)]
-struct JobTester {
+struct JobInput {
     program: String,
     args: Vec<String>,
+}
+
+#[derive(Default)]
+struct JobTester {
+    inputs: RefCell<JobInput>,
 }
 
 impl JobTester {
@@ -23,7 +29,7 @@ impl JobTester {
     }
 }
 
-impl Display for JobTester {
+impl Display for JobInput {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}", self.program)?;
         write!(f, "[")?;
@@ -39,10 +45,17 @@ impl Display for JobTester {
     }
 }
 
+impl Display for JobTester {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.inputs.borrow())
+    }
+}
+
 impl JobRunner for JobTester {
-    fn run(&mut self, program: &str, args: &[&str]) -> JobOutput {
-        self.program = program.to_string();
-        self.args = args.iter().map(|str| str.to_string()).collect();
+    fn run(&self, program: &str, args: &[&str]) -> JobOutput {
+        let mut input = self.inputs.borrow_mut();
+        input.program = program.to_string();
+        input.args = args.iter().map(|str| str.to_string()).collect();
         JobOutput::ProcessError(String::default())
     }
 }

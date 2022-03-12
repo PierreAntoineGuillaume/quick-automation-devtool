@@ -128,7 +128,7 @@ impl CommandJobRunner {
 }
 
 impl JobRunner for CommandJobRunner {
-    fn run(&mut self, program: &str, args: &[&str]) -> JobOutput {
+    fn run(&self, program: &str, args: &[&str]) -> JobOutput {
         let args: Vec<String> = args
             .iter()
             .map(|arg| {
