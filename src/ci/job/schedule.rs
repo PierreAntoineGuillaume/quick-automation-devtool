@@ -108,15 +108,13 @@ mod tests {
 
     impl Job {
         pub fn new(name: &str, instructions: &[&str]) -> Self {
-            Job {
-                name: name.to_string(),
-                shell: None,
-                image: None,
-                instructions: instructions
+            Job::short(
+                name.to_string(),
+                instructions
                     .iter()
                     .map(|item| String::from(*item))
                     .collect(),
-            }
+            )
         }
     }
 

@@ -33,6 +33,24 @@ pub struct Job {
 }
 
 impl Job {
+    pub fn long(
+        name: String,
+        instructions: Vec<String>,
+        shell: Option<String>,
+        image: Option<String>,
+    ) -> Self {
+        Self {
+            name,
+            instructions,
+            shell,
+            image,
+        }
+    }
+
+    pub fn short(name: String, instructions: Vec<String>) -> Self {
+        Self::long(name, instructions, None, None)
+    }
+
     pub fn start(&self, runner: &mut dyn JobRunner, consumer: &dyn JobProgressConsumer) {
         let mut success = true;
         for instruction in &self.instructions {

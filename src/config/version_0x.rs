@@ -41,12 +41,9 @@ impl ConfigLoader for Version0x {
     fn load(&self, payload: &mut ConfigPayload) {
         let mut ci_config = &mut payload.ci;
         for (name, instruction) in &self.jobs {
-            ci_config.jobs.push(Job {
-                name: name.clone(),
-                shell: None,
-                image: None,
-                instructions: instruction.clone(),
-            })
+            ci_config
+                .jobs
+                .push(Job::short(name.clone(), instruction.clone()))
         }
 
         if let Some(constraint) = &self.constraints {

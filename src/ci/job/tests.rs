@@ -16,12 +16,7 @@ struct JobTester {
 impl JobTester {
     fn run_job(instruction: &str, shell: Option<String>, image: Option<String>) -> String {
         let mut tester = JobTester::default();
-        let job = Job {
-            name: "name".to_string(),
-            shell,
-            image,
-            instructions: vec![],
-        };
+        let job = Job::long("name".to_string(), vec![], shell, image);
 
         job.run(instruction, &mut tester);
 
@@ -119,12 +114,7 @@ pub fn complex_job_schedule() -> (Vec<Job>, Vec<(String, String)>) {
 }
 
 pub fn job(name: &str) -> Job {
-    Job {
-        name: name.to_string(),
-        shell: None,
-        image: None,
-        instructions: vec![],
-    }
+    Job::short(name.to_string(), vec![])
 }
 
 pub fn cons(blocking: &str, blocked: &str) -> (String, String) {

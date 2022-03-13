@@ -76,12 +76,12 @@ impl ConfigLoader for Version0y {
                 full_desc.script.clone()
             };
             let name = name.clone();
-            payload.ci.jobs.push(Job {
+            payload.ci.jobs.push(Job::long(
                 name,
-                shell: full_desc.shell.clone(),
-                image: full_desc.image.clone(),
                 instructions,
-            })
+                full_desc.shell.clone(),
+                full_desc.image.clone(),
+            ))
         }
 
         if let Some(constraint) = &self.constraints {
