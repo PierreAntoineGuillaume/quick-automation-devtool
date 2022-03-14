@@ -12,6 +12,5 @@ serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.8.23"
 term = "0.7.0"
 terminal_size = "0.1.17"
-textwrap = "0.15.0"
 toml = "0.5.8"
 yaml-rust = "0.4.5"
