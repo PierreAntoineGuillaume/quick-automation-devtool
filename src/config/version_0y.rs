@@ -7,7 +7,6 @@ use std::collections::HashMap;
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct FullJobDesc {
     script: Vec<String>,
-    shell: Option<String>,
     image: Option<String>,
 }
 
@@ -66,22 +65,16 @@ impl ConfigLoader for Version0y {
     fn load(&self, payload: &mut ConfigPayload) {
         for (name, full_desc) in &self.jobs {
             let compiler = InstructionCompiler::default();
-            let instructions = if full_desc.shell.is_none() {
-                full_desc
-                    .script
-                    .iter()
-                    .map(|str| compiler.compile(str))
-                    .collect()
-            } else {
-                full_desc.script.clone()
-            };
+            let instructions = full_desc
+                .script
+                .iter()
+                .map(|str| compiler.compile(str))
+                .collect();
             let name = name.clone();
-            payload.ci.jobs.push(Job::long(
-                name,
-                instructions,
-                full_desc.shell.clone(),
-                full_desc.image.clone(),
-            ))
+            payload
+                .ci
+                .jobs
+                .push(Job::long(name, instructions, full_desc.image.clone()))
         }
 
         if let Some(constraint) = &self.constraints {
@@ -134,7 +127,6 @@ impl Version0y {
                     job.name.clone(),
                     FullJobDesc {
                         script: job.instructions.clone(),
-                        shell: job.shell.clone(),
                         image: job.image.clone(),
                     },
                 )

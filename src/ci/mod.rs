@@ -128,15 +128,18 @@ impl CommandJobRunner {
 }
 
 impl JobRunner for CommandJobRunner {
-    fn run(&self, program: &str, args: &[&str]) -> JobOutput {
+    fn run(&self, args: &[&str]) -> JobOutput {
+        let program = args[0];
         let args: Vec<String> = args
             .iter()
+            .skip(1)
             .map(|arg| {
                 arg.replace("$USER", self.uid.as_str())
                     .replace("$GROUPS", self.gid.as_str())
                     .replace("$PWD", self.pwd.as_str())
             })
             .collect();
+
         match Command::new(program).args(args).output() {
             Ok(output) => {
                 let stdout = String::from(std::str::from_utf8(&output.stdout).unwrap());
