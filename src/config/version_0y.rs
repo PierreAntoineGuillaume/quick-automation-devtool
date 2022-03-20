@@ -1,4 +1,4 @@
-use crate::ci::job::Job;
+use crate::ci::job::{Job, JobIntrospector, JobTrait};
 use crate::config::instructions::InstructionCompiler;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
@@ -117,19 +117,32 @@ impl ConfigLoader for Version0y {
     }
 }
 
+#[derive(Default)]
+struct JobTraitConverter {
+    data: Option<(String, FullJobDesc)>,
+}
+
+impl JobIntrospector for JobTraitConverter {
+    fn basic_job(&mut self, name: &str, image: &Option<String>, instructions: &[String]) {
+        self.data = Some((
+            name.to_string(),
+            FullJobDesc {
+                image: image.clone(),
+                script: instructions.to_vec(),
+            },
+        ))
+    }
+}
+
 impl Version0y {
     pub fn from(payload: ConfigPayload) -> Self {
         let job_ref = payload.ci.jobs;
         let jobs = job_ref
             .iter()
             .map(|job| {
-                (
-                    job.name.clone(),
-                    FullJobDesc {
-                        script: job.instructions.clone(),
-                        image: job.image.clone(),
-                    },
-                )
+                let mut convertor = JobTraitConverter::default();
+                job.introspect(&mut convertor);
+                convertor.data.expect("Visitor has been set")
             })
             .collect();
         Self {

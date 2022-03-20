@@ -1,4 +1,4 @@
-use crate::ci::job::Job;
+use crate::ci::job::{Job, JobIntrospector, JobTrait};
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -77,6 +77,17 @@ impl ConfigLoader for Version0x {
     }
 }
 
+#[derive(Default)]
+struct JobTraitConverter {
+    data: Option<(String, Vec<String>)>,
+}
+
+impl JobIntrospector for JobTraitConverter {
+    fn basic_job(&mut self, name: &str, _: &Option<String>, instructions: &[String]) {
+        self.data = Some((name.to_string(), instructions.to_vec()))
+    }
+}
+
 impl Version0x {
     pub fn from(payload: ConfigPayload) -> Self {
         Self {
@@ -86,7 +97,11 @@ impl Version0x {
                 .jobs
                 .iter()
                 .cloned()
-                .map(|job| (job.name, job.instructions))
+                .map(|job| {
+                    let mut converter = JobTraitConverter::default();
+                    job.introspect(&mut converter);
+                    converter.data.expect("Visitor has been set")
+                })
                 .collect(),
             constraints: Some(from_vec(&payload.ci.constraints)),
             ci_spinner: Some(CiSpinner {

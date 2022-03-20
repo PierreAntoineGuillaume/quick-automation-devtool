@@ -24,11 +24,25 @@ pub trait JobProgressConsumer {
     fn consume(&self, job_progress: JobProgress);
 }
 
+pub trait JobIntrospector {
+    fn basic_job(&mut self, name: &str, image: &Option<String>, instructions: &[String]);
+}
+
+pub trait JobTrait {
+    fn introspect(&self, introspector: &mut dyn JobIntrospector);
+}
+
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Job {
-    pub name: String,
-    pub image: Option<String>,
-    pub instructions: Vec<String>,
+    name: String,
+    image: Option<String>,
+    instructions: Vec<String>,
+}
+
+impl JobTrait for Job {
+    fn introspect(&self, introspector: &mut dyn JobIntrospector) {
+        introspector.basic_job(&self.name, &self.image, &self.instructions)
+    }
 }
 
 impl Job {
