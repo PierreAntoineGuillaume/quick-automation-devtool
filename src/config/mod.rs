@@ -2,8 +2,7 @@ pub mod argh;
 pub mod instructions;
 pub mod migrate;
 mod serialization;
-pub mod version_0x;
-pub mod version_0y;
+mod versions;
 
 use crate::ci::CiConfig;
 use crate::config::serialization::toml_parser::TomlParser;

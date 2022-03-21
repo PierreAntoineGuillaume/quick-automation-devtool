@@ -1,5 +1,5 @@
-use crate::config::version_0x::Version0x;
-use crate::config::version_0y::Version0y;
+use crate::config::versions::version_0x::Version0x;
+use crate::config::versions::version_0y::Version0y;
 use crate::{Config, ConfigPayload};
 
 pub struct Migrate {
