@@ -1,4 +1,5 @@
 use super::*;
+use crate::ci::GroupConfig;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
@@ -16,7 +17,7 @@ struct JobTester {
 impl JobTester {
     fn run_job(instruction: &str, image: Option<String>) -> String {
         let tester = JobTester::default();
-        let job = Job::long("name".to_string(), vec![], image);
+        let job = Job::long("name".to_string(), vec![], image, None);
 
         job.run(instruction, &tester);
 
@@ -79,15 +80,15 @@ pub fn docker_jobs_with_args() {
     )
 }
 
-pub fn simple_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>) {
+pub fn simple_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>, GroupConfig) {
     let jobs = vec![job("deploy"), job("build"), job("test")];
 
     let constraints = vec![cons("build", "test"), cons("test", "deploy")];
 
-    (jobs, constraints)
+    (jobs, constraints, GroupConfig::default())
 }
 
-pub fn complex_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>) {
+pub fn complex_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>, GroupConfig) {
     let jobs = vec![
         job("deploy"),
         job("build1"),
@@ -105,11 +106,38 @@ pub fn complex_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>) {
         cons("test2", "deploy"),
     ];
 
-    (jobs, constraints)
+    (jobs, constraints, GroupConfig::default())
+}
+
+pub fn group_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>, GroupConfig) {
+    let jobs = vec![
+        job_group("build1", "build"),
+        job_group("build2", "build"),
+        job_group("test1", "test"),
+        job_group("test2", "test"),
+        job_group("deploy", "deploy"),
+    ];
+
+    let mut config = GroupConfig::default();
+
+    config.groups.push("build".to_string());
+    config.groups.push("test".to_string());
+    config.groups.push("deploy".to_string());
+
+    (jobs, vec![], config)
 }
 
 pub fn job(name: &str) -> Arc<SharedJob> {
     Arc::from(Job::short(name.to_string(), vec![]))
+}
+
+fn job_group(name: &str, group: &str) -> Arc<SharedJob> {
+    Arc::from(Job::long(
+        name.to_string(),
+        vec![],
+        None,
+        Some(group.to_string()),
+    ))
 }
 
 pub fn cons(blocking: &str, blocked: &str) -> (String, String) {

@@ -76,6 +76,7 @@ impl ConfigLoader for Version0y {
                 name,
                 instructions,
                 full_desc.image.clone(),
+                None,
             )))
         }
 

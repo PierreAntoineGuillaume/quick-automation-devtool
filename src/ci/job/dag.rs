@@ -1,5 +1,6 @@
 use crate::ci::job::dag::constraint_matrix::ConstraintMatrix;
 use crate::ci::job::SharedJob;
+use crate::ci::GroupConfig;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::fmt::{Debug, Formatter};
@@ -182,6 +183,7 @@ impl Dag {
     pub fn new(
         jobs: &[Arc<SharedJob>],
         constraints: &[(String, String)],
+        _: &GroupConfig,
     ) -> Result<Self, DagError> {
         let jobs: Vec<Arc<SharedJob>> = jobs.to_vec();
         let matrix = ConstraintMatrix::new(&jobs, constraints)?;
@@ -368,7 +370,10 @@ impl Dag {
 #[cfg(test)]
 mod tests {
     use crate::ci::job::dag::{Dag, DagError, JobEnumeration, JobList, JobResult};
-    use crate::ci::job::tests::{complex_job_schedule, cons, job, simple_job_schedule};
+    use crate::ci::job::tests::{
+        complex_job_schedule, cons, group_job_schedule, job, simple_job_schedule,
+    };
+    use crate::ci::GroupConfig;
     use std::fmt::{Debug, Display, Formatter};
 
     impl Display for JobList {
@@ -395,7 +400,7 @@ mod tests {
     #[test]
     pub fn record_good() {
         let list = simple_job_schedule();
-        let mut dag = Dag::new(&list.0, &list.1).unwrap();
+        let mut dag = Dag::new(&list.0, &list.1, &list.2).unwrap();
         let build = dag.poll().expect("this is not None");
 
         assert_eq!("build", build.name());
@@ -413,7 +418,7 @@ mod tests {
     #[test]
     pub fn record_bad() {
         let list = simple_job_schedule();
-        let mut dag = Dag::new(&list.0, &list.1).unwrap();
+        let mut dag = Dag::new(&list.0, &list.1, &list.2).unwrap();
 
         let job = dag.poll().expect("this is not None");
 
@@ -427,7 +432,41 @@ mod tests {
     #[test]
     pub fn test_complex() {
         let list = complex_job_schedule();
-        let mut dag = Dag::new(&list.0, &list.1).unwrap();
+        let mut dag = Dag::new(&list.0, &list.1, &list.2).unwrap();
+
+        assert!(!dag.is_finished());
+
+        let build1 = dag.poll().unwrap();
+        let build2 = dag.poll().unwrap();
+
+        assert_eq!("build1", build1.name());
+        assert_eq!("build2", build2.name());
+        assert!(dag.poll().is_none());
+
+        dag.record_event(build1.name(), JobResult::Success);
+        dag.record_event(build2.name(), JobResult::Success);
+
+        let test1 = dag.poll().unwrap();
+        let test2 = dag.poll().unwrap();
+
+        assert_eq!("test1", test1.name());
+        assert_eq!("test2", test2.name());
+        assert!(dag.poll().is_none());
+
+        dag.record_event(test1.name(), JobResult::Success);
+        dag.record_event(test2.name(), JobResult::Success);
+
+        let deploy = dag.poll().unwrap();
+        assert_eq!("deploy", deploy.name());
+        dag.record_event(deploy.name(), JobResult::Success);
+        assert!(dag.is_finished())
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn test_group() {
+        let list = group_job_schedule();
+        let mut dag = Dag::new(&list.0, &list.1, &list.2).unwrap();
 
         assert!(!dag.is_finished());
 
@@ -459,8 +498,8 @@ mod tests {
 
     #[test]
     pub fn test_enumerate_base() {
-        let items = complex_job_schedule();
-        let dag = Dag::new(&items.0, &items.1).unwrap();
+        let list = complex_job_schedule();
+        let dag = Dag::new(&list.0, &list.1, &list.2).unwrap();
         let actual = dag.enumerate();
         assert_eq!(
             String::from("[build1(pending), build2(pending), test1(blocked), test2(blocked), deploy(blocked)]"),
@@ -470,8 +509,8 @@ mod tests {
 
     #[test]
     pub fn test_enumerate_failure() {
-        let items = complex_job_schedule();
-        let mut dag = Dag::new(&items.0, &items.1).unwrap();
+        let list = complex_job_schedule();
+        let mut dag = Dag::new(&list.0, &list.1, &list.2).unwrap();
 
         dag.poll();
         dag.record_event("build1", JobResult::Failure);
@@ -496,7 +535,9 @@ mod tests {
     pub fn test_cycle() {
         let jobs = vec![job("A"), job("B"), job("C")];
         let cons = vec![cons("A", "B"), cons("B", "C"), cons("C", "A")];
-        let error = Dag::new(&jobs, &cons).err().unwrap();
+        let error = Dag::new(&jobs, &cons, &GroupConfig::default())
+            .err()
+            .unwrap();
 
         if let DagError::CycleExistsBecauseOf(letter) = error {
             assert_eq!(&letter, "A");

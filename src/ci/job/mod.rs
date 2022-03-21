@@ -33,12 +33,14 @@ pub type SharedJob = dyn JobTrait + Send + Sync;
 pub trait JobTrait {
     fn introspect(&self, introspector: &mut dyn JobIntrospector);
     fn name(&self) -> &str;
+    fn groups(&self) -> Option<&str>;
     fn start(&self, runner: &mut dyn JobRunner, consumer: &dyn JobProgressConsumer);
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Job {
     name: String,
+    group: Option<String>,
     image: Option<String>,
     instructions: Vec<String>,
 }
@@ -50,6 +52,13 @@ impl JobTrait for Job {
 
     fn name(&self) -> &str {
         &self.name
+    }
+
+    fn groups(&self) -> Option<&str> {
+        match &self.group {
+            None => None,
+            Some(string) => Some(string.as_str()),
+        }
     }
 
     fn start(&self, runner: &mut dyn JobRunner, consumer: &dyn JobProgressConsumer) {
@@ -75,16 +84,22 @@ impl JobTrait for Job {
 }
 
 impl Job {
-    pub fn long(name: String, instructions: Vec<String>, image: Option<String>) -> Self {
+    pub fn long(
+        name: String,
+        instructions: Vec<String>,
+        image: Option<String>,
+        group: Option<String>,
+    ) -> Self {
         Self {
             name,
             instructions,
             image,
+            group,
         }
     }
 
     pub fn short(name: String, instructions: Vec<String>) -> Self {
-        Self::long(name, instructions, None)
+        Self::long(name, instructions, None, None)
     }
 
     fn run(&self, instruction: &str, runner: &dyn JobRunner) -> JobOutput {

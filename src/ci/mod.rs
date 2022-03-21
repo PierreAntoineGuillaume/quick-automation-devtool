@@ -16,8 +16,14 @@ pub mod display;
 pub mod job;
 
 #[derive(Default)]
+pub struct GroupConfig {
+    pub groups: Vec<String>,
+}
+
+#[derive(Default)]
 pub struct CiConfig {
     pub jobs: Vec<Arc<SharedJob>>,
+    pub groups: GroupConfig,
     pub constraints: Vec<(String, String)>,
     pub display: CiDisplayConfig,
 }
@@ -36,7 +42,7 @@ impl Ci {
             Box::new(TermCiDisplay::new(&ci_config.display))
         };
 
-        let dag = Dag::new(&ci_config.jobs, &ci_config.constraints).unwrap();
+        let dag = Dag::new(&ci_config.jobs, &ci_config.constraints, &ci_config.groups).unwrap();
 
         let tracker = schedule(dag, &mut ParrallelJobStarter::new(), &mut *display);
 
