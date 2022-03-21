@@ -1,8 +1,9 @@
 use crate::ci::job::dag::constraint_matrix::ConstraintMatrix;
-use crate::ci::job::Job;
+use crate::ci::job::SharedJob;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::fmt::{Debug, Formatter};
+use std::sync::Arc;
 
 pub mod constraint_matrix;
 mod constraint_matrix_constraint_iterator;
@@ -113,23 +114,28 @@ impl JobList {
     }
 }
 
-#[derive(Debug)]
 pub struct JobWatcher {
-    job: Job,
+    job: Arc<SharedJob>,
     state: JobState,
     blocks_job: Vec<String>,
     blocked_by_jobs: JobList,
 }
 
+impl Debug for JobWatcher {
+    fn fmt(&self, _: &mut Formatter<'_>) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
 impl JobWatcher {
     pub fn new(
-        job: &Job,
+        job: Arc<SharedJob>,
         state: JobState,
         blocks_job: Vec<String>,
         blocked_by_jobs: JobList,
     ) -> Self {
         JobWatcher {
-            job: job.clone(),
+            job,
             state,
             blocks_job,
             blocked_by_jobs,
@@ -180,29 +186,32 @@ impl Ord for JobEnumeration {
 }
 
 impl Dag {
-    pub fn new(jobs: &[Job], constraints: &[(String, String)]) -> Result<Self, DagError> {
-        let jobs: Vec<Job> = jobs.to_vec();
+    pub fn new(
+        jobs: &[Arc<SharedJob>],
+        constraints: &[(String, String)],
+    ) -> Result<Self, DagError> {
+        let jobs: Vec<Arc<SharedJob>> = jobs.to_vec();
         let matrix = ConstraintMatrix::new(&jobs, constraints)?;
 
         let mut all_jobs = BTreeMap::<String, JobWatcher>::new();
 
         for job in &jobs {
-            let blocking = matrix.blocked_by(&job.name);
-            let blocked_by_jobs: Vec<String> = matrix.blocking(&job.name).collect();
+            let blocking = matrix.blocked_by(job.name());
+            let blocked_by_jobs: Vec<String> = matrix.blocking(job.name()).collect();
             let state = if blocked_by_jobs.is_empty() {
                 JobState::Pending
             } else {
                 for blocked_by_job in &blocked_by_jobs {
-                    if blocked_by_job == &job.name {
+                    if blocked_by_job == job.name() {
                         return Err(DagError::CycleExistsBecauseOf(blocked_by_job.clone()));
                     }
                 }
                 JobState::Blocked
             };
             all_jobs.insert(
-                job.name.to_string(),
+                job.name().to_string(),
                 JobWatcher::new(
-                    job,
+                    job.clone(),
                     state,
                     blocking.collect(),
                     JobList::from(blocked_by_jobs),
@@ -223,7 +232,7 @@ impl Dag {
     /// Poll will return a job if a job is available
     /// Available jobs are Pending
     /// When a job is polled, it is considered Started
-    pub fn poll(&mut self) -> Option<Job> {
+    pub fn poll(&mut self) -> Option<Arc<SharedJob>> {
         let jobname = self.available_jobs.shift()?;
         let job = self.all_jobs.get_mut(&jobname);
 
@@ -257,7 +266,7 @@ impl Dag {
                 unreachable!(
                     "bad state {:?} for job {:?} should be {:?}",
                     &watcher.state,
-                    watcher.job.name,
+                    watcher.job.name(),
                     JobState::Pending
                 )
             }
@@ -293,7 +302,7 @@ impl Dag {
             .values()
             .map(|watcher| {
                 jobenum(
-                    watcher.job.name.clone(),
+                    watcher.job.name().to_string(),
                     watcher.state.clone(),
                     watcher.blocked_by_jobs.vec.clone(),
                 )
@@ -308,7 +317,7 @@ impl Dag {
             self.all_jobs
                 .values()
                 .filter(|job_watcher| matches!(job_watcher.state, JobState::Pending))
-                .map(|job_watcher| job_watcher.job.name.to_string())
+                .map(|job_watcher| job_watcher.job.name().to_string())
                 .collect(),
         );
     }
@@ -316,7 +325,7 @@ impl Dag {
     fn unlock_next_jobs(&mut self, name: &str) {
         let watcher = self.all_jobs.get(name).unwrap();
 
-        let blocking_job_name = watcher.job.name.to_string();
+        let blocking_job_name = watcher.job.name().to_string();
         let blocked_job_list = watcher.blocks_job.clone();
 
         for blocked_job_name in blocked_job_list {
@@ -334,7 +343,7 @@ impl Dag {
 
     fn cancel_next_jobs(&mut self, name: &str) {
         let watcher = self.all_jobs.get(name).unwrap();
-        let blocking_job_name = watcher.job.name.to_string();
+        let blocking_job_name = watcher.job.name().to_string();
         let blocked_job_list = watcher.blocks_job.clone();
         for blocked_job_name in blocked_job_list {
             let blocked_job = self.all_jobs.get_mut(blocked_job_name.as_str()).unwrap();
@@ -396,13 +405,16 @@ mod tests {
         let mut dag = Dag::new(&list.0, &list.1).unwrap();
         let build = dag.poll().expect("this is not None");
 
-        assert_eq!("build", &build.name);
+        assert_eq!("build", build.name());
 
-        dag.record_event(&build.name, JobResult::Success);
+        dag.record_event(build.name(), JobResult::Success);
 
         let test = dag.poll();
 
-        assert_eq!("test", &test.expect("This is supposed to be test job").name);
+        assert_eq!(
+            "test",
+            test.expect("This is supposed to be test job").name()
+        );
     }
 
     #[test]
@@ -412,7 +424,7 @@ mod tests {
 
         let job = dag.poll().expect("this is not None");
 
-        dag.record_event(&job.name, JobResult::Failure);
+        dag.record_event(job.name(), JobResult::Failure);
 
         let none = dag.poll();
 
@@ -429,26 +441,26 @@ mod tests {
         let build1 = dag.poll().unwrap();
         let build2 = dag.poll().unwrap();
 
-        assert_eq!("build1", &build1.name);
-        assert_eq!("build2", &build2.name);
+        assert_eq!("build1", build1.name());
+        assert_eq!("build2", build2.name());
         assert!(dag.poll().is_none());
 
-        dag.record_event(&build1.name, JobResult::Success);
-        dag.record_event(&build2.name, JobResult::Success);
+        dag.record_event(build1.name(), JobResult::Success);
+        dag.record_event(build2.name(), JobResult::Success);
 
         let test1 = dag.poll().unwrap();
         let test2 = dag.poll().unwrap();
 
-        assert_eq!("test1", &test1.name);
-        assert_eq!("test2", &test2.name);
+        assert_eq!("test1", test1.name());
+        assert_eq!("test2", test2.name());
         assert!(dag.poll().is_none());
 
-        dag.record_event(&test1.name, JobResult::Success);
-        dag.record_event(&test2.name, JobResult::Success);
+        dag.record_event(test1.name(), JobResult::Success);
+        dag.record_event(test2.name(), JobResult::Success);
 
         let deploy = dag.poll().unwrap();
-        assert_eq!("deploy", &deploy.name);
-        dag.record_event(&deploy.name, JobResult::Success);
+        assert_eq!("deploy", deploy.name());
+        dag.record_event(deploy.name(), JobResult::Success);
         assert!(dag.is_finished())
     }
 

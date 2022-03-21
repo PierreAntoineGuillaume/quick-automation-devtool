@@ -1,7 +1,8 @@
-use crate::ci::job::{Job, JobIntrospector, JobTrait};
+use crate::ci::job::{Job, JobIntrospector};
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 pub type JobSet = HashMap<String, Vec<String>>;
 pub type Constraints = HashMap<String, Vec<String>>;
@@ -43,7 +44,7 @@ impl ConfigLoader for Version0x {
         for (name, instruction) in &self.jobs {
             ci_config
                 .jobs
-                .push(Job::short(name.clone(), instruction.clone()))
+                .push(Arc::from(Job::short(name.clone(), instruction.clone())))
         }
 
         if let Some(constraint) = &self.constraints {
@@ -96,7 +97,6 @@ impl Version0x {
                 .ci
                 .jobs
                 .iter()
-                .cloned()
                 .map(|job| {
                     let mut converter = JobTraitConverter::default();
                     job.introspect(&mut converter);

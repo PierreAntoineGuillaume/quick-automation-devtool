@@ -1,8 +1,9 @@
-use crate::ci::job::{Job, JobIntrospector, JobTrait};
+use crate::ci::job::{Job, JobIntrospector};
 use crate::config::instructions::InstructionCompiler;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct FullJobDesc {
@@ -71,10 +72,11 @@ impl ConfigLoader for Version0y {
                 .map(|str| compiler.compile(str))
                 .collect();
             let name = name.clone();
-            payload
-                .ci
-                .jobs
-                .push(Job::long(name, instructions, full_desc.image.clone()))
+            payload.ci.jobs.push(Arc::from(Job::long(
+                name,
+                instructions,
+                full_desc.image.clone(),
+            )))
         }
 
         if let Some(constraint) = &self.constraints {

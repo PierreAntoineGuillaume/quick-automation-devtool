@@ -1,7 +1,8 @@
 use crate::ci::job::dag::constraint_matrix_constraint_iterator::ConstraintMatrixConstraintIterator;
 use crate::ci::job::dag::{Constraint, DagError};
-use crate::ci::job::Job;
+use crate::ci::job::SharedJob;
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct ConstraintMatrix {
@@ -10,26 +11,32 @@ pub struct ConstraintMatrix {
 }
 
 impl ConstraintMatrix {
-    pub fn new(jobs: &[Job], constraints: &[(String, String)]) -> Result<Self, DagError> {
+    pub fn new(
+        jobs: &[Arc<SharedJob>],
+        constraints: &[(String, String)],
+    ) -> Result<Self, DagError> {
         let mut matrix = BTreeMap::<(String, String), Constraint>::new();
         let mut blocks_jobs = BTreeMap::new();
         let mut blocked_by_jobs = BTreeMap::new();
 
         for outer in jobs {
             for inner in jobs {
-                let constraint = if outer.name == inner.name {
+                let constraint = if outer.name() == inner.name() {
                     Constraint::Free
                 } else {
                     Constraint::Indifferent
                 };
-                matrix.insert((outer.name.to_string(), inner.name.to_string()), constraint);
+                matrix.insert(
+                    (outer.name().to_string(), inner.name().to_string()),
+                    constraint,
+                );
             }
 
-            blocks_jobs.insert(outer.name.to_string(), BTreeSet::<String>::new());
-            blocked_by_jobs.insert(outer.name.to_string(), BTreeSet::<String>::new());
+            blocks_jobs.insert(outer.name().to_string(), BTreeSet::<String>::new());
+            blocked_by_jobs.insert(outer.name().to_string(), BTreeSet::<String>::new());
         }
 
-        let job_names: Vec<String> = jobs.iter().map(|job| job.name.to_string()).collect();
+        let job_names: Vec<String> = jobs.iter().map(|job| job.name().to_string()).collect();
 
         for constraint in constraints {
             if constraint.0 == constraint.1 {

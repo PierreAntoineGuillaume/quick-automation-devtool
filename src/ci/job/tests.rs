@@ -1,6 +1,7 @@
 use super::*;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
+use std::sync::Arc;
 
 #[derive(Default)]
 struct JobInput {
@@ -78,7 +79,7 @@ pub fn docker_jobs_with_args() {
     )
 }
 
-pub fn simple_job_schedule() -> (Vec<Job>, Vec<(String, String)>) {
+pub fn simple_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>) {
     let jobs = vec![job("deploy"), job("build"), job("test")];
 
     let constraints = vec![cons("build", "test"), cons("test", "deploy")];
@@ -86,7 +87,7 @@ pub fn simple_job_schedule() -> (Vec<Job>, Vec<(String, String)>) {
     (jobs, constraints)
 }
 
-pub fn complex_job_schedule() -> (Vec<Job>, Vec<(String, String)>) {
+pub fn complex_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>) {
     let jobs = vec![
         job("deploy"),
         job("build1"),
@@ -107,8 +108,8 @@ pub fn complex_job_schedule() -> (Vec<Job>, Vec<(String, String)>) {
     (jobs, constraints)
 }
 
-pub fn job(name: &str) -> Job {
-    Job::short(name.to_string(), vec![])
+pub fn job(name: &str) -> Arc<SharedJob> {
+    Arc::from(Job::short(name.to_string(), vec![]))
 }
 
 pub fn cons(blocking: &str, blocked: &str) -> (String, String) {

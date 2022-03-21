@@ -2,12 +2,12 @@ use crate::ci::display::{CiDisplayConfig, NullCiDisplay};
 use crate::ci::job::dag::Dag;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{schedule, CiDisplay, JobRunner, JobStarter};
-use crate::ci::job::JobOutput;
+use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
 use crate::TermCiDisplay;
-use job::{Job, JobProgressConsumer};
 use std::process::Command;
 use std::sync::mpsc::Sender;
+use std::sync::Arc;
 use std::thread;
 use std::thread::{sleep, JoinHandle};
 use std::time::{Duration, SystemTime};
@@ -17,7 +17,7 @@ pub mod job;
 
 #[derive(Default)]
 pub struct CiConfig {
-    pub jobs: Vec<Job>,
+    pub jobs: Vec<Arc<SharedJob>>,
     pub constraints: Vec<(String, String)>,
     pub display: CiDisplayConfig,
 }
@@ -76,8 +76,9 @@ impl JobStarter for ParrallelJobStarter {
     fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>) {
         while let Some(job) = jobs.poll() {
             let consumer = tx.clone();
+            let arc: Arc<SharedJob> = job.clone();
             self.threads.push(thread::spawn(move || {
-                job.start(&mut CommandJobRunner::new(), &consumer);
+                arc.start(&mut CommandJobRunner::new(), &consumer);
             }));
         }
     }

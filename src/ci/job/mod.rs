@@ -28,11 +28,15 @@ pub trait JobIntrospector {
     fn basic_job(&mut self, name: &str, image: &Option<String>, instructions: &[String]);
 }
 
+pub type SharedJob = dyn JobTrait + Send + Sync;
+
 pub trait JobTrait {
     fn introspect(&self, introspector: &mut dyn JobIntrospector);
+    fn name(&self) -> &str;
+    fn start(&self, runner: &mut dyn JobRunner, consumer: &dyn JobProgressConsumer);
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Job {
     name: String,
     image: Option<String>,
@@ -43,22 +47,12 @@ impl JobTrait for Job {
     fn introspect(&self, introspector: &mut dyn JobIntrospector) {
         introspector.basic_job(&self.name, &self.image, &self.instructions)
     }
-}
 
-impl Job {
-    pub fn long(name: String, instructions: Vec<String>, image: Option<String>) -> Self {
-        Self {
-            name,
-            instructions,
-            image,
-        }
+    fn name(&self) -> &str {
+        &self.name
     }
 
-    pub fn short(name: String, instructions: Vec<String>) -> Self {
-        Self::long(name, instructions, None)
-    }
-
-    pub fn start(&self, runner: &mut dyn JobRunner, consumer: &dyn JobProgressConsumer) {
+    fn start(&self, runner: &mut dyn JobRunner, consumer: &dyn JobProgressConsumer) {
         let mut success = true;
 
         for instruction in &self.instructions {
@@ -77,6 +71,20 @@ impl Job {
         }
 
         consumer.consume(JobProgress::new(&self.name, Progress::Terminated(success)));
+    }
+}
+
+impl Job {
+    pub fn long(name: String, instructions: Vec<String>, image: Option<String>) -> Self {
+        Self {
+            name,
+            instructions,
+            image,
+        }
+    }
+
+    pub fn short(name: String, instructions: Vec<String>) -> Self {
+        Self::long(name, instructions, None)
     }
 
     fn run(&self, instruction: &str, runner: &dyn JobRunner) -> JobOutput {
