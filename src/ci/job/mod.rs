@@ -33,7 +33,7 @@ pub type SharedJob = dyn JobTrait + Send + Sync;
 pub trait JobTrait {
     fn introspect(&self, introspector: &mut dyn JobIntrospector);
     fn name(&self) -> &str;
-    fn groups(&self) -> Option<&str>;
+    fn group(&self) -> Option<&str>;
     fn start(&self, runner: &mut dyn JobRunner, consumer: &dyn JobProgressConsumer);
 }
 
@@ -54,7 +54,7 @@ impl JobTrait for Job {
         &self.name
     }
 
-    fn groups(&self) -> Option<&str> {
+    fn group(&self) -> Option<&str> {
         match &self.group {
             None => None,
             Some(string) => Some(string.as_str()),
