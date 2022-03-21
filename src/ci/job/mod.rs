@@ -25,7 +25,13 @@ pub trait JobProgressConsumer {
 }
 
 pub trait JobIntrospector {
-    fn basic_job(&mut self, name: &str, image: &Option<String>, instructions: &[String]);
+    fn basic_job(
+        &mut self,
+        name: &str,
+        image: &Option<String>,
+        group: &Option<String>,
+        instructions: &[String],
+    );
 }
 
 pub type SharedJob = dyn JobTrait + Send + Sync;
@@ -47,7 +53,7 @@ pub struct Job {
 
 impl JobTrait for Job {
     fn introspect(&self, introspector: &mut dyn JobIntrospector) {
-        introspector.basic_job(&self.name, &self.image, &self.instructions)
+        introspector.basic_job(&self.name, &self.image, &self.group, &self.instructions)
     }
 
     fn name(&self) -> &str {

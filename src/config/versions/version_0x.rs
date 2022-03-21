@@ -79,12 +79,18 @@ impl ConfigLoader for Version0x {
 }
 
 #[derive(Default)]
-struct JobTraitConverter {
+struct VersionXJobConverter {
     data: Option<(String, Vec<String>)>,
 }
 
-impl JobIntrospector for JobTraitConverter {
-    fn basic_job(&mut self, name: &str, _: &Option<String>, instructions: &[String]) {
+impl JobIntrospector for VersionXJobConverter {
+    fn basic_job(
+        &mut self,
+        name: &str,
+        _: &Option<String>,
+        _: &Option<String>,
+        instructions: &[String],
+    ) {
         self.data = Some((name.to_string(), instructions.to_vec()))
     }
 }
@@ -98,7 +104,7 @@ impl Version0x {
                 .jobs
                 .iter()
                 .map(|job| {
-                    let mut converter = JobTraitConverter::default();
+                    let mut converter = VersionXJobConverter::default();
                     job.introspect(&mut converter);
                     converter.data.expect("Visitor has been set")
                 })

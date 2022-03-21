@@ -9,6 +9,7 @@ use std::sync::Arc;
 pub struct FullJobDesc {
     script: Vec<String>,
     image: Option<String>,
+    group: Option<String>,
 }
 
 pub type JobSet = std::collections::HashMap<String, FullJobDesc>;
@@ -58,6 +59,7 @@ struct Display {
 pub struct Version0y {
     version: String,
     jobs: JobSet,
+    groups: Option<Vec<String>>,
     constraints: Option<Constraints>,
     display: Option<Display>,
 }
@@ -76,8 +78,11 @@ impl ConfigLoader for Version0y {
                 name,
                 instructions,
                 full_desc.image.clone(),
-                None,
+                full_desc.group.clone(),
             )))
+        }
+        if let Some(groups) = &self.groups {
+            payload.ci.groups = groups.clone();
         }
 
         if let Some(constraint) = &self.constraints {
@@ -121,16 +126,23 @@ impl ConfigLoader for Version0y {
 }
 
 #[derive(Default)]
-struct JobTraitConverter {
+struct VersionYJobConverter {
     data: Option<(String, FullJobDesc)>,
 }
 
-impl JobIntrospector for JobTraitConverter {
-    fn basic_job(&mut self, name: &str, image: &Option<String>, instructions: &[String]) {
+impl JobIntrospector for VersionYJobConverter {
+    fn basic_job(
+        &mut self,
+        name: &str,
+        image: &Option<String>,
+        group: &Option<String>,
+        instructions: &[String],
+    ) {
         self.data = Some((
             name.to_string(),
             FullJobDesc {
                 image: image.clone(),
+                group: group.clone(),
                 script: instructions.to_vec(),
             },
         ))
@@ -143,7 +155,7 @@ impl Version0y {
         let jobs = job_ref
             .iter()
             .map(|job| {
-                let mut convertor = JobTraitConverter::default();
+                let mut convertor = VersionYJobConverter::default();
                 job.introspect(&mut convertor);
                 convertor.data.expect("Visitor has been set")
             })
@@ -152,6 +164,7 @@ impl Version0y {
             version: String::from("unstable"),
             jobs,
             constraints: Some(from_vec(&payload.ci.constraints)),
+            groups: Some(payload.ci.groups.clone()),
             display: Some(Display {
                 ok: Some(payload.ci.display.ok.to_string()),
                 ko: Some(payload.ci.display.ko.to_string()),
