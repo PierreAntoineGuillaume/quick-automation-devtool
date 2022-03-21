@@ -1,14 +1,13 @@
 pub mod argh;
 pub mod instructions;
 pub mod migrate;
-mod toml_parser;
+mod serialization;
 pub mod version_0x;
 pub mod version_0y;
-mod yaml_parser;
 
 use crate::ci::CiConfig;
-use crate::config::toml_parser::TomlParser;
-use crate::config::yaml_parser::YamlParser;
+use crate::config::serialization::toml_parser::TomlParser;
+use crate::config::serialization::yaml_parser::YamlParser;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
