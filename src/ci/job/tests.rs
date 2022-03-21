@@ -1,5 +1,4 @@
 use super::*;
-use crate::ci::GroupConfig;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
@@ -80,15 +79,17 @@ pub fn docker_jobs_with_args() {
     )
 }
 
-pub fn simple_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>, GroupConfig) {
+pub type ScheduleType = (Vec<Arc<SharedJob>>, Vec<(String, String)>, Vec<String>);
+
+pub fn simple_job_schedule() -> ScheduleType {
     let jobs = vec![job("deploy"), job("build"), job("test")];
 
     let constraints = vec![cons("build", "test"), cons("test", "deploy")];
 
-    (jobs, constraints, GroupConfig::default())
+    (jobs, constraints, vec![])
 }
 
-pub fn complex_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>, GroupConfig) {
+pub fn complex_job_schedule() -> ScheduleType {
     let jobs = vec![
         job("deploy"),
         job("build1"),
@@ -106,10 +107,10 @@ pub fn complex_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>, Gr
         cons("test2", "deploy"),
     ];
 
-    (jobs, constraints, GroupConfig::default())
+    (jobs, constraints, vec![])
 }
 
-pub fn group_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>, GroupConfig) {
+pub fn group_job_schedule() -> ScheduleType {
     let jobs = vec![
         job_group("build1", "build"),
         job_group("build2", "build"),
@@ -118,11 +119,11 @@ pub fn group_job_schedule() -> (Vec<Arc<SharedJob>>, Vec<(String, String)>, Grou
         job_group("deploy", "deploy"),
     ];
 
-    let mut config = GroupConfig::default();
-
-    config.groups.push("build".to_string());
-    config.groups.push("test".to_string());
-    config.groups.push("deploy".to_string());
+    let config = vec![
+        "build".to_string(),
+        "test".to_string(),
+        "deploy".to_string(),
+    ];
 
     (jobs, vec![], config)
 }

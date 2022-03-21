@@ -1,6 +1,5 @@
 use crate::ci::job::dag::constraint_matrix::ConstraintMatrix;
 use crate::ci::job::SharedJob;
-use crate::ci::GroupConfig;
 use indexmap::IndexMap;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
@@ -184,12 +183,12 @@ impl Dag {
     pub fn new(
         jobs: &[Arc<SharedJob>],
         constraints: &[(String, String)],
-        groups: &GroupConfig,
+        groups: &[String],
     ) -> Result<Self, DagError> {
         let jobs: Vec<Arc<SharedJob>> = jobs.to_vec();
         let mut constraints: Vec<(String, String)> = constraints.to_vec();
 
-        constraints.extend(Self::compute_group_constraints(&jobs, &groups.groups));
+        constraints.extend(Self::compute_group_constraints(&jobs, groups));
 
         let matrix = ConstraintMatrix::new(&jobs, &constraints)?;
 
@@ -231,7 +230,7 @@ impl Dag {
 
     fn compute_group_constraints(
         jobs: &[Arc<SharedJob>],
-        groups: &Vec<String>,
+        groups: &[String],
     ) -> Vec<(String, String)> {
         let mut group_constraints = vec![];
         let mut blocking_jobs_by_groups = IndexMap::<String, Vec<String>>::new();
@@ -410,7 +409,6 @@ mod tests {
     use crate::ci::job::tests::{
         complex_job_schedule, cons, group_job_schedule, job, simple_job_schedule,
     };
-    use crate::ci::GroupConfig;
     use std::fmt::{Debug, Display, Formatter};
 
     impl Display for JobList {
@@ -548,9 +546,7 @@ mod tests {
     pub fn test_cycle() {
         let jobs = vec![job("A"), job("B"), job("C")];
         let cons = vec![cons("A", "B"), cons("B", "C"), cons("C", "A")];
-        let error = Dag::new(&jobs, &cons, &GroupConfig::default())
-            .err()
-            .unwrap();
+        let error = Dag::new(&jobs, &cons, &[]).err().unwrap();
 
         if let DagError::CycleExistsBecauseOf(letter) = error {
             assert_eq!(&letter, "A");

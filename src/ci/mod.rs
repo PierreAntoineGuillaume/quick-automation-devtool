@@ -16,14 +16,9 @@ pub mod display;
 pub mod job;
 
 #[derive(Default)]
-pub struct GroupConfig {
-    pub groups: Vec<String>,
-}
-
-#[derive(Default)]
 pub struct CiConfig {
     pub jobs: Vec<Arc<SharedJob>>,
-    pub groups: GroupConfig,
+    pub groups: Vec<String>,
     pub constraints: Vec<(String, String)>,
     pub display: CiDisplayConfig,
 }
