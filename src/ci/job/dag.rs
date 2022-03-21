@@ -121,12 +121,6 @@ pub struct JobWatcher {
     blocked_by_jobs: JobList,
 }
 
-impl Debug for JobWatcher {
-    fn fmt(&self, _: &mut Formatter<'_>) -> std::fmt::Result {
-        Ok(())
-    }
-}
-
 impl JobWatcher {
     pub fn new(
         job: Arc<SharedJob>,
@@ -143,7 +137,6 @@ impl JobWatcher {
     }
 }
 
-#[derive(Debug)]
 pub struct Dag {
     all_jobs: BTreeMap<String, JobWatcher>,
     available_jobs: JobList,
@@ -503,9 +496,9 @@ mod tests {
     pub fn test_cycle() {
         let jobs = vec![job("A"), job("B"), job("C")];
         let cons = vec![cons("A", "B"), cons("B", "C"), cons("C", "A")];
-        let error = Dag::new(&jobs, &cons);
+        let error = Dag::new(&jobs, &cons).err().unwrap();
 
-        if let Err(DagError::CycleExistsBecauseOf(letter)) = error {
+        if let DagError::CycleExistsBecauseOf(letter) = error {
             assert_eq!(&letter, "A");
         } else {
             panic!(
