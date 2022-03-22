@@ -26,7 +26,7 @@ pub fn schedule(
     let mut tracker = JobProgressTracker::new();
 
     if jobs.is_finished() {
-        tracker.try_finish();
+        tracker.finish();
         return tracker;
     }
 
@@ -78,7 +78,7 @@ pub fn schedule(
         }
 
         if jobs.is_finished() {
-            tracker.try_finish();
+            tracker.finish();
             break;
         }
         job_display.refresh(&tracker, delay);

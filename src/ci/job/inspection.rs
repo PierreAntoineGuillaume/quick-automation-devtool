@@ -60,16 +60,9 @@ impl JobProgressTracker {
             .push(job_progress.1);
     }
 
-    pub fn try_finish(&mut self) -> bool {
-        if self.end_time.is_some() {
-            return true;
+    pub fn finish(&mut self) {
+        if self.end_time.is_none() {
+            self.end_time = Some(SystemTime::now());
         }
-        for progress in self.states.values() {
-            if progress.last().is_pending() {
-                return false;
-            }
-        }
-        self.end_time = Some(SystemTime::now());
-        true
     }
 }

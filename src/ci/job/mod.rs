@@ -149,8 +149,4 @@ impl Progress {
                 | Progress::Terminated(false)
         )
     }
-
-    pub fn is_pending(&self) -> bool {
-        !matches!(*self, Progress::Terminated(_))
-    }
 }
