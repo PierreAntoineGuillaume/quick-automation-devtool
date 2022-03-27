@@ -1,11 +1,11 @@
+use crate::ci::display::full_final_display::FullFinalDisplay;
 use crate::ci::display::spinner::Spinner;
 use crate::ci::display::term_wrapper::TermWrapper;
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::schedule::CiDisplay;
-use crate::ci::job::{JobOutput, Progress};
+use crate::ci::job::Progress;
 use std::cmp::max;
-use std::time::SystemTime;
 
 pub struct SequenceDisplay<'a> {
     spin: Spinner<'a>,
@@ -30,65 +30,8 @@ impl<'a> CiDisplay for SequenceDisplay<'a> {
         self.refresh(tracker, 0);
         self.clear();
         self.term.flush();
-        for (job_name, progress_collector) in &tracker.states {
-            println!("Running tasks for job {job_name}");
-            for progress in &progress_collector.progresses {
-                match progress {
-                    Progress::Partial(instruction, job_output) => match job_output {
-                        JobOutput::Success(stdout, stderr)
-                        | JobOutput::JobError(stdout, stderr) => {
-                            let symbol = if job_output.succeeded() {
-                                &self.config.ok
-                            } else {
-                                &self.config.ko
-                            };
-                            print!(
-                                "{} {}",
-                                symbol,
-                                try_cleanup(format!(
-                                    "{}\n{}{}",
-                                    instruction,
-                                    try_cleanup(stdout.clone()),
-                                    try_cleanup(stderr.clone())
-                                ))
-                            );
-                        }
-                        JobOutput::ProcessError(stderr) => {
-                            print!(
-                                "{} {instruction}: {}",
-                                self.config.ko,
-                                try_cleanup(stderr.clone())
-                            );
-                        }
-                    },
-                    Progress::Terminated(bool) => {
-                        let emoji: &str = if *bool {
-                            &self.config.ok
-                        } else {
-                            &self.config.ko
-                        };
-                        println!("{} all tasks done for job {}", emoji, job_name);
-                    }
-                    _ => {}
-                }
-            }
-        }
-        let time = tracker
-            .end_time
-            .or_else(|| Some(SystemTime::now()))
-            .unwrap();
-        let elasped = time.duration_since(tracker.start_time).unwrap().as_millis() as f64;
-        let status = if !tracker.has_failed {
-            (&self.config.ok, "succeeded")
-        } else {
-            (&self.config.ko, "failed")
-        };
-        println!(
-            "\n{} ci {} in {:.2} seconds",
-            status.0,
-            status.1,
-            elasped / 1000f64
-        );
+        let mut final_display = FullFinalDisplay::new(self.config);
+        final_display.finish(tracker);
     }
 }
 
@@ -141,14 +84,5 @@ impl<'a> SequenceDisplay<'a> {
             config,
             max_job_name_len: 0,
         }
-    }
-}
-
-fn try_cleanup(input: String) -> String {
-    let cleaned = input.trim_end();
-    if cleaned.is_empty() {
-        String::new()
-    } else {
-        format!("{cleaned}\n")
     }
 }

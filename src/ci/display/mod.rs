@@ -1,3 +1,4 @@
+mod full_final_display;
 pub mod sequence_display;
 pub mod silent_display;
 mod spinner;
