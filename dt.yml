@@ -14,7 +14,6 @@ constraints:
     fmt: [ clippy, tests]
   needs:
 display:
-  show_command: false
   spinner:
     frames: [".  ", ".. ", "...", ".. ", ".  "]
     per_frames: 80

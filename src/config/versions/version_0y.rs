@@ -59,7 +59,6 @@ struct Display {
     ok: Option<String>,
     ko: Option<String>,
     cancelled: Option<String>,
-    show_command: Option<bool>,
     display: Option<Vec<Verbose>>,
     spinner: Option<Spinner>,
 }
@@ -188,7 +187,6 @@ impl Version0y {
                 ok: Some(payload.ci.display.ok.to_string()),
                 ko: Some(payload.ci.display.ko.to_string()),
                 cancelled: Some(payload.ci.display.cancelled.to_string()),
-                show_command: Some(payload.ci.display.show_commands),
                 display: None,
                 spinner: Some(Spinner {
                     frames: payload.ci.display.spinner.0.clone(),

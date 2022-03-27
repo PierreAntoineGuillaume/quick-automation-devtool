@@ -124,11 +124,7 @@ impl<'a> SequenceDisplay<'a> {
                 self.term.write(&format!(" {}", self.config.cancelled));
             }
             Progress::Started(command) => {
-                if self.config.show_commands {
-                    self.term.write(&format!(" {} {}", command, self.spin));
-                } else {
-                    self.term.write(&format!(" {}", self.spin));
-                }
+                self.term.write(&format!(" {} {}", command, self.spin));
             }
         }
         self.term.newline();

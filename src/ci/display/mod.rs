@@ -19,7 +19,6 @@ pub struct CiDisplayConfig {
     pub ok: String,
     pub ko: String,
     pub cancelled: String,
-    pub show_commands: bool,
     pub spinner: (Vec<String>, usize),
 }
 
@@ -30,7 +29,6 @@ impl Default for CiDisplayConfig {
             ok: String::from("✔"),
             ko: String::from("✕"),
             cancelled: String::from("? cancelled"),
-            show_commands: true,
             spinner: (
                 vec![
                     String::from(".  "),
