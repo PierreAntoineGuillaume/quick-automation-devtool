@@ -1,3 +1,4 @@
+use crate::ci::display::Mode;
 use crate::ci::job::{Job, JobIntrospector};
 use crate::config::instructions::InstructionCompiler;
 use crate::config::{ConfigLoader, ConfigPayload};
@@ -45,8 +46,16 @@ struct Spinner {
     per_frames: usize,
 }
 
+#[allow(non_camel_case_types)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub enum DisplayMode {
+    silent,
+    sequence,
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct Display {
+    mode: Option<DisplayMode>,
     ok: Option<String>,
     ko: Option<String>,
     cancelled: Option<String>,
@@ -108,18 +117,24 @@ impl ConfigLoader for Version0y {
             }
         }
 
-        if let Some(icons) = &self.display {
-            if let Some(ok) = &icons.ok {
+        if let Some(display) = &self.display {
+            if let Some(ok) = &display.ok {
                 payload.ci.display.ok = ok.to_string()
             }
-            if let Some(ko) = &icons.ko {
+            if let Some(ko) = &display.ko {
                 payload.ci.display.ko = ko.to_string()
             }
-            if let Some(cancelled) = &icons.cancelled {
+            if let Some(cancelled) = &display.cancelled {
                 payload.ci.display.cancelled = cancelled.to_string()
             }
-            if let Some(spinner) = &icons.spinner {
+            if let Some(spinner) = &display.spinner {
                 payload.ci.display.spinner = (spinner.frames.clone(), spinner.per_frames)
+            }
+            if let Some(mode) = &display.mode {
+                match mode {
+                    DisplayMode::silent => payload.ci.display.mode = Mode::Silent,
+                    DisplayMode::sequence => payload.ci.display.mode = Mode::AllOutput,
+                }
             }
         }
     }
@@ -166,6 +181,10 @@ impl Version0y {
             constraints: Some(from_vec(&payload.ci.constraints)),
             groups: Some(payload.ci.groups.clone()),
             display: Some(Display {
+                mode: Some(match payload.ci.display.mode {
+                    Mode::Silent => DisplayMode::silent,
+                    Mode::AllOutput => DisplayMode::sequence,
+                }),
                 ok: Some(payload.ci.display.ok.to_string()),
                 ko: Some(payload.ci.display.ko.to_string()),
                 cancelled: Some(payload.ci.display.cancelled.to_string()),

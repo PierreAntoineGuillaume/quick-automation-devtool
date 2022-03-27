@@ -10,16 +10,12 @@ use crate::ci::display::TermCiDisplay;
 use crate::ci::Ci;
 use crate::config::argh::{Args, ConfigSubcommands, MigrateToSubCommands, Subcommands};
 use crate::config::migrate::Migrate;
-use crate::config::{Config, ConfigPayload, Format, OptionConfigPayload};
+use crate::config::{Config, ConfigPayload, Format};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
     let args: Args = argh::from_env();
-
-    let mut option_config = OptionConfigPayload::default();
-
-    args.fill(&mut option_config);
 
     if args.version {
         println!("v{}", VERSION);
@@ -37,7 +33,7 @@ fn main() {
         .or_else::<String, _>(|_| Ok(String::from("dt")))
         .unwrap();
 
-    let config = Config::from(option_config, &envvar);
+    let config = Config::from(&envvar);
 
     match command {
         Subcommands::Ci(_) => match (Ci {}).run(config) {

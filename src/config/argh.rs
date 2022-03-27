@@ -1,4 +1,4 @@
-use crate::{Format, OptionConfigPayload};
+use crate::Format;
 use argh::FromArgs;
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -6,17 +6,9 @@ use argh::FromArgs;
 pub struct Args {
     #[argh(switch, description = "show the executable version")]
     pub version: bool,
-    #[argh(switch, short = 'q', description = "do not display expected output")]
-    pub quiet: bool,
 
     #[argh(subcommand)]
     pub nested: Option<Subcommands>,
-}
-
-impl Args {
-    pub fn fill(&self, config: &mut OptionConfigPayload) {
-        config.display = if self.quiet { Some(()) } else { None }
-    }
 }
 
 #[derive(FromArgs, PartialEq, Debug)]

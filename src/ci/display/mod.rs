@@ -10,7 +10,19 @@ use std::cmp::max;
 use std::time::SystemTime;
 use term::StdoutTerminal;
 
+pub enum Mode {
+    Silent,
+    AllOutput,
+}
+
+impl Default for Mode {
+    fn default() -> Self {
+        Self::AllOutput
+    }
+}
+
 pub struct CiDisplayConfig {
+    pub mode: Mode,
     pub ok: String,
     pub ko: String,
     pub cancelled: String,
@@ -21,6 +33,7 @@ pub struct CiDisplayConfig {
 impl Default for CiDisplayConfig {
     fn default() -> Self {
         Self {
+            mode: Mode::default(),
             ok: String::from("✔"),
             ko: String::from("✕"),
             cancelled: String::from("? cancelled"),

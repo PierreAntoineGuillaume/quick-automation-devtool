@@ -66,26 +66,11 @@ pub struct Version {
 
 pub struct Config {
     possible_files: Vec<String>,
-    options: OptionConfigPayload,
 }
 
 #[derive(Default)]
 pub struct ConfigPayload {
     pub ci: CiConfig,
-    pub quiet: bool,
-}
-
-#[derive(Default)]
-pub struct OptionConfigPayload {
-    pub display: Option<()>,
-}
-
-impl OptionConfigPayload {
-    pub fn load_into(&self, config: &mut ConfigPayload) {
-        if self.display.is_some() {
-            config.quiet = true;
-        }
-    }
 }
 
 pub trait ConfigLoader {
@@ -118,17 +103,14 @@ impl Config {
         })
     }
 
-    pub fn from(options: OptionConfigPayload, env: &str) -> Self {
+    pub fn from(env: &str) -> Self {
         let possible_files: Vec<String> =
             ["toml", "yaml", "yml", "toml.dist", "yaml.dist", "yml.dist"]
                 .iter()
                 .map(|str| format!("{}.{}", env, str))
                 .collect();
 
-        Config {
-            possible_files,
-            options,
-        }
+        Config { possible_files }
     }
 
     pub fn load_into(&self, config: &mut ConfigPayload) -> Result<(), String> {
@@ -146,7 +128,6 @@ impl Config {
 
     pub fn load_with_args_into(&self, config: &mut ConfigPayload) -> Result<(), String> {
         self.load_into(config)?;
-        self.options.load_into(config);
         Ok(())
     }
 
