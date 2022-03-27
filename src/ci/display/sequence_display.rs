@@ -2,7 +2,7 @@ use crate::ci::display::full_final_display::FullFinalDisplay;
 use crate::ci::display::spinner::Spinner;
 use crate::ci::display::term_wrapper::TermWrapper;
 use crate::ci::display::CiDisplayConfig;
-use crate::ci::job::inspection::JobProgressTracker;
+use crate::ci::job::inspection::{JobProgressTracker, ProgressCollector};
 use crate::ci::job::schedule::CiDisplay;
 use crate::ci::job::Progress;
 use std::cmp::max;
@@ -21,7 +21,7 @@ impl<'a> CiDisplay for SequenceDisplay<'a> {
             self.max_job_name_len = max(self.max_job_name_len, job_name.len());
         }
         for (job_name, progress_collector) in &tracker.states {
-            self.display(job_name, progress_collector.last());
+            self.display(job_name, progress_collector);
         }
         self.term.flush();
         self.spin.tick(elapsed);
@@ -36,7 +36,9 @@ impl<'a> CiDisplay for SequenceDisplay<'a> {
 }
 
 impl<'a> SequenceDisplay<'a> {
-    fn display(&mut self, job_name: &str, progress: &Progress) {
+    fn display(&mut self, job_name: &str, collector: &ProgressCollector) {
+        let progress = collector.last();
+
         self.term
             .write(&format!("{:1$}", job_name, self.max_job_name_len));
         match progress {
