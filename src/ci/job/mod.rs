@@ -133,9 +133,9 @@ impl Job {
 #[derive(Debug, PartialEq)]
 pub enum Progress {
     Available,
-    Started(String),
     Blocked(Vec<String>),
     Cancelled,
+    Started(String),
     Partial(String, JobOutput),
     Terminated(bool),
 }
