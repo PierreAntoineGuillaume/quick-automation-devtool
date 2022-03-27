@@ -1,10 +1,11 @@
-use crate::ci::display::{CiDisplayConfig, Mode, NullCiDisplay};
+use crate::ci::display::silent_display::SilentDisplay;
+use crate::ci::display::{CiDisplayConfig, Mode};
 use crate::ci::job::dag::Dag;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{schedule, CiDisplay, JobRunner, JobStarter};
 use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
-use crate::TermCiDisplay;
+use crate::SequenceDisplay;
 use std::process::Command;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
@@ -32,8 +33,8 @@ impl Ci {
         let ci_config = payload.ci;
 
         let mut display: Box<dyn CiDisplay> = match &ci_config.display.mode {
-            Mode::Silent => Box::new(NullCiDisplay {}),
-            Mode::AllOutput => Box::new(TermCiDisplay::new(&ci_config.display)),
+            Mode::Silent => Box::new(SilentDisplay {}),
+            Mode::AllOutput => Box::new(SequenceDisplay::new(&ci_config.display)),
         };
 
         let dag = Dag::new(&ci_config.jobs, &ci_config.constraints, &ci_config.groups).unwrap();

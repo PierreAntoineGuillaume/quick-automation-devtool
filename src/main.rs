@@ -6,7 +6,7 @@ extern crate indexmap;
 extern crate term;
 extern crate terminal_size;
 
-use crate::ci::display::TermCiDisplay;
+use crate::ci::display::sequence_display::SequenceDisplay;
 use crate::ci::Ci;
 use crate::config::argh::{Args, ConfigSubcommands, MigrateToSubCommands, Subcommands};
 use crate::config::migrate::Migrate;

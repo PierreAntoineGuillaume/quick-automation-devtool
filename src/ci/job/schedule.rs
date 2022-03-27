@@ -103,7 +103,7 @@ pub fn read(rx: &Receiver<JobProgress>) -> Option<JobProgress> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ci::display::NullCiDisplay;
+    use crate::ci::display::silent_display::SilentDisplay;
     use crate::ci::job::{Job, SharedJob};
     use std::sync::Arc;
 
@@ -121,7 +121,7 @@ mod tests {
 
     fn pipeline(jobs: &[Arc<SharedJob>]) -> JobProgressTracker {
         let mut job_start = TestJobStarter {};
-        let mut job_display = NullCiDisplay {};
+        let mut job_display = SilentDisplay {};
         let dag = Dag::new(jobs, &[], &[]).unwrap();
         schedule(dag, &mut job_start, &mut job_display)
     }
