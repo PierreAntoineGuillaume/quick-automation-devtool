@@ -1,4 +1,5 @@
 use crate::ci::display::silent_display::SilentDisplay;
+use crate::ci::display::summary_display::SummaryDisplay;
 use crate::ci::display::{CiDisplayConfig, Mode};
 use crate::ci::job::dag::Dag;
 use crate::ci::job::inspection::JobProgress;
@@ -35,6 +36,7 @@ impl Ci {
         let mut display: Box<dyn CiDisplay> = match &ci_config.display.mode {
             Mode::Silent => Box::new(SilentDisplay {}),
             Mode::AllOutput => Box::new(SequenceDisplay::new(&ci_config.display)),
+            Mode::Summary => Box::new(SummaryDisplay::new(&ci_config.display)),
         };
 
         let dag = Dag::new(&ci_config.jobs, &ci_config.constraints, &ci_config.groups).unwrap();

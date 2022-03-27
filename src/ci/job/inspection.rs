@@ -34,6 +34,44 @@ impl ProgressCollector {
     pub fn last(&self) -> &Progress {
         self.progresses.last().unwrap()
     }
+
+    pub fn terminated(&self) -> Option<bool> {
+        match self.last() {
+            Progress::Terminated(result) => Some(*result),
+            _ => None,
+        }
+    }
+
+    pub fn instruction_list(&self) -> Vec<InstructionState> {
+        let mut vec = vec![];
+        let mut temp = None;
+        for progress in &self.progresses {
+            match progress {
+                Progress::Partial(instruction, output) => {
+                    temp = None;
+                    vec.push(InstructionState::Finished(
+                        instruction.clone(),
+                        output.succeeded(),
+                    ))
+                }
+                Progress::Started(instruction) => {
+                    temp = Some(instruction.clone());
+                }
+                _ => {
+                    temp = None;
+                }
+            }
+        }
+        if let Some(instruction) = temp {
+            vec.push(InstructionState::Running(instruction))
+        }
+        vec
+    }
+}
+
+pub enum InstructionState {
+    Finished(String, bool),
+    Running(String),
 }
 
 pub struct JobProgressTracker {

@@ -2,11 +2,13 @@ mod full_final_display;
 pub mod sequence_display;
 pub mod silent_display;
 mod spinner;
+pub mod summary_display;
 mod term_wrapper;
 
 pub enum Mode {
     Silent,
     AllOutput,
+    Summary,
 }
 
 impl Default for Mode {

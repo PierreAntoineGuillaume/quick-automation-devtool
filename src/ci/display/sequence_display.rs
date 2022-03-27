@@ -16,7 +16,7 @@ pub struct SequenceDisplay<'a> {
 
 impl<'a> CiDisplay for SequenceDisplay<'a> {
     fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
-        self.term.clear();
+        self.clean_up();
         for (job_name, _) in &tracker.states {
             self.max_job_name_len = max(self.max_job_name_len, job_name.len());
         }
@@ -26,10 +26,12 @@ impl<'a> CiDisplay for SequenceDisplay<'a> {
         self.term.flush();
         self.spin.tick(elapsed);
     }
+
+    fn clean_up(&mut self) {
+        self.term.clear();
+    }
+
     fn finish(&mut self, tracker: &JobProgressTracker) {
-        self.refresh(tracker, 0);
-        self.clear();
-        self.term.flush();
         let mut final_display = FullFinalDisplay::new(self.config);
         final_display.finish(tracker);
     }
@@ -73,10 +75,6 @@ impl<'a> SequenceDisplay<'a> {
             }
         }
         self.term.newline();
-    }
-
-    fn clear(&mut self) {
-        self.term.clear()
     }
 
     pub fn new(config: &'a CiDisplayConfig) -> Self {

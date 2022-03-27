@@ -51,6 +51,7 @@ struct Spinner {
 pub enum DisplayMode {
     silent,
     sequence,
+    summary,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -133,6 +134,7 @@ impl ConfigLoader for Version0y {
                 match mode {
                     DisplayMode::silent => payload.ci.display.mode = Mode::Silent,
                     DisplayMode::sequence => payload.ci.display.mode = Mode::AllOutput,
+                    DisplayMode::summary => payload.ci.display.mode = Mode::Summary,
                 }
             }
         }
@@ -183,6 +185,7 @@ impl Version0y {
                 mode: Some(match payload.ci.display.mode {
                     Mode::Silent => DisplayMode::silent,
                     Mode::AllOutput => DisplayMode::sequence,
+                    Mode::Summary => DisplayMode::summary,
                 }),
                 ok: Some(payload.ci.display.ok.to_string()),
                 ko: Some(payload.ci.display.ko.to_string()),

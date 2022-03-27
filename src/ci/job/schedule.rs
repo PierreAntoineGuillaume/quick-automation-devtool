@@ -15,6 +15,7 @@ pub trait JobStarter {
 
 pub trait CiDisplay {
     fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize);
+    fn clean_up(&mut self);
     fn finish(&mut self, tracker: &JobProgressTracker);
 }
 
@@ -86,6 +87,7 @@ pub fn schedule(
     }
 
     job_starter.join();
+    job_display.clean_up();
 
     tracker
 }
