@@ -361,9 +361,12 @@ impl Dag {
 
         for blocked_job_name in blocked_job_list {
             let blocked_job = self.all_jobs.get_mut(blocked_job_name.as_str()).unwrap();
+            if matches!(blocked_job.state, JobState::Cancelled(_)) {
+                return;
+            }
             debug_assert!(
                 matches!(blocked_job.state, JobState::Blocked),
-                "Only blocked jobs should be in blocked list"
+                "Only blocked or Cancelled jobs should be in blocked list"
             );
             blocked_job.blocked_by_jobs.remove_job(&blocking_job_name);
             if blocked_job.blocked_by_jobs.is_empty() {
@@ -383,7 +386,7 @@ impl Dag {
                     blocked_job.state,
                     JobState::Blocked | JobState::Cancelled(_)
                 ),
-                "Only blocked jobs should be in blocked list"
+                "Only blocked or Cancelled jobs should be in blocked list"
             );
             let list = match &blocked_job.state {
                 JobState::Blocked => {
