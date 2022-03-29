@@ -1,48 +1,43 @@
 use crate::terminal_size::terminal_size;
-use term::StdoutTerminal;
+use std::io::Write;
 
+#[derive(Default)]
 pub struct TermWrapper {
-    term: Box<StdoutTerminal>,
     written_lines: u16,
     written_chars: usize,
 }
 
-impl Default for TermWrapper {
-    fn default() -> Self {
-        Self {
-            term: term::stdout().unwrap(),
-            written_lines: 0,
-            written_chars: 0,
-        }
-    }
-}
+const CLEAR_TIL_EO_SCREEN: [u8; 4] = [27, b'[', b'0', b'J'];
 
 impl TermWrapper {
     pub fn newline(&mut self) {
         self.written_lines += 1;
         self.written_chars = 0;
-        writeln!(self.term).unwrap();
+        println!();
     }
+
     pub fn write(&mut self, message: &str) {
         let termsize = terminal_size().unwrap().0 .0 as usize;
-        write!(self.term, "{}", message).unwrap();
+        print!("{}", message);
         self.written_chars += message.len();
         if self.written_chars > termsize {
             self.written_chars %= termsize;
             self.written_lines += 1;
         }
     }
+
     pub fn clear(&mut self) {
-        (0..self.written_lines as usize).for_each(|_| {
-            self.term.cursor_up().unwrap();
-            self.term.carriage_return().unwrap();
-            self.term.delete_line().unwrap();
-        });
+        if self.written_lines == 0 && self.written_chars == 0 {
+            return;
+        }
+        let mut term_seq = vec![27, b'['];
+
+        term_seq.extend(self.written_lines.to_string().into_bytes());
+        term_seq.extend(&[b'A']);
+        term_seq.extend(CLEAR_TIL_EO_SCREEN);
+
+        std::io::stdout().write_all(&term_seq).unwrap();
         self.written_lines = 0;
         self.written_chars = 0;
-    }
-
-    pub fn flush(&mut self) {
-        self.term.reset().unwrap();
     }
 }

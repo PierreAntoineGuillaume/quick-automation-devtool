@@ -22,13 +22,11 @@ impl<'a> RunningCiDisplay for SummaryDisplay<'a> {
         for (job_name, progress_collector) in &tracker.states {
             self.display(job_name, progress_collector);
         }
-        self.term.flush();
         self.spin.tick(elapsed);
     }
 
     fn clean_up(&mut self) {
         self.clear();
-        self.term.flush();
     }
 }
 
