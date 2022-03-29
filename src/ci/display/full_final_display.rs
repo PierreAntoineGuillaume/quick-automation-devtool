@@ -2,14 +2,20 @@ use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::schedule::FinalCiDisplay;
 use crate::ci::job::{JobOutput, Progress};
+use regex::Regex;
 use std::time::SystemTime;
 
 pub fn try_cleanup(input: String) -> String {
-    let cleaned = input.trim_end();
+    let cleaned = input.trim_end().replace(27 as char, r"\E");
     if cleaned.is_empty() {
         String::new()
     } else {
-        format!("{cleaned}\n")
+        let regex = Regex::new(r"\\E\[.[KG]").unwrap();
+        format!(
+            "{}\n",
+            regex.replace_all(&cleaned, (27 as char).to_string())
+        )
+        .replace(r"\E", &(27 as char).to_string())
     }
 }
 
@@ -25,9 +31,13 @@ impl<'a> FullFinalDisplay<'a> {
 impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
     fn finish(&mut self, tracker: &JobProgressTracker) {
         for (job_name, progress_collector) in &tracker.states {
-            println!("Running tasks for job {job_name}");
+            let mut string = String::new();
+            let mut icon = String::new();
             for progress in &progress_collector.progresses {
                 match progress {
+                    Progress::Cancelled => {
+                        icon = self.config.cancelled.clone();
+                    }
                     Progress::Partial(instruction, job_output) => match job_output {
                         JobOutput::Success(stdout, stderr)
                         | JobOutput::JobError(stdout, stderr) => {
@@ -36,35 +46,38 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                             } else {
                                 &self.config.ko
                             };
-                            print!(
-                                "{} {}",
-                                symbol,
-                                try_cleanup(format!(
-                                    "{}\n{}{}",
-                                    instruction,
-                                    try_cleanup(stdout.clone()),
-                                    try_cleanup(stderr.clone())
-                                ))
-                            );
+                            string.push_str(&format!("{} {}", symbol, instruction,));
+                            string.push_str(&format!(
+                                "\n  {}\n  {}\n",
+                                try_cleanup(stdout.clone()).replace('\n', "\n  "),
+                                stderr.clone().trim_end().replace('\n', "\n  ")
+                            ))
                         }
                         JobOutput::ProcessError(stderr) => {
-                            print!(
+                            string.push_str(&format!(
                                 "{} {instruction}: {}",
                                 self.config.ko,
-                                try_cleanup(stderr.clone())
-                            );
+                                try_cleanup(stderr.clone()).replace('\n', "\n  ")
+                            ));
                         }
                     },
                     Progress::Terminated(bool) => {
                         let emoji: &str = if *bool {
+                            icon = self.config.ok.clone();
                             &self.config.ok
                         } else {
+                            icon = self.config.ko.clone();
                             &self.config.ko
                         };
-                        println!("{} all tasks done for job {}", emoji, job_name);
+                        string
+                            .push_str(&format!("{} all tasks done for job {}\n", emoji, job_name));
                     }
                     _ => {}
                 }
+            }
+            println!("{icon} tasks for job {job_name}:");
+            if !string.is_empty() {
+                print!("{}", string);
             }
         }
         let time = tracker
