@@ -13,16 +13,19 @@ pub trait JobStarter {
     fn delay(&mut self) -> usize;
 }
 
-pub trait CiDisplay {
+pub trait RunningCiDisplay {
     fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize);
     fn clean_up(&mut self);
+}
+
+pub trait FinalCiDisplay {
     fn finish(&mut self, tracker: &JobProgressTracker);
 }
 
 pub fn schedule(
     mut jobs: Dag,
     job_starter: &mut dyn JobStarter,
-    job_display: &mut dyn CiDisplay,
+    job_display: &mut dyn RunningCiDisplay,
 ) -> JobProgressTracker {
     let mut tracker = JobProgressTracker::new();
 

@@ -1,9 +1,8 @@
-use crate::ci::display::full_final_display::FullFinalDisplay;
 use crate::ci::display::spinner::Spinner;
 use crate::ci::display::term_wrapper::TermWrapper;
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::{JobProgressTracker, ProgressCollector};
-use crate::ci::job::schedule::CiDisplay;
+use crate::ci::job::schedule::RunningCiDisplay;
 use crate::ci::job::Progress;
 use std::cmp::max;
 
@@ -14,7 +13,7 @@ pub struct SequenceDisplay<'a> {
     max_job_name_len: usize,
 }
 
-impl<'a> CiDisplay for SequenceDisplay<'a> {
+impl<'a> RunningCiDisplay for SequenceDisplay<'a> {
     fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
         self.clean_up();
         for (job_name, _) in &tracker.states {
@@ -29,11 +28,6 @@ impl<'a> CiDisplay for SequenceDisplay<'a> {
 
     fn clean_up(&mut self) {
         self.term.clear();
-    }
-
-    fn finish(&mut self, tracker: &JobProgressTracker) {
-        let mut final_display = FullFinalDisplay::new(self.config);
-        final_display.finish(tracker);
     }
 }
 

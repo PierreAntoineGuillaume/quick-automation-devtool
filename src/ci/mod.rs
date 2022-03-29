@@ -1,9 +1,10 @@
+use crate::ci::display::full_final_display::FullFinalDisplay;
 use crate::ci::display::silent_display::SilentDisplay;
 use crate::ci::display::summary_display::SummaryDisplay;
 use crate::ci::display::{CiDisplayConfig, Mode};
 use crate::ci::job::dag::Dag;
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::schedule::{schedule, CiDisplay, JobRunner, JobStarter};
+use crate::ci::job::schedule::{schedule, FinalCiDisplay, JobRunner, JobStarter, RunningCiDisplay};
 use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
 use crate::SequenceDisplay;
@@ -33,7 +34,7 @@ impl Ci {
         config.load_with_args_into(&mut payload)?;
         let ci_config = payload.ci;
 
-        let mut display: Box<dyn CiDisplay> = match &ci_config.display.mode {
+        let mut display: Box<dyn RunningCiDisplay> = match &ci_config.display.mode {
             Mode::Silent => Box::new(SilentDisplay {}),
             Mode::AllOutput => Box::new(SequenceDisplay::new(&ci_config.display)),
             Mode::Summary => Box::new(SummaryDisplay::new(&ci_config.display)),
@@ -43,7 +44,8 @@ impl Ci {
 
         let tracker = schedule(dag, &mut ParrallelJobStarter::new(), &mut *display);
 
-        display.finish(&tracker);
+        (&mut FullFinalDisplay::new(&ci_config.display) as &mut dyn FinalCiDisplay)
+            .finish(&tracker);
 
         if tracker.has_failed {
             Err(None)

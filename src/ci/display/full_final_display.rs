@@ -1,5 +1,6 @@
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::JobProgressTracker;
+use crate::ci::job::schedule::FinalCiDisplay;
 use crate::ci::job::{JobOutput, Progress};
 use std::time::SystemTime;
 
@@ -20,8 +21,9 @@ impl<'a> FullFinalDisplay<'a> {
     pub fn new(config: &'a CiDisplayConfig) -> Self {
         Self { config }
     }
-
-    pub fn finish(&mut self, tracker: &JobProgressTracker) {
+}
+impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
+    fn finish(&mut self, tracker: &JobProgressTracker) {
         for (job_name, progress_collector) in &tracker.states {
             println!("Running tasks for job {job_name}");
             for progress in &progress_collector.progresses {
