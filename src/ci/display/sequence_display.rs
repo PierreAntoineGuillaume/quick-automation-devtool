@@ -4,7 +4,6 @@ use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::{JobProgressTracker, ProgressCollector};
 use crate::ci::job::schedule::RunningCiDisplay;
 use crate::ci::job::Progress;
-use std::cmp::max;
 
 pub struct SequenceDisplay<'a> {
     spin: Spinner<'a>,
@@ -14,18 +13,24 @@ pub struct SequenceDisplay<'a> {
 }
 
 impl<'a> RunningCiDisplay for SequenceDisplay<'a> {
-    fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
-        self.clean_up();
-        for (job_name, _) in &tracker.states {
-            self.max_job_name_len = max(self.max_job_name_len, job_name.len());
-        }
+    fn set_up(&mut self, tracker: &JobProgressTracker) {
+        self.max_job_name_len = tracker
+            .states
+            .iter()
+            .map(|(name, _)| name.len())
+            .max()
+            .unwrap();
+    }
+
+    fn run(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
+        self.term.clear();
         for (job_name, progress_collector) in &tracker.states {
             self.display(job_name, progress_collector);
         }
         self.spin.tick(elapsed);
     }
 
-    fn clean_up(&mut self) {
+    fn tear_down(&mut self, _: &JobProgressTracker) {
         self.term.clear();
     }
 }

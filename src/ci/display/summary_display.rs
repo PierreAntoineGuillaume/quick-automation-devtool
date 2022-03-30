@@ -3,7 +3,6 @@ use crate::ci::display::term_wrapper::TermWrapper;
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::{InstructionState, JobProgressTracker, ProgressCollector};
 use crate::ci::job::schedule::RunningCiDisplay;
-use std::cmp::max;
 
 pub struct SummaryDisplay<'a> {
     spin: Spinner<'a>,
@@ -13,19 +12,25 @@ pub struct SummaryDisplay<'a> {
 }
 
 impl<'a> RunningCiDisplay for SummaryDisplay<'a> {
-    fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
+    fn set_up(&mut self, tracker: &JobProgressTracker) {
+        self.max_job_name_len = tracker
+            .states
+            .iter()
+            .map(|(name, _)| name.len())
+            .max()
+            .unwrap();
+    }
+
+    fn run(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
         self.term.clear();
 
-        for (job_name, _) in &tracker.states {
-            self.max_job_name_len = max(self.max_job_name_len, job_name.len());
-        }
         for (job_name, progress_collector) in &tracker.states {
             self.display(job_name, progress_collector);
         }
         self.spin.tick(elapsed);
     }
 
-    fn clean_up(&mut self) {
+    fn tear_down(&mut self, _: &JobProgressTracker) {
         self.clear();
     }
 }
@@ -64,8 +69,6 @@ impl<'a> SummaryDisplay<'a> {
             }
             self.term.newline();
         }
-
-        self.term.newline();
     }
 
     fn clear(&mut self) {

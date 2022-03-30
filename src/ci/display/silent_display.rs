@@ -3,7 +3,7 @@ use crate::ci::job::schedule::RunningCiDisplay;
 
 pub struct SilentDisplay {}
 impl RunningCiDisplay for SilentDisplay {
-    fn refresh(&mut self, _: &JobProgressTracker, _: usize) {}
-
-    fn clean_up(&mut self) {}
+    fn set_up(&mut self, _: &JobProgressTracker) {}
+    fn run(&mut self, _: &JobProgressTracker, _: usize) {}
+    fn tear_down(&mut self, _: &JobProgressTracker) {}
 }

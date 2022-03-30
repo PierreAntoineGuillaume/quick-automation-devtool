@@ -14,8 +14,9 @@ pub trait JobStarter {
 }
 
 pub trait RunningCiDisplay {
-    fn refresh(&mut self, tracker: &JobProgressTracker, elapsed: usize);
-    fn clean_up(&mut self);
+    fn set_up(&mut self, tracker: &JobProgressTracker);
+    fn run(&mut self, tracker: &JobProgressTracker, elapsed: usize);
+    fn tear_down(&mut self, tracker: &JobProgressTracker);
 }
 
 pub trait FinalCiDisplay {
@@ -51,6 +52,8 @@ pub fn schedule(
 
     let mut delay: usize = 0;
 
+    job_display.set_up(&tracker);
+
     loop {
         job_starter.consume_some_jobs(&mut jobs, tx.clone());
 
@@ -85,12 +88,12 @@ pub fn schedule(
             tracker.finish();
             break;
         }
-        job_display.refresh(&tracker, delay);
+        job_display.run(&tracker, delay);
         delay = job_starter.delay();
     }
 
     job_starter.join();
-    job_display.clean_up();
+    job_display.tear_down(&tracker);
 
     tracker
 }
