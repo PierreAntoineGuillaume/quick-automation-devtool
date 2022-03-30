@@ -22,11 +22,12 @@ impl<'a> RunningCiDisplay for SummaryDisplay<'a> {
     }
 
     fn run(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
-        self.term.clear();
+        self.term.rewind();
 
         for (job_name, progress_collector) in &tracker.states {
             self.display(job_name, progress_collector);
         }
+        self.term.clear_til_eo_screen();
         self.spin.tick(elapsed);
     }
 
@@ -38,7 +39,7 @@ impl<'a> RunningCiDisplay for SummaryDisplay<'a> {
 impl<'a> SummaryDisplay<'a> {
     fn display(&mut self, job_name: &str, collector: &ProgressCollector) {
         self.term
-            .write(&format!("{:1$}  ", job_name, self.max_job_name_len));
+            .write(&format!("{:1$} ", job_name, self.max_job_name_len));
         if let Some(result) = collector.terminated() {
             self.term.write(if result {
                 &self.config.ok
@@ -46,7 +47,8 @@ impl<'a> SummaryDisplay<'a> {
                 &self.config.ko
             })
         }
-        self.term.newline();
+        self.term.clear_til_eol();
+
         let spin_len = self.spin.current().len();
         for instruction in collector.instruction_list() {
             match instruction {
@@ -67,7 +69,7 @@ impl<'a> SummaryDisplay<'a> {
                         .write(&format!("{}    {}", self.spin, instruction));
                 }
             }
-            self.term.newline();
+            self.term.clear_til_eol();
         }
     }
 
