@@ -1,5 +1,7 @@
 use crate::ci::display::Mode;
-use crate::ci::job::{Job, JobIntrospector};
+use crate::ci::job::docker_job::DockerJob;
+use crate::ci::job::simple_job::SimpleJob;
+use crate::ci::job::JobIntrospector;
 use crate::config::instructions::InstructionCompiler;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
@@ -83,12 +85,21 @@ impl ConfigLoader for Version0y {
                 .map(|str| compiler.compile(str))
                 .collect();
             let name = name.clone();
-            payload.ci.jobs.push(Arc::from(Job::long(
-                name,
-                instructions,
-                full_desc.image.clone(),
-                full_desc.group.clone(),
-            )))
+
+            if let Some(image) = &full_desc.image {
+                payload.ci.jobs.push(Arc::from(DockerJob::long(
+                    name,
+                    instructions,
+                    image.clone(),
+                    full_desc.group.clone(),
+                )))
+            } else {
+                payload.ci.jobs.push(Arc::from(SimpleJob::long(
+                    name,
+                    instructions,
+                    full_desc.group.clone(),
+                )))
+            }
         }
         if let Some(groups) = &self.groups {
             payload.ci.groups = groups.clone();
@@ -147,17 +158,28 @@ struct VersionYJobConverter {
 }
 
 impl JobIntrospector for VersionYJobConverter {
-    fn basic_job(
+    fn basic_job(&mut self, name: &str, group: &Option<String>, instructions: &[String]) {
+        self.data = Some((
+            name.to_string(),
+            FullJobDesc {
+                image: None,
+                group: group.clone(),
+                script: instructions.to_vec(),
+            },
+        ))
+    }
+
+    fn docker_job(
         &mut self,
         name: &str,
-        image: &Option<String>,
+        image: &str,
         group: &Option<String>,
         instructions: &[String],
     ) {
         self.data = Some((
             name.to_string(),
             FullJobDesc {
-                image: image.clone(),
+                image: Some(image.to_string()),
                 group: group.clone(),
                 script: instructions.to_vec(),
             },

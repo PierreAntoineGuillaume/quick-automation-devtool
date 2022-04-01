@@ -112,12 +112,13 @@ pub fn read(rx: &Receiver<JobProgress>) -> Option<JobProgress> {
 mod tests {
     use super::*;
     use crate::ci::display::silent_display::SilentDisplay;
-    use crate::ci::job::{Job, SharedJob};
+    use crate::ci::job::simple_job::SimpleJob;
+    use crate::ci::job::SharedJob;
     use std::sync::Arc;
 
-    impl Job {
+    impl SimpleJob {
         pub fn new(name: &str, instructions: &[&str]) -> Self {
-            Job::short(
+            SimpleJob::short(
                 name.to_string(),
                 instructions
                     .iter()
@@ -136,17 +137,17 @@ mod tests {
 
     #[test]
     pub fn every_job_is_initialisated() {
-        assert!(!pipeline(&[Arc::from(Job::new("a", &["ok: result"]))]).has_failed)
+        assert!(!pipeline(&[Arc::from(SimpleJob::new("a", &["ok: result"]))]).has_failed)
     }
 
     #[test]
     pub fn one_job_failure_fails_scheduling() {
-        assert!(pipeline(&[Arc::from(Job::new("c", &["ko: result"]))]).has_failed)
+        assert!(pipeline(&[Arc::from(SimpleJob::new("c", &["ko: result"]))]).has_failed)
     }
 
     #[test]
     pub fn one_job_crash_fails_scheduling() {
-        assert!(pipeline(&[Arc::from(Job::new("c", &["crash: result"]))]).has_failed)
+        assert!(pipeline(&[Arc::from(SimpleJob::new("c", &["crash: result"]))]).has_failed)
     }
 
     pub struct TestJobStarter {}

@@ -1,4 +1,6 @@
 use super::*;
+use crate::ci::job::docker_job::DockerJob;
+use crate::ci::job::simple_job::SimpleJob;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
@@ -16,11 +18,15 @@ struct JobTester {
 impl JobTester {
     fn run_job(instruction: &str, image: Option<String>) -> String {
         let tester = JobTester::default();
-        let job = Job::long("name".to_string(), vec![], image, None);
-
-        job.run(instruction, &tester);
-
-        format!("{tester}")
+        if let Some(image) = image {
+            let job = DockerJob::long("name".to_string(), vec![], image, None);
+            job.run(instruction, &tester);
+            format!("{tester}")
+        } else {
+            let job = SimpleJob::long("name".to_string(), vec![], None);
+            job.run(instruction, &tester);
+            format!("{tester}")
+        }
     }
 }
 
@@ -129,14 +135,13 @@ pub fn group_job_schedule() -> ScheduleType {
 }
 
 pub fn job(name: &str) -> Arc<SharedJob> {
-    Arc::from(Job::short(name.to_string(), vec![]))
+    Arc::from(SimpleJob::short(name.to_string(), vec![]))
 }
 
 fn job_group(name: &str, group: &str) -> Arc<SharedJob> {
-    Arc::from(Job::long(
+    Arc::from(SimpleJob::long(
         name.to_string(),
         vec![],
-        None,
         Some(group.to_string()),
     ))
 }
