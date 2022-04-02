@@ -1,6 +1,7 @@
+use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::JobRunner;
-use crate::ci::job::{EnvBag, JobIntrospector, JobProgressConsumer, JobTrait, Progress};
+use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
 use std::sync::{Arc, Mutex};
 
 #[derive(PartialEq, Eq, Hash, Debug)]

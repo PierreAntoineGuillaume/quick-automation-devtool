@@ -1,6 +1,7 @@
 use crate::ci::job::dag::{Dag, JobResult, JobState};
+use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::{EnvBag, JobOutput, JobProgressTracker, Progress};
+use crate::ci::job::{JobOutput, JobProgressTracker, Progress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 use std::sync::{Arc, Mutex};
 
@@ -119,8 +120,9 @@ pub fn read(rx: &Receiver<JobProgress>) -> Option<JobProgress> {
 mod tests {
     use super::*;
     use crate::ci::display::silent_display::SilentDisplay;
+    use crate::ci::job::env_bag::SimpleEnvBag;
     use crate::ci::job::simple_job::SimpleJob;
-    use crate::ci::job::{SharedJob, SimpleEnvBag};
+    use crate::ci::job::SharedJob;
     use std::sync::{Arc, Mutex};
 
     impl SimpleJob {

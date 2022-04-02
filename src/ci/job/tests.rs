@@ -1,5 +1,6 @@
 use super::*;
 use crate::ci::job::docker_job::DockerJob;
+use crate::ci::job::env_bag::{EnvBag, SimpleEnvBag};
 use crate::ci::job::simple_job::SimpleJob;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
