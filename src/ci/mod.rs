@@ -5,12 +5,12 @@ use crate::ci::display::{CiDisplayConfig, Mode};
 use crate::ci::job::dag::Dag;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{schedule, FinalCiDisplay, JobRunner, JobStarter, RunningCiDisplay};
-use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
+use crate::ci::job::{EnvBag, JobOutput, JobProgressConsumer, SharedJob, SimpleEnvBag};
 use crate::config::{Config, ConfigPayload};
 use crate::SequenceDisplay;
 use std::process::Command;
 use std::sync::mpsc::Sender;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::{sleep, JoinHandle};
 use std::time::{Duration, SystemTime};
@@ -29,6 +29,16 @@ pub struct CiConfig {
 pub struct Ci {}
 
 impl Ci {
+    fn id(flag: &str) -> String {
+        let output = Command::new("id")
+            .args(vec![flag])
+            .output()
+            .expect("id -u cannot fail");
+        String::from(std::str::from_utf8(&output.stdout).expect("This is an int"))
+            .trim()
+            .to_string()
+    }
+
     pub fn run(&mut self, config: Config) -> Result<(), Option<String>> {
         let mut payload = ConfigPayload::default();
         config.load_with_args_into(&mut payload)?;
@@ -42,7 +52,14 @@ impl Ci {
 
         let dag = Dag::new(&ci_config.jobs, &ci_config.constraints, &ci_config.groups).unwrap();
 
-        let tracker = schedule(dag, &mut ParrallelJobStarter::new(), &mut *display);
+        let uid = Self::id("-u");
+        let gid = Self::id("-g");
+        let pwd = std::env::var("PWD").expect("PWD always exists");
+        let envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>> = Arc::from(Mutex::new(
+            SimpleEnvBag::new(uid, gid, pwd, payload.env.clone()),
+        ));
+
+        let tracker = schedule(dag, &mut ParrallelJobStarter::new(), &mut *display, envbag);
 
         (&mut FullFinalDisplay::new(&ci_config.display) as &mut dyn FinalCiDisplay)
             .finish(&tracker);
@@ -78,12 +95,18 @@ impl JobProgressConsumer for Sender<JobProgress> {
 }
 
 impl JobStarter for ParrallelJobStarter {
-    fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>) {
+    fn consume_some_jobs(
+        &mut self,
+        jobs: &mut Dag,
+        envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
+        tx: Sender<JobProgress>,
+    ) {
         while let Some(job) = jobs.poll() {
             let consumer = tx.clone();
             let arc: Arc<SharedJob> = job.clone();
+            let envbag = envbag.clone();
             self.threads.push(thread::spawn(move || {
-                arc.start(&mut CommandJobRunner::new(), &consumer);
+                arc.start(&mut CommandJobRunner, envbag, &consumer);
             }));
         }
     }
@@ -108,43 +131,12 @@ impl JobStarter for ParrallelJobStarter {
     }
 }
 
-pub struct CommandJobRunner {
-    uid: String,
-    gid: String,
-    pwd: String,
-}
-
-impl CommandJobRunner {
-    fn id(flag: &str) -> String {
-        let output = Command::new("id")
-            .args(vec![flag])
-            .output()
-            .expect("id -u cannot fail");
-        String::from(std::str::from_utf8(&output.stdout).expect("This is an int"))
-            .trim()
-            .to_string()
-    }
-
-    pub fn new() -> CommandJobRunner {
-        let uid = Self::id("-u");
-        let gid = Self::id("-g");
-        let pwd = std::env::var("PWD").expect("PWD always exists");
-        CommandJobRunner { uid, gid, pwd }
-    }
-}
+pub struct CommandJobRunner;
 
 impl JobRunner for CommandJobRunner {
     fn run(&self, args: &[&str]) -> JobOutput {
         let program = args[0];
-        let args: Vec<String> = args
-            .iter()
-            .skip(1)
-            .map(|arg| {
-                arg.replace("$USER", self.uid.as_str())
-                    .replace("$GROUPS", self.gid.as_str())
-                    .replace("$PWD", self.pwd.as_str())
-            })
-            .collect();
+        let args: Vec<String> = args.iter().skip(1).map(|str| str.to_string()).collect();
 
         match Command::new(program).args(args).output() {
             Ok(output) => {

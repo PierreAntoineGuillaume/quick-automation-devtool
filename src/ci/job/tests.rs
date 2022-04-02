@@ -16,17 +16,13 @@ struct JobTester {
 }
 
 impl JobTester {
-    fn run_job(instruction: &str, image: Option<String>) -> String {
+    pub fn run_job<T: Into<String>>(instruction: &str, image: T) -> String {
         let tester = JobTester::default();
-        if let Some(image) = image {
-            let job = DockerJob::long("name".to_string(), vec![], image, None);
-            job.run(instruction, &tester);
-            format!("{tester}")
-        } else {
-            let job = SimpleJob::long("name".to_string(), vec![], None);
-            job.run(instruction, &tester);
-            format!("{tester}")
-        }
+        let envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>> =
+            Arc::from(Mutex::new(SimpleEnvBag::new("uid", "gid", "/dir", vec![])));
+        let job = DockerJob::long("name".to_string(), vec![], image.into(), None);
+        job.run(instruction, &tester, &envbag);
+        format!("{tester}")
     }
 }
 
@@ -65,23 +61,10 @@ impl JobRunner for JobTester {
 }
 
 #[test]
-pub fn simple_job() {
-    assert_eq!(JobTester::run_job("task", None), "task()\n");
-}
-
-#[test]
-pub fn simple_jobs_with_args() {
-    assert_eq!(
-        JobTester::run_job("task with args", None),
-        "task(with, args)\n"
-    )
-}
-
-#[test]
 pub fn docker_jobs_with_args() {
     assert_eq!(
-        JobTester::run_job("task with args", Some("alpine".to_string())),
-        "docker(run, --rm, --user, $USER:$GROUPS, --volume, $PWD:$PWD, --workdir, $PWD, alpine, task, with, args)\n"
+        JobTester::run_job("task with args", "alpine"),
+        "docker(run, --rm, --user, uid:gid, --volume, /dir:/dir, --workdir, /dir, alpine, task, with, args)\n"
     )
 }
 

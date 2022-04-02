@@ -1,14 +1,20 @@
 use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::{JobOutput, JobProgressTracker, Progress};
+use crate::ci::job::{EnvBag, JobOutput, JobProgressTracker, Progress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
+use std::sync::{Arc, Mutex};
 
 pub trait JobRunner {
     fn run(&self, args: &[&str]) -> JobOutput;
 }
 
 pub trait JobStarter {
-    fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>);
+    fn consume_some_jobs(
+        &mut self,
+        jobs: &mut Dag,
+        envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
+        tx: Sender<JobProgress>,
+    );
     fn join(&mut self);
     fn delay(&mut self) -> usize;
 }
@@ -27,6 +33,7 @@ pub fn schedule(
     mut jobs: Dag,
     job_starter: &mut dyn JobStarter,
     job_display: &mut dyn RunningCiDisplay,
+    envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
 ) -> JobProgressTracker {
     let mut tracker = JobProgressTracker::new();
 
@@ -55,7 +62,7 @@ pub fn schedule(
     job_display.set_up(&tracker);
 
     loop {
-        job_starter.consume_some_jobs(&mut jobs, tx.clone());
+        job_starter.consume_some_jobs(&mut jobs, envbag.clone(), tx.clone());
 
         while let Some(progress) = read(&rx) {
             let mut cancel_list: Vec<String> = vec![];
@@ -113,8 +120,8 @@ mod tests {
     use super::*;
     use crate::ci::display::silent_display::SilentDisplay;
     use crate::ci::job::simple_job::SimpleJob;
-    use crate::ci::job::SharedJob;
-    use std::sync::Arc;
+    use crate::ci::job::{SharedJob, SimpleEnvBag};
+    use std::sync::{Arc, Mutex};
 
     impl SimpleJob {
         pub fn new(name: &str, instructions: &[&str]) -> Self {
@@ -128,33 +135,40 @@ mod tests {
         }
     }
 
-    fn pipeline(jobs: &[Arc<SharedJob>]) -> JobProgressTracker {
+    fn test_pipeline(jobs: &[Arc<SharedJob>]) -> JobProgressTracker {
         let mut job_start = TestJobStarter {};
         let mut job_display = SilentDisplay {};
         let dag = Dag::new(jobs, &[], &[]).unwrap();
-        schedule(dag, &mut job_start, &mut job_display)
+        let envbag = Arc::from(Mutex::new(SimpleEnvBag::new("uid", "gid", "/dir", vec![])));
+        schedule(dag, &mut job_start, &mut job_display, envbag)
     }
 
     #[test]
     pub fn every_job_is_initialisated() {
-        assert!(!pipeline(&[Arc::from(SimpleJob::new("a", &["ok: result"]))]).has_failed)
+        assert!(!test_pipeline(&[Arc::from(SimpleJob::new("a", &["ok: result"]))]).has_failed)
     }
 
     #[test]
     pub fn one_job_failure_fails_scheduling() {
-        assert!(pipeline(&[Arc::from(SimpleJob::new("c", &["ko: result"]))]).has_failed)
+        assert!(test_pipeline(&[Arc::from(SimpleJob::new("c", &["ko: result"]))]).has_failed)
     }
 
     #[test]
     pub fn one_job_crash_fails_scheduling() {
-        assert!(pipeline(&[Arc::from(SimpleJob::new("c", &["crash: result"]))]).has_failed)
+        assert!(test_pipeline(&[Arc::from(SimpleJob::new("c", &["crash: result"]))]).has_failed)
     }
 
     pub struct TestJobStarter {}
     impl JobStarter for TestJobStarter {
-        fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>) {
+        fn consume_some_jobs(
+            &mut self,
+            jobs: &mut Dag,
+            envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
+            tx: Sender<JobProgress>,
+        ) {
+            let new_env_bag = envbag.clone();
             while let Some(job) = jobs.poll() {
-                job.start(&mut TestJobRunner {}, &tx.clone());
+                job.start(&mut TestJobRunner {}, new_env_bag.clone(), &tx.clone());
             }
         }
 
