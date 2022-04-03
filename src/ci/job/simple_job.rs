@@ -1,5 +1,6 @@
 use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
+use crate::ci::job::instruction_parser::InstructionParser;
 use crate::ci::job::schedule::JobRunner;
 use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
 use std::sync::{Arc, Mutex};
@@ -34,18 +35,24 @@ impl JobTrait for SimpleJob {
         consumer: &dyn JobProgressConsumer,
     ) {
         let mut success = true;
+        let parser = InstructionParser::new(&envbag, &self.instructions);
 
-        for instruction in &self.instructions {
+        for word_list in parser {
+            let executed = word_list.join(" ");
             consumer.consume(JobProgress::new(
                 &self.name,
-                Progress::Started(instruction.clone()),
+                Progress::Started(executed.clone()),
             ));
 
-            let parse = Self::parse_instruction(instruction, &envbag);
-            let output = runner.run(&(parse.iter().map(|str| str.as_str()).collect::<Vec<&str>>()));
+            let output = runner.run(
+                &(word_list
+                    .iter()
+                    .map(|str| str.as_str())
+                    .collect::<Vec<&str>>()),
+            );
 
             success = output.succeeded();
-            let partial = Progress::Partial(instruction.clone(), output);
+            let partial = Progress::Partial(executed, output);
             consumer.consume(JobProgress::new(&self.name, partial));
             if !success {
                 break;
@@ -67,13 +74,5 @@ impl SimpleJob {
 
     pub fn short(name: String, instructions: Vec<String>) -> Self {
         Self::long(name, instructions, None)
-    }
-
-    fn parse_instruction(
-        instruction: &str,
-        envbag: &Arc<Mutex<dyn EnvBag + Send + Sync>>,
-    ) -> Vec<String> {
-        let mut lock = envbag.lock().unwrap();
-        (*lock).parse(instruction)
     }
 }
