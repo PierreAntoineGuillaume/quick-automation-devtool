@@ -1,5 +1,4 @@
 pub trait EnvBag {
-    fn parse(&mut self, key: &str) -> Vec<String>;
     fn user(&self) -> String;
     fn group(&self) -> String;
     fn pwd(&self) -> String;
@@ -24,14 +23,6 @@ impl SimpleEnvBag {
 }
 
 impl EnvBag for SimpleEnvBag {
-    fn parse(&mut self, instruction: &str) -> Vec<String> {
-        return instruction
-            .split(' ')
-            .filter(|str| !str.is_empty())
-            .map(|str| str.to_string())
-            .collect();
-    }
-
     fn user(&self) -> String {
         self.uid.to_string()
     }
