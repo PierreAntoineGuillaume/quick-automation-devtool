@@ -1,6 +1,6 @@
 use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::instruction_parser::InstructionParser;
+use crate::ci::job::instruction_interpreter::InstructionInterpreter;
 use crate::ci::job::schedule::JobRunner;
 use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
 use std::sync::{Arc, Mutex};
@@ -35,7 +35,7 @@ impl JobTrait for SimpleJob {
         consumer: &dyn JobProgressConsumer,
     ) {
         let mut success = true;
-        let parser = InstructionParser::arc_mutex(&envbag, &self.instructions);
+        let parser = InstructionInterpreter::arc_mutex(&envbag, &self.instructions);
 
         for word_list in parser {
             let executed = word_list.join(" ");

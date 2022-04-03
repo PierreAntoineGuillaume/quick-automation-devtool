@@ -1,13 +1,13 @@
 use crate::ci::job::env_bag::EnvBag;
 use std::sync::{Arc, Mutex};
 
-pub struct InstructionParser<'a> {
+pub struct InstructionInterpreter<'a> {
     envbag: &'a Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
     instructions: &'a Vec<String>,
     current_index: usize,
 }
 
-impl<'a> InstructionParser<'a> {
+impl<'a> InstructionInterpreter<'a> {
     pub fn arc_mutex(
         envbag: &'a Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
         instructions: &'a Vec<String>,
@@ -20,7 +20,7 @@ impl<'a> InstructionParser<'a> {
     }
 }
 
-impl<'a> Iterator for InstructionParser<'a> {
+impl<'a> Iterator for InstructionInterpreter<'a> {
     type Item = Vec<String>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -87,7 +87,7 @@ mod tests {
     pub fn iterate_normal() {
         let env = TestEnvBag::arc_mutex();
         let instructions = vec!["Parse this $KEY please".to_string()];
-        let mut parser = InstructionParser::arc_mutex(&env, &instructions);
+        let mut parser = InstructionInterpreter::arc_mutex(&env, &instructions);
 
         assert_eq!(
             Some(strvec!["Parse", "this", "VALUE", "please"]),
