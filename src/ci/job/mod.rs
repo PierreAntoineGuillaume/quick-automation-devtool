@@ -2,6 +2,7 @@ pub mod dag;
 pub mod docker_job;
 pub mod env_bag;
 pub mod inspection;
+pub mod instruction_parser;
 pub mod schedule;
 pub mod simple_job;
 #[cfg(test)]

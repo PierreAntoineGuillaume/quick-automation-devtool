@@ -1,6 +1,4 @@
 use super::*;
-use crate::ci::job::docker_job::DockerJob;
-use crate::ci::job::env_bag::{EnvBag, SimpleEnvBag};
 use crate::ci::job::simple_job::SimpleJob;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
@@ -14,17 +12,6 @@ struct JobInput {
 #[derive(Default)]
 struct JobTester {
     inputs: RefCell<Vec<JobInput>>,
-}
-
-impl JobTester {
-    pub fn run_job<T: Into<String>>(instruction: &str, image: T) -> String {
-        let tester = JobTester::default();
-        let envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>> =
-            Arc::from(Mutex::new(SimpleEnvBag::new("uid", "gid", "/dir", vec![])));
-        let job = DockerJob::long("name".to_string(), vec![], image.into(), None);
-        job.run(instruction, &tester, &envbag);
-        format!("{tester}")
-    }
 }
 
 impl Display for JobInput {
@@ -59,14 +46,6 @@ impl JobRunner for JobTester {
         });
         JobOutput::ProcessError(String::default())
     }
-}
-
-#[test]
-pub fn docker_jobs_with_args() {
-    assert_eq!(
-        JobTester::run_job("task with args", "alpine"),
-        "docker(run, --rm, --user, uid:gid, --volume, /dir:/dir, --workdir, /dir, alpine, task, with, args)\n"
-    )
 }
 
 pub type ScheduleType = (Vec<Arc<SharedJob>>, Vec<(String, String)>, Vec<String>);

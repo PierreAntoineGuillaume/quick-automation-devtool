@@ -1,7 +1,8 @@
 use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
+use crate::ci::job::instruction_parser::InstructionParser;
 use crate::ci::job::schedule::JobRunner;
-use crate::ci::job::{JobIntrospector, JobOutput, JobProgressConsumer, JobTrait, Progress};
+use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
 use std::sync::{Arc, Mutex};
 
 #[derive(PartialEq, Eq, Hash, Debug)]
@@ -36,16 +37,39 @@ impl JobTrait for DockerJob {
     ) {
         let mut success = true;
 
-        for instruction in &self.instructions {
+        let (uid, gid, pwd) = Self::get_env(&envbag);
+
+        let user_string = format!("{}:{}", uid, gid);
+        let volume_string = format!("{}:{}", pwd, pwd);
+
+        let base_instructions = vec![
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            &user_string,
+            "--volume",
+            &volume_string,
+            "--workdir",
+            &pwd,
+            self.image.as_str(),
+        ];
+
+        let parser = InstructionParser::new(&envbag, &self.instructions);
+
+        for word_list in parser {
+            let executed = word_list.join(" ");
             consumer.consume(JobProgress::new(
                 &self.name,
-                Progress::Started(instruction.clone()),
+                Progress::Started(executed.clone()),
             ));
 
-            let output = self.run(instruction, runner, &envbag);
+            let mut args = base_instructions.clone();
+            args.extend(word_list.iter().map(|str| str.as_str()));
+            let output = runner.run(&args);
 
             success = output.succeeded();
-            let partial = Progress::Partial(instruction.clone(), output);
+            let partial = Progress::Partial(executed, output);
             consumer.consume(JobProgress::new(&self.name, partial));
             if !success {
                 break;
@@ -71,44 +95,11 @@ impl DockerJob {
         }
     }
 
-    pub fn run(
-        &self,
-        instruction: &str,
-        runner: &dyn JobRunner,
-        envbag: &Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
-    ) -> JobOutput {
-        let (uid, gid, pwd, parsed) = Self::get_instructions(instruction, envbag);
-
-        let user_string = format!("{}:{}", uid, gid);
-        let volume_string = format!("{}:{}", pwd, pwd);
-
-        let mut args = vec![
-            "docker",
-            "run",
-            "--rm",
-            "--user",
-            &user_string,
-            "--volume",
-            &volume_string,
-            "--workdir",
-            &pwd,
-            self.image.as_str(),
-        ];
-
-        args.extend(parsed.iter().map(|string| string.as_str()));
-
-        runner.run(&args)
-    }
-
-    fn get_instructions(
-        instruction: &str,
-        envbag: &Arc<Mutex<dyn EnvBag + Send + Sync>>,
-    ) -> (String, String, String, Vec<String>) {
-        let mut lock = envbag.lock().unwrap();
+    fn get_env(envbag: &Arc<Mutex<dyn EnvBag + Send + Sync>>) -> (String, String, String) {
+        let lock = envbag.lock().unwrap();
         let uid = (*lock).user();
         let gid = (*lock).group();
         let pwd = (*lock).pwd();
-        let parsed = (*lock).parse(instruction);
-        (uid, gid, pwd, parsed)
+        (uid, gid, pwd)
     }
 }
