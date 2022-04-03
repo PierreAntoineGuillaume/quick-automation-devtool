@@ -100,3 +100,11 @@ fn main() {
         },
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[macro_export]
+    macro_rules! strvec {
+        ($($x:expr),*) => (vec![$($x.to_string()),*]);
+    }
+}

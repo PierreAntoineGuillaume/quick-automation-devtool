@@ -9,6 +9,7 @@ use crate::ci::job::schedule::{schedule, FinalCiDisplay, JobRunner, JobStarter, 
 use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
 use crate::SequenceDisplay;
+use std::collections::HashMap;
 use std::process::Command;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
@@ -57,7 +58,7 @@ impl Ci {
         let gid = Self::id("-g");
         let pwd = std::env::var("PWD").expect("PWD always exists");
         let envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>> = Arc::from(Mutex::new(
-            SimpleEnvBag::new(uid, gid, pwd, payload.env.clone()),
+            SimpleEnvBag::new(uid, gid, pwd, HashMap::default()),
         ));
 
         let tracker = schedule(dag, &mut ParrallelJobStarter::new(), &mut *display, envbag);

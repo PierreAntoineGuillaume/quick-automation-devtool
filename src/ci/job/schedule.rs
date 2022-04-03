@@ -123,6 +123,7 @@ mod tests {
     use crate::ci::job::env_bag::SimpleEnvBag;
     use crate::ci::job::simple_job::SimpleJob;
     use crate::ci::job::SharedJob;
+    use std::collections::HashMap;
     use std::sync::{Arc, Mutex};
 
     impl SimpleJob {
@@ -141,7 +142,12 @@ mod tests {
         let mut job_start = TestJobStarter {};
         let mut job_display = SilentDisplay {};
         let dag = Dag::new(jobs, &[], &[]).unwrap();
-        let envbag = Arc::from(Mutex::new(SimpleEnvBag::new("uid", "gid", "/dir", vec![])));
+        let envbag = Arc::from(Mutex::new(SimpleEnvBag::new(
+            "uid",
+            "gid",
+            "/dir",
+            HashMap::default(),
+        )));
         schedule(dag, &mut job_start, &mut job_display, envbag)
     }
 

@@ -1,23 +1,26 @@
+use std::collections::HashMap;
+
 pub trait EnvBag {
     fn user(&self) -> String;
     fn group(&self) -> String;
     fn pwd(&self) -> String;
+    fn read(&mut self, key: &str) -> Option<&str>;
 }
 
 pub struct SimpleEnvBag {
     uid: String,
     gid: String,
     pwd: String,
-    _env_keys: Vec<String>,
+    env: HashMap<String, String>,
 }
 
 impl SimpleEnvBag {
-    pub fn new<T: Into<String>>(uid: T, gid: T, pwd: T, _env_keys: Vec<String>) -> Self {
+    pub fn new<T: Into<String>>(uid: T, gid: T, pwd: T, env: HashMap<String, String>) -> Self {
         Self {
             uid: uid.into(),
             gid: gid.into(),
             pwd: pwd.into(),
-            _env_keys,
+            env,
         }
     }
 }
@@ -33,5 +36,9 @@ impl EnvBag for SimpleEnvBag {
 
     fn pwd(&self) -> String {
         self.pwd.to_string()
+    }
+
+    fn read(&mut self, key: &str) -> Option<&str> {
+        self.env.get(key).map(|opt| opt.as_str())
     }
 }

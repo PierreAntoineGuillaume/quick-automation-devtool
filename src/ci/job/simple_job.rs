@@ -35,7 +35,7 @@ impl JobTrait for SimpleJob {
         consumer: &dyn JobProgressConsumer,
     ) {
         let mut success = true;
-        let parser = InstructionParser::new(&envbag, &self.instructions);
+        let parser = InstructionParser::arc_mutex(&envbag, &self.instructions);
 
         for word_list in parser {
             let executed = word_list.join(" ");

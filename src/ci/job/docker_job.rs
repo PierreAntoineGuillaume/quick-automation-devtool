@@ -55,7 +55,7 @@ impl JobTrait for DockerJob {
             self.image.as_str(),
         ];
 
-        let parser = InstructionParser::new(&envbag, &self.instructions);
+        let parser = InstructionParser::arc_mutex(&envbag, &self.instructions);
 
         for word_list in parser {
             let executed = word_list.join(" ");
