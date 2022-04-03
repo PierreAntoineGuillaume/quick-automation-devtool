@@ -3,13 +3,13 @@ use crate::ci::display::silent_display::SilentDisplay;
 use crate::ci::display::summary_display::SummaryDisplay;
 use crate::ci::display::{CiDisplayConfig, Mode};
 use crate::ci::job::dag::Dag;
-use crate::ci::job::env_bag::{EnvBag, SimpleEnvBag};
+use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{schedule, FinalCiDisplay, JobRunner, JobStarter, RunningCiDisplay};
+use crate::ci::job::shell_interpreter::ShellInterpreter;
 use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
 use crate::SequenceDisplay;
-use std::collections::HashMap;
 use std::process::Command;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
@@ -54,12 +54,14 @@ impl Ci {
 
         let dag = Dag::new(&ci_config.jobs, &ci_config.constraints, &ci_config.groups).unwrap();
 
-        let uid = Self::id("-u");
-        let gid = Self::id("-g");
-        let pwd = std::env::var("PWD").expect("PWD always exists");
-        let envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>> = Arc::from(Mutex::new(
-            SimpleEnvBag::new(uid, gid, pwd, HashMap::default()),
-        ));
+        let shell_interpreter = ShellInterpreter::new(
+            Self::id("-u"),
+            Self::id("-g"),
+            std::env::var("PWD").expect("PWD always exists"),
+            payload.env,
+        );
+
+        let envbag = shell_interpreter.interpret();
 
         let tracker = schedule(dag, &mut ParrallelJobStarter::new(), &mut *display, envbag);
 

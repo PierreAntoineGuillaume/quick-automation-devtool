@@ -4,6 +4,7 @@ pub mod env_bag;
 pub mod inspection;
 pub mod instruction_interpreter;
 pub mod schedule;
+pub mod shell_interpreter;
 pub mod simple_job;
 #[cfg(test)]
 pub mod tests;

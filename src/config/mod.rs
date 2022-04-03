@@ -71,7 +71,7 @@ pub struct Config {
 #[derive(Default)]
 pub struct ConfigPayload {
     pub ci: CiConfig,
-    pub env: Vec<String>,
+    pub env: Option<String>,
 }
 
 pub trait ConfigLoader {

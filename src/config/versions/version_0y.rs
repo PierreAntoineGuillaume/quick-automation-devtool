@@ -73,6 +73,7 @@ pub struct Version0y {
     groups: Option<Vec<String>>,
     constraints: Option<Constraints>,
     display: Option<Display>,
+    env: Option<String>,
 }
 
 impl ConfigLoader for Version0y {
@@ -149,6 +150,8 @@ impl ConfigLoader for Version0y {
                 }
             }
         }
+
+        payload.env = self.env.clone();
     }
 }
 
@@ -218,6 +221,7 @@ impl Version0y {
                     per_frames: payload.ci.display.spinner.1,
                 }),
             }),
+            env: payload.env,
         }
     }
 }
