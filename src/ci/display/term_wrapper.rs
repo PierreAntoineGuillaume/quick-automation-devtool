@@ -44,11 +44,20 @@ impl TermWrapper {
 
     pub fn write(&mut self, message: &str) {
         let termsize = terminal_size().unwrap().0 .0 as usize;
-        print!("{}", message);
-        self.written_chars += message.len();
-        if self.written_chars > termsize {
-            self.written_chars %= termsize;
-            self.written_lines += 1;
+        let mut redo = false;
+        for sub in message.split('\n') {
+            if redo {
+                self.clear_til_eol();
+                println!();
+                self.written_lines += 1;
+                self.written_chars = 0;
+            }
+            print!("{}", sub);
+            if self.written_chars > termsize {
+                self.written_chars %= termsize;
+                self.written_lines += 1;
+            }
+            redo = true;
         }
     }
 
