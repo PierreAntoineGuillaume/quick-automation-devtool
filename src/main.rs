@@ -1,6 +1,7 @@
 mod ci;
 mod config;
 
+extern crate anyhow;
 extern crate atty;
 extern crate indexmap;
 extern crate terminal_size;
@@ -36,12 +37,13 @@ fn main() {
 
     match command {
         Subcommands::Ci(_) => match (Ci {}).run(config) {
-            Ok(_) => {}
+            Ok(true) => {}
+            Ok(false) => {
+                std::process::exit(1);
+            }
             Err(str) => {
-                if let Some(msg) = str {
-                    eprintln!("dt: {}", msg);
-                }
-                std::process::exit(1)
+                eprintln!("dt: {}", str);
+                std::process::exit(2)
             }
         },
         Subcommands::Autocomplete(_) => {

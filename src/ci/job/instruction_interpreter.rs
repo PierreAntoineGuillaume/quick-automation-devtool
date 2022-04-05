@@ -26,22 +26,25 @@ impl<'a> Iterator for InstructionInterpreter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_index < self.instructions.len() {
             self.current_index += 1;
-            let word_list = self.instructions[self.current_index - 1]
+            let mut word_list = vec![];
+            self.instructions[self.current_index - 1]
                 .split(' ')
-                .map(|str| {
+                .for_each(|str| {
                     if let Some(stripped) = str.strip_prefix('$') {
                         let mut mutex = self.envbag.lock().unwrap();
                         let opt = (*mutex).read(stripped);
-                        if let Some(value) = opt {
-                            value.to_string()
+                        if let Some(vec) = opt {
+                            for value in vec {
+                                word_list.push(value)
+                            }
                         } else {
-                            str.to_string()
+                            word_list.push(str.to_string())
                         }
                     } else {
-                        str.to_string()
+                        word_list.push(str.to_string())
                     }
-                })
-                .collect::<Vec<String>>();
+                });
+
             Some(word_list)
         } else {
             None
@@ -69,9 +72,9 @@ mod tests {
             "pwd".into()
         }
 
-        fn read(&mut self, key: &str) -> Option<&str> {
+        fn read(&mut self, key: &str) -> Option<Vec<String>> {
             match key {
-                "KEY" => Some("VALUE"),
+                "KEY" => Some(strvec!("VALUE")),
                 _ => None,
             }
         }

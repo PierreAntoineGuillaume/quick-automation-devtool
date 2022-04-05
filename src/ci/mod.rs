@@ -10,6 +10,7 @@ use crate::ci::job::shell_interpreter::ShellInterpreter;
 use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
 use crate::SequenceDisplay;
+use anyhow::Result;
 use std::process::Command;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
@@ -41,7 +42,7 @@ impl Ci {
             .to_string()
     }
 
-    pub fn run(&mut self, config: Config) -> Result<(), Option<String>> {
+    pub fn run(&mut self, config: Config) -> Result<bool> {
         let mut payload = ConfigPayload::default();
         config.load_with_args_into(&mut payload)?;
         let ci_config = payload.ci;
@@ -61,18 +62,14 @@ impl Ci {
             payload.env,
         );
 
-        let envbag = shell_interpreter.interpret();
+        let envbag = shell_interpreter.interpret()?;
 
         let tracker = schedule(dag, &mut ParrallelJobStarter::new(), &mut *display, envbag);
 
         (&mut FullFinalDisplay::new(&ci_config.display) as &mut dyn FinalCiDisplay)
             .finish(&tracker);
 
-        if tracker.has_failed {
-            Err(None)
-        } else {
-            Ok(())
-        }
+        Ok(!tracker.has_failed)
     }
 }
 

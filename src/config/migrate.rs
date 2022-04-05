@@ -1,6 +1,7 @@
 use crate::config::versions::version_0x::Version0x;
 use crate::config::versions::version_0y::Version0y;
 use crate::{Config, ConfigPayload};
+use anyhow::Result;
 
 pub struct Migrate {
     config: Config,
@@ -17,13 +18,13 @@ impl Migrate {
         Self { config }
     }
 
-    pub fn to0x(&self) -> Result<Migration, String> {
+    pub fn to0x(&self) -> Result<Migration> {
         let mut payload = ConfigPayload::default();
         self.config.load_into(&mut payload)?;
         Ok(Migration::Version0x(Version0x::from(payload)))
     }
 
-    pub fn to0y(&self) -> Result<Migration, String> {
+    pub fn to0y(&self) -> Result<Migration> {
         let mut payload = ConfigPayload::default();
         self.config.load_into(&mut payload)?;
         Ok(Migration::Version0y(Version0y::from(payload)))

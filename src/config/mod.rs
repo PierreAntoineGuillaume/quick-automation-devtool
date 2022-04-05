@@ -7,6 +7,7 @@ mod versions;
 use crate::ci::CiConfig;
 use crate::config::serialization::toml_parser::TomlParser;
 use crate::config::serialization::yaml_parser::YamlParser;
+use anyhow::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
@@ -87,7 +88,7 @@ pub trait FormatParser {
 }
 
 impl Config {
-    pub fn get_first_available_config_file(&self) -> Result<String, String> {
+    pub fn get_first_available_config_file(&self) -> Result<String> {
         let mut filename = None;
         for file in &self.possible_files {
             if Path::new(file).exists() {
@@ -97,10 +98,10 @@ impl Config {
         }
 
         filename.ok_or_else(|| {
-            format!(
+            Error::msg(format!(
                 "no config file could be found (looked in files {:?})",
                 self.possible_files
-            )
+            ))
         })
     }
 
@@ -114,20 +115,21 @@ impl Config {
         Config { possible_files }
     }
 
-    pub fn load_into(&self, config: &mut ConfigPayload) -> Result<(), String> {
+    pub fn load_into(&self, config: &mut ConfigPayload) -> Result<()> {
         let filename = self.get_first_available_config_file()?;
 
-        let content = fs::read_to_string(&filename)
-            .map_err(|error| ConfigError::FileError(error.to_string()).explain(&filename))?;
+        let content = fs::read_to_string(&filename).map_err(|error| {
+            Error::msg(ConfigError::FileError(error.to_string()).explain(&filename))
+        })?;
 
         let loader = self
             .parse(&filename, &content)
-            .map_err(|error| error.explain(&filename))?;
+            .map_err(|error| Error::msg(error.explain(&filename)))?;
         loader.load(config);
         Ok(())
     }
 
-    pub fn load_with_args_into(&self, config: &mut ConfigPayload) -> Result<(), String> {
+    pub fn load_with_args_into(&self, config: &mut ConfigPayload) -> Result<()> {
         self.load_into(config)?;
         Ok(())
     }
