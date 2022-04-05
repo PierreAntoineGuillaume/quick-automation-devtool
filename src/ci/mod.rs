@@ -5,7 +5,7 @@ use crate::ci::display::{CiDisplayConfig, Mode};
 use crate::ci::job::dag::Dag;
 use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::schedule::{schedule, FinalCiDisplay, JobRunner, JobStarter, RunningCiDisplay};
+use crate::ci::job::schedule::{schedule, FinalCiDisplay, JobRunner, JobStarter, UserFacade};
 use crate::ci::job::shell_interpreter::ShellInterpreter;
 use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
@@ -46,7 +46,7 @@ impl Ci {
         config.load_with_args_into(&mut payload)?;
         let ci_config = payload.ci;
 
-        let mut display: Box<dyn RunningCiDisplay> = match &ci_config.display.mode {
+        let mut display: Box<dyn UserFacade> = match &ci_config.display.mode {
             Mode::Silent => Box::new(SilentDisplay {}),
             Mode::AllOutput => Box::new(SequenceDisplay::new(&ci_config.display)),
             Mode::Summary => Box::new(SummaryDisplay::new(&ci_config.display)),

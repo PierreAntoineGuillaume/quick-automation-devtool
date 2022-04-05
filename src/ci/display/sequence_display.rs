@@ -2,7 +2,7 @@ use crate::ci::display::spinner::Spinner;
 use crate::ci::display::term_wrapper::TermWrapper;
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::{JobProgressTracker, ProgressCollector};
-use crate::ci::job::schedule::RunningCiDisplay;
+use crate::ci::job::schedule::UserFacade;
 use crate::ci::job::Progress;
 
 pub struct SequenceDisplay<'a> {
@@ -12,7 +12,7 @@ pub struct SequenceDisplay<'a> {
     max_job_name_len: usize,
 }
 
-impl<'a> RunningCiDisplay for SequenceDisplay<'a> {
+impl<'a> UserFacade for SequenceDisplay<'a> {
     fn set_up(&mut self, tracker: &JobProgressTracker) {
         self.max_job_name_len = tracker
             .states

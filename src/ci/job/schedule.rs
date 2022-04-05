@@ -20,7 +20,7 @@ pub trait JobStarter {
     fn delay(&mut self) -> usize;
 }
 
-pub trait RunningCiDisplay {
+pub trait UserFacade {
     fn set_up(&mut self, tracker: &JobProgressTracker);
     fn run(&mut self, tracker: &JobProgressTracker, elapsed: usize);
     fn tear_down(&mut self, tracker: &JobProgressTracker);
@@ -33,7 +33,7 @@ pub trait FinalCiDisplay {
 pub fn schedule(
     mut jobs: Dag,
     job_starter: &mut dyn JobStarter,
-    job_display: &mut dyn RunningCiDisplay,
+    user_facade: &mut dyn UserFacade,
     envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
 ) -> JobProgressTracker {
     let mut tracker = JobProgressTracker::new();
@@ -58,10 +58,9 @@ pub fn schedule(
 
     let (tx, rx) = channel();
 
+    user_facade.set_up(&tracker);
+
     let mut delay: usize = 0;
-
-    job_display.set_up(&tracker);
-
     loop {
         job_starter.consume_some_jobs(&mut jobs, envbag.clone(), tx.clone());
 
@@ -96,12 +95,12 @@ pub fn schedule(
             tracker.finish();
             break;
         }
-        job_display.run(&tracker, delay);
+        user_facade.run(&tracker, delay);
         delay = job_starter.delay();
     }
 
     job_starter.join();
-    job_display.tear_down(&tracker);
+    user_facade.tear_down(&tracker);
 
     tracker
 }
