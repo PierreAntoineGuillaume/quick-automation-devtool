@@ -7,7 +7,7 @@ base_dirname=$(realpath "$(dirname "$0")/..")
 cd "$base_dirname"
 
 source tools/lib/bash-completion-unit-framework.sh # autocomplete_test
-source assets/dt_bash_competion.sh                 # _dt
+source assets/dt_bash_completion.sh                 # _dt
 
 err_counter=0
 

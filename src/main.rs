@@ -54,7 +54,7 @@ fn main() {
                     env!("CARGO_PKG_NAME")
                 );
             }
-            print!("{}", include_str!("../assets/dt_bash_competion.sh"));
+            print!("{}", include_str!("../assets/dt_bash_completion.sh"));
             std::process::exit(0);
         }
         Subcommands::Config(config_args) => match config_args.command {
