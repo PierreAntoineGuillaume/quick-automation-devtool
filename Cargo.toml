@@ -2,6 +2,16 @@
 name = "qad"
 version = "0.6.0"
 edition = "2021"
+description = """
+Quick Automation Devtool (qad) is your companion for doing more, quicker,
+on your local machine. It launches your CI locally with blazing fast parallel
+jobs, keeping you informed with a responsive terminal UI.
+"""
+authors = ["Pierre-Antoine Guillaume <pierreantoine.guillaume@gmail.com>"]
+license = "MIT"
+documentation = "https://gitlab.com/pag-station/quick-automation-devtool"
+homepage = "https://gitlab.com/pag-station/quick-automation-devtool"
+repository = "https://gitlab.com/pag-station/quick-automation-devtool"
 
 [dependencies]
 anyhow = "1.0.56"
@@ -13,3 +23,12 @@ serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.8.23"
 terminal_size = "0.1.17"
 yaml-rust = "0.4.5"
+
+[package.metadata.deb]
+section = "devel"
+assets = [
+  ["target/release/qad", "usr/bin/", "755"],
+  ["LICENSE", "usr/share/doc/qad/", "644"],
+  ["README.md", "usr/share/doc/qad/README", "644"],
+  ["/tmp/qad.bash", "usr/share/bash-completion/completions/qad", "644"],
+]
