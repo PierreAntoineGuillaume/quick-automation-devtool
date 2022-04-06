@@ -12,7 +12,7 @@ _dt() {
       mapfile -t COMPREPLY < <(compgen -W "ci" -- "${cur}")
       return 0
     fi
-    mapfile -t COMPREPLY < <(compgen -W "autocomplete ci config -q --quiet --version --help" -- "${cur}")
+    mapfile -t COMPREPLY < <(compgen -W "autocomplete ci config --version --help" -- "${cur}")
     return 0
   fi
   COMPREPLY=()

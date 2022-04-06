@@ -17,7 +17,7 @@ unit() {
   fi
 }
 
-unit "dt " "autocomplete" "ci" "config" "-q" "--quiet" "--version" "--help"
+unit "dt " "autocomplete" "ci" "config" "--version" "--help"
 unit "dt az" ""
 unit "dt a" "autocomplete"
 unit "dt auto" "autocomplete"
