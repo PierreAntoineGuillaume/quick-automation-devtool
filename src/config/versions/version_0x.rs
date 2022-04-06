@@ -8,14 +8,6 @@ use std::sync::Arc;
 pub type JobSet = HashMap<String, Vec<String>>;
 pub type Constraints = HashMap<String, Vec<String>>;
 
-fn from_vec(constraints: &[(String, String)]) -> Constraints {
-    let mut map = Constraints::default();
-    for (blocker, blocked) in constraints.iter().cloned() {
-        map.entry(blocker).or_insert_with(Vec::new).push(blocked)
-    }
-    map
-}
-
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct CiSpinner {
     frames: Vec<String>,
@@ -88,33 +80,5 @@ impl JobIntrospector for VersionXJobConverter {
 
     fn docker_job(&mut self, name: &str, _: &str, _: &Option<String>, instructions: &[String]) {
         self.data = Some((name.to_string(), instructions.to_vec()))
-    }
-}
-
-impl Version0x {
-    pub fn from(payload: ConfigPayload) -> Self {
-        Self {
-            version: String::from("0.x"),
-            jobs: payload
-                .ci
-                .jobs
-                .iter()
-                .map(|job| {
-                    let mut converter = VersionXJobConverter::default();
-                    job.introspect(&mut converter);
-                    converter.data.expect("Visitor has been set")
-                })
-                .collect(),
-            constraints: Some(from_vec(&payload.ci.constraints)),
-            ci_spinner: Some(CiSpinner {
-                frames: payload.ci.display.spinner.0.clone(),
-                per_frames: payload.ci.display.spinner.1,
-            }),
-            ci_icons: Some(CiIcons {
-                ok: Some(payload.ci.display.ok.clone()),
-                ko: Some(payload.ci.display.ko.clone()),
-                cancelled: Some(payload.ci.display.cancelled.clone()),
-            }),
-        }
     }
 }

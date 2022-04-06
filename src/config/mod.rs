@@ -5,7 +5,6 @@ mod serialization;
 mod versions;
 
 use crate::ci::CiConfig;
-use crate::config::serialization::toml_parser::TomlParser;
 use crate::config::serialization::yaml_parser::YamlParser;
 use anyhow::{Error, Result};
 use serde::{Deserialize, Serialize};
@@ -51,13 +50,6 @@ impl ConfigError {
 #[derive(Serialize, Deserialize, Debug, PartialOrd, PartialEq, Clone)]
 pub enum Format {
     Yaml,
-    Toml,
-}
-
-impl Default for Format {
-    fn default() -> Self {
-        Self::Toml
-    }
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
@@ -106,11 +98,10 @@ impl Config {
     }
 
     pub fn from(env: &str) -> Self {
-        let possible_files: Vec<String> =
-            ["toml", "yaml", "yml", "toml.dist", "yaml.dist", "yml.dist"]
-                .iter()
-                .map(|str| format!("{}.{}", env, str))
-                .collect();
+        let possible_files: Vec<String> = ["yaml", "yml", "yaml.dist", "yml.dist"]
+            .iter()
+            .map(|str| format!("{}.{}", env, str))
+            .collect();
 
         Config { possible_files }
     }
@@ -135,7 +126,7 @@ impl Config {
     }
 
     pub fn get_parser(&self, filename: &str) -> Option<Box<dyn FormatParser>> {
-        let parsers = [YamlParser::boxed(), TomlParser::boxed()];
+        let parsers = [YamlParser::boxed()];
         for parser in parsers {
             if !parser.supports(filename) {
                 continue;

@@ -26,6 +26,5 @@ unit "qad ci " ""
 unit "qad co" "config"
 unit "qad config " "migrate" "--help"
 unit "qad config m" "migrate"
-unit "qad config migrate unstable " "to-toml" "to-yaml --help"
 
 exit "$err_counter"

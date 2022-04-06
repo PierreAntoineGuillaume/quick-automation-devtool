@@ -66,25 +66,14 @@ fn main() {
                     let used_conf_file = config
                         .get_first_available_config_file()
                         .expect("Error passed before");
-                    let mut format = config
+                    let format = config
                         .get_parser(&used_conf_file)
                         .expect("Error passed before")
                         .format();
 
                     let migrate = Migrate::new(config);
                     let migration = match version.to {
-                        MigrateToSubCommands::V0y(sub) => {
-                            if let Some(new_format) = sub.format {
-                                format = new_format.map()
-                            }
-                            migrate.to0y()
-                        }
-                        MigrateToSubCommands::V0x(sub) => {
-                            if let Some(new_format) = sub.format {
-                                format = new_format.map()
-                            }
-                            migrate.to0x()
-                        }
+                        MigrateToSubCommands::V0y(_) => migrate.to0y(),
                     };
                     if migration.is_err() {
                         eprintln!("{PACKAGE_NAME}: {}", migration.unwrap_err());
@@ -93,7 +82,6 @@ fn main() {
 
                     let serialization = match (format, migration.unwrap()) {
                         (Format::Yaml, serializable) => migrate.yaml(serializable),
-                        (Format::Toml, serializable) => migrate.toml(serializable),
                     };
                     println!("{}", serialization)
                 }
