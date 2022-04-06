@@ -7,25 +7,25 @@ base_dirname=$(realpath "$(dirname "$0")/..")
 cd "$base_dirname"
 
 source tools/lib/bash-completion-unit-framework.sh # autocomplete_test
-source assets/dt_bash_completion.sh                 # _dt
+source assets/bash_completion.sh                   # _qad
 
 err_counter=0
 
 unit() {
-  if ! autocomplete_test "_dt" "$@"; then
+  if ! autocomplete_test "_qad" "$@"; then
     ((err_counter += 1))
   fi
 }
 
-unit "dt " "autocomplete" "ci" "config" "--version" "--help"
-unit "dt az" ""
-unit "dt a" "autocomplete"
-unit "dt auto" "autocomplete"
-unit "dt c" "ci"
-unit "dt ci " ""
-unit "dt co" "config"
-unit "dt config " "migrate" "--help"
-unit "dt config m" "migrate"
-unit "dt config migrate unstable " "to-toml" "to-yaml --help"
+unit "qad " "autocomplete" "ci" "config" "--version" "--help"
+unit "qad az" ""
+unit "qad a" "autocomplete"
+unit "qad auto" "autocomplete"
+unit "qad c" "ci"
+unit "qad ci " ""
+unit "qad co" "config"
+unit "qad config " "migrate" "--help"
+unit "qad config m" "migrate"
+unit "qad config migrate unstable " "to-toml" "to-yaml --help"
 
 exit "$err_counter"

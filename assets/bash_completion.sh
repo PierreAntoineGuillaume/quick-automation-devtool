@@ -1,6 +1,6 @@
 #!/bin/bash
 
-_dt() {
+_qad() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   local prev="${COMP_WORDS[COMP_CWORD - 1]}"
 
@@ -29,7 +29,7 @@ _dt() {
   fi
   if [ "$COMP_CWORD" == 3 ]; then
     if [ "${COMP_WORDS[1]}" == "config" ] && [ "${COMP_WORDS[2]}" == "migrate" ]; then
-      mapfile -t versions < <(dt config migrate --help | awk ' $1 ~ /./ { print $1 }' | sed '1,/Commands:/ d')
+      mapfile -t versions < <(qad config migrate --help | awk ' $1 ~ /./ { print $1 }' | sed '1,/Commands:/ d')
       mapfile -t COMPREPLY < <(compgen -W "$(printf "%s " "${versions[@]}")--help" -- "${cur}")
       return 0
     fi
@@ -45,4 +45,4 @@ _dt() {
   return 0
 }
 
-complete -F _dt dt
+complete -F _qad qad

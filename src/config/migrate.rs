@@ -1,6 +1,6 @@
 use crate::config::versions::version_0x::Version0x;
 use crate::config::versions::version_0y::Version0y;
-use crate::{Config, ConfigPayload};
+use crate::{Config, ConfigPayload, PACKAGE_NAME};
 use anyhow::Result;
 
 pub struct Migrate {
@@ -36,7 +36,7 @@ impl Migrate {
             Migration::Version0y(version) => toml::to_string(&version),
         };
         if str.is_err() {
-            eprintln!("dt serialization error: {}", str.unwrap_err());
+            eprintln!("{PACKAGE_NAME} serialization error: {}", str.unwrap_err());
             std::process::exit(1);
         }
 

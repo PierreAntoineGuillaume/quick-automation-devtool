@@ -2,7 +2,7 @@ use crate::Format;
 use argh::FromArgs;
 
 #[derive(FromArgs, PartialEq, Debug)]
-#[argh(description = "dt is a tool to help with testing, and dev-related tasks")]
+#[argh(description = "A tool to help with testing, and dev-related tasks")]
 pub struct Args {
     #[argh(switch, description = "show the executable version")]
     pub version: bool,

@@ -13,6 +13,7 @@ use crate::config::migrate::Migrate;
 use crate::config::{Config, ConfigPayload, Format};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
 
 fn main() {
     let args: Args = argh::from_env();
@@ -23,14 +24,14 @@ fn main() {
     }
 
     let command = args.nested.unwrap_or_else(|| {
-        println!("dt: no args given");
+        println!("{PACKAGE_NAME}: no args given");
         std::process::exit(0);
     });
 
     if matches!(command, Subcommands::Autocomplete(_)) {}
 
-    let envvar = std::env::var("DT_CONFIG_FILE")
-        .or_else::<String, _>(|_| Ok(String::from("dt")))
+    let envvar = std::env::var(format!("{}_CONFIG_FILE", PACKAGE_NAME.to_uppercase()))
+        .or_else::<String, _>(|_| Ok(String::from(PACKAGE_NAME)))
         .unwrap();
 
     let config = Config::from(&envvar);
@@ -42,26 +43,24 @@ fn main() {
                 std::process::exit(1);
             }
             Err(str) => {
-                eprintln!("dt: {}", str);
+                eprintln!("{PACKAGE_NAME}: {}", str);
                 std::process::exit(2)
             }
         },
         Subcommands::Autocomplete(_) => {
             if atty::is(atty::Stream::Stdout) {
                 eprintln!(
-                    "#{} autocomplete > ~/.local/share/bash-completion/completions/{}",
-                    env!("CARGO_PKG_NAME"),
-                    env!("CARGO_PKG_NAME")
+                    "#{PACKAGE_NAME} autocomplete > ~/.local/share/bash-completion/completions/{PACKAGE_NAME}",
                 );
             }
-            print!("{}", include_str!("../assets/dt_bash_completion.sh"));
+            print!("{}", include_str!("../assets/bash_completion.sh"));
             std::process::exit(0);
         }
         Subcommands::Config(config_args) => match config_args.command {
             ConfigSubcommands::Migrate(version) => {
                 let mut payload = ConfigPayload::default();
                 if let Err(err) = config.load_into(&mut payload) {
-                    eprintln!("dt: could not read config: {}", err);
+                    eprintln!("{PACKAGE_NAME}: could not read config: {}", err);
                     std::process::exit(1);
                 } else {
                     let used_conf_file = config
@@ -88,7 +87,7 @@ fn main() {
                         }
                     };
                     if migration.is_err() {
-                        eprintln!("dt: {}", migration.unwrap_err());
+                        eprintln!("{PACKAGE_NAME}: {}", migration.unwrap_err());
                         std::process::exit(1)
                     }
 

@@ -64,22 +64,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
-name = "dt"
-version = "0.6.0"
-dependencies = [
- "anyhow",
- "argh",
- "atty",
- "indexmap",
- "regex",
- "serde",
- "serde_yaml",
- "terminal_size",
- "toml",
- "yaml-rust",
-]
-
-[[package]]
 name = "hashbrown"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -138,6 +122,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c7342d5883fbccae1cc37a2353b09c87c9b0f3afd73f5fb9bba687a1f733b029"
 dependencies = [
  "unicode-xid",
+]
+
+[[package]]
+name = "qad"
+version = "0.6.0"
+dependencies = [
+ "anyhow",
+ "argh",
+ "atty",
+ "indexmap",
+ "regex",
+ "serde",
+ "serde_yaml",
+ "terminal_size",
+ "toml",
+ "yaml-rust",
 ]
 
 [[package]]

@@ -51,34 +51,3 @@ autocomplete_test() {
   set "$oldstate" nounset
   assert "$expected" "${COMPREPLY[*]}" "$(printf '❌ %-10s expected: "%%s" actual: "%%s"' "$line")\n" "$(printf '✅ %-10s expected: "%%s"' "$line")\n"
 }
-
-(
-  set -euo pipefail
-  auto_test_framework() {
-    # this tests assert
-    if ! assert "5" "5" "error while expecting success: test failed on 5=5\n"; then
-      return 1
-    fi
-    if assert "1" "2" "" "error while expecting error: test did not fail on 1=2\n"; then
-      return 1
-    fi
-
-    # this tests COMP_CWORD positionning
-    set -- "dt " 1 \
-      "dt a" 1 \
-      "dt a " 2
-
-    while [ "$#" -gt 0 ]; do
-      parse_string_for_completion "$1"
-      if ! assert "$2" "$COMP_CWORD" "COMP_CWORD \"$1\" expected: %s actual: %s\n"; then
-        return 1
-      fi
-      shift 2
-    done
-  }
-
-  if ! auto_test_framework; then
-    echo >&2 "$0:" "Framework is bugged, exiting."
-    exit 255
-  fi
-)
