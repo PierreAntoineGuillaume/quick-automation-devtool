@@ -12,7 +12,7 @@ pub mod tests;
 
 use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
-use crate::ci::job::schedule::JobRunner;
+use crate::ci::job::schedule::CommandRunner;
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, PartialEq, Clone)]
@@ -51,7 +51,7 @@ pub trait JobTrait {
     fn group(&self) -> Option<&str>;
     fn start(
         &self,
-        runner: &mut dyn JobRunner,
+        runner: &mut dyn CommandRunner,
         envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
         consumer: &dyn JobProgressConsumer,
     );

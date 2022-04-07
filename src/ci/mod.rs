@@ -5,7 +5,7 @@ use crate::ci::display::{CiDisplayConfig, Mode};
 use crate::ci::job::dag::Dag;
 use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::schedule::{schedule, FinalCiDisplay, JobRunner, JobStarter, UserFacade};
+use crate::ci::job::schedule::{schedule, CommandRunner, FinalCiDisplay, SystemFacade, UserFacade};
 use crate::ci::job::shell_interpreter::ShellInterpreter;
 use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
@@ -95,7 +95,13 @@ impl JobProgressConsumer for Sender<JobProgress> {
     }
 }
 
-impl JobStarter for ParrallelJobStarter {
+impl CommandRunner for ParrallelJobStarter {
+    fn run(&self, args: &[&str]) -> JobOutput {
+        CommandJobRunner {}.run(args)
+    }
+}
+
+impl SystemFacade for ParrallelJobStarter {
     fn consume_some_jobs(
         &mut self,
         jobs: &mut Dag,
@@ -134,7 +140,7 @@ impl JobStarter for ParrallelJobStarter {
 
 pub struct CommandJobRunner;
 
-impl JobRunner for CommandJobRunner {
+impl CommandRunner for CommandJobRunner {
     fn run(&self, args: &[&str]) -> JobOutput {
         let program = args[0];
         let args: Vec<String> = args.iter().skip(1).map(|str| str.to_string()).collect();
@@ -149,7 +155,7 @@ impl JobRunner for CommandJobRunner {
                     JobOutput::JobError(stdout, stderr)
                 }
             }
-            Err(e) => JobOutput::ProcessError(format!("{}", e)),
+            Err(e) => JobOutput::ProcessError(e.to_string()),
         }
     }
 }

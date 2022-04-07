@@ -5,11 +5,11 @@ use crate::ci::job::{JobOutput, JobProgressTracker, Progress};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 use std::sync::{Arc, Mutex};
 
-pub trait JobRunner {
+pub trait CommandRunner {
     fn run(&self, args: &[&str]) -> JobOutput;
 }
 
-pub trait JobStarter {
+pub trait SystemFacade: CommandRunner {
     fn consume_some_jobs(
         &mut self,
         jobs: &mut Dag,
@@ -32,7 +32,7 @@ pub trait FinalCiDisplay {
 
 pub fn schedule(
     mut jobs: Dag,
-    job_starter: &mut dyn JobStarter,
+    system_facade: &mut dyn SystemFacade,
     user_facade: &mut dyn UserFacade,
     envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
 ) -> JobProgressTracker {
@@ -62,7 +62,7 @@ pub fn schedule(
 
     let mut delay: usize = 0;
     loop {
-        job_starter.consume_some_jobs(&mut jobs, envbag.clone(), tx.clone());
+        system_facade.consume_some_jobs(&mut jobs, envbag.clone(), tx.clone());
 
         while let Some(progress) = read(&rx) {
             let mut cancel_list: Vec<String> = vec![];
@@ -96,10 +96,10 @@ pub fn schedule(
             break;
         }
         user_facade.run(&tracker, delay);
-        delay = job_starter.delay();
+        delay = system_facade.delay();
     }
 
-    job_starter.join();
+    system_facade.join();
     user_facade.tear_down(&tracker);
 
     tracker
@@ -166,7 +166,14 @@ mod tests {
     }
 
     pub struct TestJobStarter {}
-    impl JobStarter for TestJobStarter {
+
+    impl CommandRunner for TestJobStarter {
+        fn run(&self, args: &[&str]) -> JobOutput {
+            TestJobRunner {}.run(args)
+        }
+    }
+
+    impl SystemFacade for TestJobStarter {
         fn consume_some_jobs(
             &mut self,
             jobs: &mut Dag,
@@ -187,7 +194,7 @@ mod tests {
     }
 
     pub struct TestJobRunner {}
-    impl JobRunner for TestJobRunner {
+    impl CommandRunner for TestJobRunner {
         fn run(&self, args: &[&str]) -> JobOutput {
             let job = args[0].to_string();
             if let Some(stripped) = job.strip_prefix("ok:") {

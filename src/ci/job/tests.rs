@@ -39,7 +39,7 @@ impl Display for JobTester {
     }
 }
 
-impl JobRunner for JobTester {
+impl CommandRunner for JobTester {
     fn run(&self, args: &[&str]) -> JobOutput {
         self.inputs.borrow_mut().push(JobInput {
             args: args.iter().map(|str| str.to_string()).collect(),
