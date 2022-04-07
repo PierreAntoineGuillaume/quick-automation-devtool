@@ -2,7 +2,6 @@ use crate::ci::display::Mode;
 use crate::ci::job::docker_job::DockerJob;
 use crate::ci::job::simple_job::SimpleJob;
 use crate::ci::job::JobIntrospector;
-use crate::config::instructions::InstructionCompiler;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -79,25 +78,17 @@ pub struct Version0y {
 impl ConfigLoader for Version0y {
     fn load(&self, payload: &mut ConfigPayload) {
         for (name, full_desc) in &self.jobs {
-            let compiler = InstructionCompiler::default();
-            let instructions = full_desc
-                .script
-                .iter()
-                .map(|str| compiler.compile(str))
-                .collect();
-            let name = name.clone();
-
             if let Some(image) = &full_desc.image {
                 payload.ci.jobs.push(Arc::from(DockerJob::long(
-                    name,
-                    instructions,
+                    name.clone(),
+                    full_desc.script.clone(),
                     image.clone(),
                     full_desc.group.clone(),
                 )))
             } else {
                 payload.ci.jobs.push(Arc::from(SimpleJob::long(
-                    name,
-                    instructions,
+                    name.clone(),
+                    full_desc.script.clone(),
                     full_desc.group.clone(),
                 )))
             }

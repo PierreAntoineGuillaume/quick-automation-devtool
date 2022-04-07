@@ -1,5 +1,4 @@
 pub mod argh;
-pub mod instructions;
 pub mod migrate;
 mod serialization;
 mod versions;
