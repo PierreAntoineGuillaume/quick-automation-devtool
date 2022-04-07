@@ -33,6 +33,10 @@ impl<'a> UserFacade for SequenceDisplay<'a> {
     fn tear_down(&mut self, _: &JobProgressTracker) {
         self.term.clear();
     }
+
+    fn display_error(&self, error: String) {
+        eprintln!("{}", error)
+    }
 }
 
 impl<'a> SequenceDisplay<'a> {

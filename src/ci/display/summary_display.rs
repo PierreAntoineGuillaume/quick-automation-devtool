@@ -34,6 +34,10 @@ impl<'a> UserFacade for SummaryDisplay<'a> {
     fn tear_down(&mut self, _: &JobProgressTracker) {
         self.clear();
     }
+
+    fn display_error(&self, error: String) {
+        eprintln!("{}", error)
+    }
 }
 
 impl<'a> SummaryDisplay<'a> {

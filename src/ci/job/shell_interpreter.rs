@@ -1,80 +1,77 @@
-use crate::ci::job::env_bag::{EnvBag, SimpleEnvBag};
 use crate::ci::job::env_parser::EnvParser;
-use anyhow::{Error, Result};
+use crate::ci::job::schedule::{SystemFacade, UserFacade};
+use crate::ci::job::JobOutput;
+use crate::strvec;
+use anyhow::{anyhow, Result};
 use regex::Regex;
 use std::collections::HashMap;
-use std::process::{Command, Stdio};
-use std::sync::{Arc, Mutex};
 
-pub struct ShellInterpreter {
-    uid: String,
-    gid: String,
-    pwd: String,
-    envtext: Option<String>,
+pub struct ShellInterpreter<'a> {
+    user_facade: &'a dyn UserFacade,
+    system_facade: &'a dyn SystemFacade,
 }
 
-impl ShellInterpreter {
-    pub fn new(uid: String, gid: String, pwd: String, envtext: Option<String>) -> Self {
+impl<'a> ShellInterpreter<'a> {
+    pub fn new(user_facade: &'a dyn UserFacade, system_facade: &'a dyn SystemFacade) -> Self {
         Self {
-            uid,
-            gid,
-            pwd,
-            envtext,
+            user_facade,
+            system_facade,
         }
     }
-    pub fn interpret(&self) -> Result<Arc<Mutex<(dyn EnvBag + Send + Sync)>>> {
-        let mut map = HashMap::default();
 
-        map.insert("UID".to_string(), vec![self.uid.clone()]);
-        map.insert("GID".to_string(), vec![self.gid.clone()]);
-        map.insert("PWD".to_string(), vec![self.pwd.clone()]);
+    pub fn interpret(
+        &self,
+        additionnal_envtext: Option<String>,
+    ) -> Result<HashMap<String, Vec<String>>> {
+        let mut map = HashMap::default();
 
         let regex = Regex::new(r"^\s*(\w+)=").unwrap();
 
-        if let Some(envtext) = &self.envtext {
-            let mut control = String::new();
-            envtext
-                .split('\n')
-                .for_each(|line| match regex.captures(line) {
-                    None => {}
-                    Some(captures) => {
-                        let name = captures.get(1).unwrap().as_str().to_string();
-                        control.push_str(&format!("printf {}=; printf '%s\n' ${}\n", name, name))
-                    }
-                });
-            let script = format!("{envtext}\n{control}");
-            let default_shell = std::env::var("SHELL").unwrap_or_else(|_| String::from("bash"));
-            let output = Command::new(&default_shell)
-                .args(&["-c", &script])
-                .stderr(Stdio::inherit())
-                .output()
-                .unwrap();
+        let mut env_text = strvec!("USER_ID=$(id -u)", "GROUP_ID=$(id -g)").join("\n");
 
-            let envlist = String::from(std::str::from_utf8(&output.stdout).unwrap())
-                .trim()
-                .to_string();
+        if let Some(additionnal) = additionnal_envtext {
+            env_text = format!("{}\n{}\n", env_text, additionnal);
+        }
 
-            if !output.status.success() {
-                return Err(Error::msg("env script failed"));
+        let mut control = String::new();
+
+        env_text
+            .split('\n')
+            .for_each(|line| match regex.captures(line) {
+                None => {}
+                Some(captures) => {
+                    let name = captures.get(1).unwrap().as_str().to_string();
+                    control.push_str(&format!("printf {}=; printf '%s\n' ${}\n", name, name))
+                }
+            });
+
+        let script = format!("{env_text}\n{control}");
+        let default_shell = self.system_facade.read_env("SHELL", Some("/bin/bash"))?;
+        let out = self.system_facade.run(&[&default_shell, "-c", &script]);
+
+        let envlist = match out {
+            JobOutput::Success(stdout, stderr) => {
+                if !stderr.is_empty() {
+                    self.user_facade.display_error(stderr);
+                }
+                stdout.trim().to_string()
             }
+            JobOutput::JobError(_, stderr) => return Err(anyhow!(stderr)),
+            JobOutput::ProcessError(stderr) => return Err(anyhow!(stderr)),
+        };
 
-            let parser = EnvParser {};
-            let intermediate_map = parser.parse(envlist);
+        let parser = EnvParser {};
+        let intermediate_map = parser.parse(envlist);
 
-            for line in envtext.split('\n') {
-                let mut keyval = line.split('=');
-                if let Some(key) = keyval.next() {
-                    if let Some(value) = intermediate_map.get(key) {
-                        map.insert(key.to_string(), value.clone());
-                    }
+        for line in env_text.split('\n') {
+            let mut keyval = line.split('=');
+            if let Some(key) = keyval.next() {
+                if let Some(value) = intermediate_map.get(key) {
+                    map.insert(key.to_string(), value.clone());
                 }
             }
         }
-        Ok(Arc::from(Mutex::new(SimpleEnvBag::new(
-            self.uid.clone(),
-            self.gid.clone(),
-            self.pwd.clone(),
-            map,
-        ))))
+
+        Ok(map)
     }
 }

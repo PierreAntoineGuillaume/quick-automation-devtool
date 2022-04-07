@@ -3,17 +3,16 @@ use crate::ci::display::silent_display::SilentDisplay;
 use crate::ci::display::summary_display::SummaryDisplay;
 use crate::ci::display::{CiDisplayConfig, Mode};
 use crate::ci::job::dag::Dag;
-use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{schedule, CommandRunner, FinalCiDisplay, SystemFacade, UserFacade};
-use crate::ci::job::shell_interpreter::ShellInterpreter;
 use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
 use crate::SequenceDisplay;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
+use std::collections::HashMap;
 use std::process::Command;
 use std::sync::mpsc::Sender;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::thread;
 use std::thread::{sleep, JoinHandle};
 use std::time::{Duration, SystemTime};
@@ -32,16 +31,6 @@ pub struct CiConfig {
 pub struct Ci {}
 
 impl Ci {
-    fn id(flag: &str) -> String {
-        let output = Command::new("id")
-            .args(vec![flag])
-            .output()
-            .expect("id -u cannot fail");
-        String::from(std::str::from_utf8(&output.stdout).expect("This is an int"))
-            .trim()
-            .to_string()
-    }
-
     pub fn run(&mut self, config: Config) -> Result<bool> {
         let mut payload = ConfigPayload::default();
         config.load_with_args_into(&mut payload)?;
@@ -55,16 +44,12 @@ impl Ci {
 
         let dag = Dag::new(&ci_config.jobs, &ci_config.constraints, &ci_config.groups).unwrap();
 
-        let shell_interpreter = ShellInterpreter::new(
-            Self::id("-u"),
-            Self::id("-g"),
-            std::env::var("PWD").expect("PWD always exists"),
+        let tracker = schedule(
+            dag,
+            &mut ParrallelJobStarter::new(),
+            &mut *display,
             payload.env,
-        );
-
-        let envbag = shell_interpreter.interpret()?;
-
-        let tracker = schedule(dag, &mut ParrallelJobStarter::new(), &mut *display, envbag);
+        )?;
 
         (&mut FullFinalDisplay::new(&ci_config.display) as &mut dyn FinalCiDisplay)
             .finish(&tracker);
@@ -102,18 +87,12 @@ impl CommandRunner for ParrallelJobStarter {
 }
 
 impl SystemFacade for ParrallelJobStarter {
-    fn consume_some_jobs(
-        &mut self,
-        jobs: &mut Dag,
-        envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
-        tx: Sender<JobProgress>,
-    ) {
+    fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>) {
         while let Some(job) = jobs.poll() {
             let consumer = tx.clone();
             let arc: Arc<SharedJob> = job.clone();
-            let envbag = envbag.clone();
             self.threads.push(thread::spawn(move || {
-                arc.start(&mut CommandJobRunner, envbag, &consumer);
+                arc.start(&mut CommandJobRunner, &consumer);
             }));
         }
     }
@@ -125,16 +104,33 @@ impl SystemFacade for ParrallelJobStarter {
     }
 
     fn delay(&mut self) -> usize {
-        let time_for = AWAIT_TIME
-            - SystemTime::now()
-                .duration_since(self.last_occurence)
-                .unwrap();
+        let time_for = match AWAIT_TIME.checked_sub(self.last_occurence.elapsed().unwrap()) {
+            None => Duration::new(0, 0),
+            Some(duration) => duration,
+        };
+
         let millis: usize = std::cmp::max(time_for.as_millis() as usize, 0);
         if millis != 0 {
             sleep(time_for);
         }
         self.last_occurence = SystemTime::now();
         millis
+    }
+
+    fn write_env(&self, env: HashMap<String, Vec<String>>) {
+        for (key, vals) in env {
+            std::env::set_var(key, vals.join("\n"))
+        }
+    }
+
+    fn read_env(&self, key: &str, default: Option<&str>) -> anyhow::Result<String> {
+        if let Ok(env) = std::env::var(key) {
+            Ok(env)
+        } else if let Some(env) = default {
+            Ok(env.to_string())
+        } else {
+            Err(anyhow!("no env value for {}", key))
+        }
     }
 }
 

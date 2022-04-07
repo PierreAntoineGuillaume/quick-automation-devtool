@@ -1,9 +1,6 @@
-use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::instruction_interpreter::InstructionInterpreter;
 use crate::ci::job::schedule::CommandRunner;
 use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
-use std::sync::{Arc, Mutex};
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct SimpleJob {
@@ -28,31 +25,19 @@ impl JobTrait for SimpleJob {
         }
     }
 
-    fn start(
-        &self,
-        runner: &mut dyn CommandRunner,
-        envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
-        consumer: &dyn JobProgressConsumer,
-    ) {
+    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer) {
         let mut success = true;
-        let parser = InstructionInterpreter::arc_mutex(&envbag, &self.instructions);
 
-        for word_list in parser {
-            let executed = word_list.join(" ");
+        for instruction in &self.instructions {
             consumer.consume(JobProgress::new(
                 &self.name,
-                Progress::Started(executed.clone()),
+                Progress::Started(instruction.clone()),
             ));
 
-            let output = runner.run(
-                &(word_list
-                    .iter()
-                    .map(|str| str.as_str())
-                    .collect::<Vec<&str>>()),
-            );
+            let output = runner.run(&["bash", "-c", instruction]);
 
             success = output.succeeded();
-            let partial = Progress::Partial(executed, output);
+            let partial = Progress::Partial(instruction.clone(), output);
             consumer.consume(JobProgress::new(&self.name, partial));
             if !success {
                 break;

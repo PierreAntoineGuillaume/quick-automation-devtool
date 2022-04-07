@@ -1,29 +1,27 @@
 use crate::ci::job::dag::{Dag, JobResult, JobState};
-use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
+use crate::ci::job::shell_interpreter::ShellInterpreter;
 use crate::ci::job::{JobOutput, JobProgressTracker, Progress};
+use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
-use std::sync::{Arc, Mutex};
 
 pub trait CommandRunner {
     fn run(&self, args: &[&str]) -> JobOutput;
 }
 
 pub trait SystemFacade: CommandRunner {
-    fn consume_some_jobs(
-        &mut self,
-        jobs: &mut Dag,
-        envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
-        tx: Sender<JobProgress>,
-    );
+    fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>);
     fn join(&mut self);
     fn delay(&mut self) -> usize;
+    fn write_env(&self, env: HashMap<String, Vec<String>>);
+    fn read_env(&self, key: &str, default: Option<&str>) -> anyhow::Result<String>;
 }
 
 pub trait UserFacade {
     fn set_up(&mut self, tracker: &JobProgressTracker);
     fn run(&mut self, tracker: &JobProgressTracker, elapsed: usize);
     fn tear_down(&mut self, tracker: &JobProgressTracker);
+    fn display_error(&self, error: String);
 }
 
 pub trait FinalCiDisplay {
@@ -34,14 +32,21 @@ pub fn schedule(
     mut jobs: Dag,
     system_facade: &mut dyn SystemFacade,
     user_facade: &mut dyn UserFacade,
-    envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
-) -> JobProgressTracker {
+    envtext: Option<String>,
+) -> anyhow::Result<JobProgressTracker> {
     let mut tracker = JobProgressTracker::new();
 
     if jobs.is_finished() {
         tracker.finish();
-        return tracker;
+        return Ok(tracker);
     }
+
+    let env = {
+        let parser = ShellInterpreter::new(user_facade, system_facade);
+        parser.interpret(envtext)?
+    };
+
+    system_facade.write_env(env);
 
     for job in jobs.enumerate() {
         tracker.record(JobProgress::new(
@@ -62,7 +67,7 @@ pub fn schedule(
 
     let mut delay: usize = 0;
     loop {
-        system_facade.consume_some_jobs(&mut jobs, envbag.clone(), tx.clone());
+        system_facade.consume_some_jobs(&mut jobs, tx.clone());
 
         while let Some(progress) = read(&rx) {
             let mut cancel_list: Vec<String> = vec![];
@@ -102,7 +107,7 @@ pub fn schedule(
     system_facade.join();
     user_facade.tear_down(&tracker);
 
-    tracker
+    Ok(tracker)
 }
 
 pub fn read(rx: &Receiver<JobProgress>) -> Option<JobProgress> {
@@ -119,11 +124,10 @@ pub fn read(rx: &Receiver<JobProgress>) -> Option<JobProgress> {
 mod tests {
     use super::*;
     use crate::ci::display::silent_display::SilentDisplay;
-    use crate::ci::job::env_bag::SimpleEnvBag;
     use crate::ci::job::simple_job::SimpleJob;
     use crate::ci::job::SharedJob;
     use std::collections::HashMap;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
 
     impl SimpleJob {
         pub fn new(name: &str, instructions: &[&str]) -> Self {
@@ -141,13 +145,7 @@ mod tests {
         let mut job_start = TestJobStarter {};
         let mut job_display = SilentDisplay {};
         let dag = Dag::new(jobs, &[], &[]).unwrap();
-        let envbag = Arc::from(Mutex::new(SimpleEnvBag::new(
-            "uid",
-            "gid",
-            "/dir",
-            HashMap::default(),
-        )));
-        schedule(dag, &mut job_start, &mut job_display, envbag)
+        schedule(dag, &mut job_start, &mut job_display, None).unwrap()
     }
 
     #[test]
@@ -168,21 +166,15 @@ mod tests {
     pub struct TestJobStarter {}
 
     impl CommandRunner for TestJobStarter {
-        fn run(&self, args: &[&str]) -> JobOutput {
-            TestJobRunner {}.run(args)
+        fn run(&self, _: &[&str]) -> JobOutput {
+            JobOutput::Success("".to_string(), "".to_string())
         }
     }
 
     impl SystemFacade for TestJobStarter {
-        fn consume_some_jobs(
-            &mut self,
-            jobs: &mut Dag,
-            envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
-            tx: Sender<JobProgress>,
-        ) {
-            let new_env_bag = envbag.clone();
+        fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>) {
             while let Some(job) = jobs.poll() {
-                job.start(&mut TestJobRunner {}, new_env_bag.clone(), &tx.clone());
+                job.start(&mut TestJobRunner {}, &tx.clone());
             }
         }
 
@@ -191,12 +183,18 @@ mod tests {
         fn delay(&mut self) -> usize {
             0
         }
+
+        fn write_env(&self, _: HashMap<String, Vec<String>>) {}
+
+        fn read_env(&self, _: &str, _: Option<&str>) -> anyhow::Result<String> {
+            Ok("".to_string())
+        }
     }
 
     pub struct TestJobRunner {}
     impl CommandRunner for TestJobRunner {
         fn run(&self, args: &[&str]) -> JobOutput {
-            let job = args[0].to_string();
+            let job = args[2].to_string();
             if let Some(stripped) = job.strip_prefix("ok:") {
                 JobOutput::Success(stripped.into(), "".into())
             } else if let Some(stripped) = job.strip_prefix("ko:") {
@@ -204,7 +202,10 @@ mod tests {
             } else if let Some(stripped) = job.strip_prefix("crash:") {
                 JobOutput::ProcessError(stripped.into())
             } else {
-                unreachable!("Job should begin with ok:, ko, or crash:")
+                unreachable!(
+                    "Job should begin with ok:, ko, or crash: (actual: '{}')",
+                    job
+                )
             }
         }
     }

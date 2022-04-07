@@ -1,19 +1,15 @@
 pub mod dag;
 pub mod docker_job;
-pub mod env_bag;
 mod env_parser;
 pub mod inspection;
-pub mod instruction_interpreter;
 pub mod schedule;
 pub mod shell_interpreter;
 pub mod simple_job;
 #[cfg(test)]
 pub mod tests;
 
-use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
 use crate::ci::job::schedule::CommandRunner;
-use std::sync::{Arc, Mutex};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JobOutput {
@@ -49,12 +45,7 @@ pub trait JobTrait {
     fn introspect(&self, introspector: &mut dyn JobIntrospector);
     fn name(&self) -> &str;
     fn group(&self) -> Option<&str>;
-    fn start(
-        &self,
-        runner: &mut dyn CommandRunner,
-        envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
-        consumer: &dyn JobProgressConsumer,
-    );
+    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer);
 }
 
 #[derive(Debug, PartialEq)]

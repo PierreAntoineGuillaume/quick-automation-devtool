@@ -1,9 +1,6 @@
-use crate::ci::job::env_bag::EnvBag;
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::instruction_interpreter::InstructionInterpreter;
 use crate::ci::job::schedule::CommandRunner;
 use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
-use std::sync::{Arc, Mutex};
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct DockerJob {
@@ -12,6 +9,9 @@ pub struct DockerJob {
     image: String,
     instructions: Vec<String>,
 }
+
+const DOCKER_RUN: &str =
+    r#"docker run --rm --user "$USER_ID:$GROUP_ID" --volume "$PWD:$PWD" --workdir "$PWD""#;
 
 impl JobTrait for DockerJob {
     fn introspect(&self, introspector: &mut dyn JobIntrospector) {
@@ -29,47 +29,23 @@ impl JobTrait for DockerJob {
         }
     }
 
-    fn start(
-        &self,
-        runner: &mut dyn CommandRunner,
-        envbag: Arc<Mutex<(dyn EnvBag + Send + Sync)>>,
-        consumer: &dyn JobProgressConsumer,
-    ) {
+    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer) {
         let mut success = true;
 
-        let (uid, gid, pwd) = Self::get_env(&envbag);
-
-        let user_string = format!("{}:{}", uid, gid);
-        let volume_string = format!("{}:{}", pwd, pwd);
-
-        let base_instructions = vec![
-            "docker",
-            "run",
-            "--rm",
-            "--user",
-            &user_string,
-            "--volume",
-            &volume_string,
-            "--workdir",
-            &pwd,
-            self.image.as_str(),
-        ];
-
-        let parser = InstructionInterpreter::arc_mutex(&envbag, &self.instructions);
-
-        for word_list in parser {
-            let executed = word_list.join(" ");
+        for instruction in &self.instructions {
             consumer.consume(JobProgress::new(
                 &self.name,
-                Progress::Started(executed.clone()),
+                Progress::Started(instruction.clone()),
             ));
 
-            let mut args = base_instructions.clone();
-            args.extend(word_list.iter().map(|str| str.as_str()));
-            let output = runner.run(&args);
+            let output = runner.run(&[
+                "bash",
+                "-c",
+                &format!(r#"{} {} {}"#, DOCKER_RUN, self.image, instruction),
+            ]);
 
             success = output.succeeded();
-            let partial = Progress::Partial(executed, output);
+            let partial = Progress::Partial(instruction.clone(), output);
             consumer.consume(JobProgress::new(&self.name, partial));
             if !success {
                 break;
@@ -93,13 +69,5 @@ impl DockerJob {
             image,
             group,
         }
-    }
-
-    fn get_env(envbag: &Arc<Mutex<dyn EnvBag + Send + Sync>>) -> (String, String, String) {
-        let lock = envbag.lock().unwrap();
-        let uid = (*lock).user();
-        let gid = (*lock).group();
-        let pwd = (*lock).pwd();
-        (uid, gid, pwd)
     }
 }
