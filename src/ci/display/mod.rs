@@ -31,7 +31,7 @@ impl Default for CiDisplayConfig {
             mode: Mode::default(),
             ok: String::from("✔"),
             ko: String::from("✕"),
-            cancelled: String::from("? cancelled"),
+            cancelled: String::from("✕"),
             spinner: (
                 vec![
                     String::from(".  "),
