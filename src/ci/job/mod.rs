@@ -1,3 +1,4 @@
+pub mod constraint_matrix;
 pub mod dag;
 pub mod docker_job;
 mod env_parser;

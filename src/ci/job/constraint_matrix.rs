@@ -1,4 +1,3 @@
-use crate::ci::job::dag::constraint_matrix_constraint_iterator::ConstraintMatrixConstraintIterator;
 use crate::ci::job::dag::{Constraint, DagError};
 use crate::ci::job::{JobTrait, JobType};
 use std::collections::{BTreeMap, BTreeSet};
@@ -72,6 +71,38 @@ impl ConstraintMatrix {
 
     pub fn blocking(&self, link: &str) -> ConstraintMatrixConstraintIterator {
         ConstraintMatrixConstraintIterator::new(&self.blocked_by_jobs, link.to_string())
+    }
+}
+
+pub struct ConstraintMatrixConstraintIterator {
+    proximity: Vec<String>,
+}
+
+impl ConstraintMatrixConstraintIterator {
+    pub fn new(cm: &BTreeMap<String, BTreeSet<String>>, blocking: String) -> Self {
+        let mut accumulator = BTreeSet::new();
+        let mut stack = vec![blocking];
+
+        while let Some(current) = stack.pop() {
+            let blocks = cm.get(&current).unwrap();
+            for block in blocks {
+                if accumulator.insert(block.clone()) {
+                    stack.push(block.clone());
+                }
+            }
+        }
+
+        let proximity = accumulator.iter().cloned().collect();
+
+        Self { proximity }
+    }
+}
+
+impl Iterator for ConstraintMatrixConstraintIterator {
+    type Item = String;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.proximity.pop()
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::ci::job::dag::constraint_matrix::ConstraintMatrix;
+use crate::ci::job::constraint_matrix::ConstraintMatrix;
 use crate::ci::job::{JobTrait, JobType, SharedJob};
 use indexmap::IndexMap;
 use std::cmp::Ordering;
@@ -6,18 +6,15 @@ use std::collections::{BTreeMap, HashMap};
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
-pub mod constraint_matrix;
-mod constraint_matrix_constraint_iterator;
-
 #[derive(Debug)]
-enum Constraint {
+pub enum Constraint {
     Free,
     Indifferent,
     Blocked(usize),
 }
 
 impl Constraint {
-    fn constrain(&self) -> Result<Self, ()> {
+    pub(crate) fn constrain(&self) -> Result<Self, ()> {
         match self {
             Constraint::Free => Err(()),
             Constraint::Indifferent => Ok(Constraint::Blocked(1)),
