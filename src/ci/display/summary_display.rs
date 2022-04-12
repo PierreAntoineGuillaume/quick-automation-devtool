@@ -3,10 +3,11 @@ use crate::ci::display::term_wrapper::TermWrapper;
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::{InstructionState, JobProgressTracker, ProgressCollector};
 use crate::ci::job::ports::UserFacade;
+use std::io::Write;
 
 pub struct SummaryDisplay<'a> {
     spin: Spinner<'a>,
-    term: TermWrapper,
+    term: TermWrapper<'a>,
     config: &'a CiDisplayConfig,
     max_job_name_len: usize,
 }
@@ -81,9 +82,9 @@ impl<'a> SummaryDisplay<'a> {
         self.term.clear()
     }
 
-    pub fn new(config: &'a CiDisplayConfig) -> Self {
+    pub fn new(config: &'a CiDisplayConfig, write: &'a mut dyn Write) -> Self {
         SummaryDisplay {
-            term: TermWrapper::default(),
+            term: TermWrapper::new(write),
             spin: Spinner::new(&config.spinner.0, config.spinner.1),
             config,
             max_job_name_len: 0,

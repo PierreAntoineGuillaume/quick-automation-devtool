@@ -29,10 +29,12 @@ impl Ci {
         config.load_with_args_into(&mut payload)?;
         let ci_config = payload.ci;
 
+        let mut stdout = std::io::stdout();
+
         let mut display: Box<dyn UserFacade> = match &payload.display.mode {
             Mode::Silent => Box::new(SilentDisplay {}),
-            Mode::AllOutput => Box::new(SequenceDisplay::new(&payload.display)),
-            Mode::Summary => Box::new(SummaryDisplay::new(&payload.display)),
+            Mode::AllOutput => Box::new(SequenceDisplay::new(&payload.display, &mut stdout)),
+            Mode::Summary => Box::new(SummaryDisplay::new(&payload.display, &mut stdout)),
         };
 
         let tracker = schedule(
