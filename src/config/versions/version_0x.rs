@@ -1,9 +1,9 @@
 use crate::ci::job::simple_job::SimpleJob;
 use crate::ci::job::JobIntrospector;
+use crate::ci::JobType;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 pub type JobSet = HashMap<String, Vec<String>>;
 pub type Constraints = HashMap<String, Vec<String>>;
@@ -35,7 +35,7 @@ impl ConfigLoader for Version0x {
         let ci_config = &mut payload.ci;
 
         for (name, instruction) in &self.jobs {
-            ci_config.jobs.push(Arc::from(SimpleJob::short(
+            ci_config.jobs.push(JobType::Simple(SimpleJob::short(
                 name.clone(),
                 instruction.clone(),
             )))

@@ -47,8 +47,9 @@ pub fn schedule(
         &ci_config.jobs,
         &ci_config.constraints,
         &ci_config.groups,
-        &env
-    ).unwrap();
+        &env,
+    )
+    .unwrap();
 
     if jobs.is_finished() {
         tracker.finish();
@@ -134,38 +135,9 @@ pub fn read(rx: &Receiver<JobProgress>) -> Option<JobProgress> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ci::display::silent_display::SilentDisplay;
-    use crate::ci::job::simple_job::SimpleJob;
     use crate::ci::job::SharedJob;
     use std::collections::HashMap;
     use std::sync::Arc;
-
-    impl SimpleJob {
-        pub fn new(name: &str, instructions: &[&str]) -> Self {
-            SimpleJob::short(
-                name.to_string(),
-                instructions
-                    .iter()
-                    .map(|item| String::from(*item))
-                    .collect(),
-            )
-        }
-    }
-
-    #[test]
-    pub fn every_job_is_initialisated() {
-        assert!(!test_pipeline(&[Arc::from(SimpleJob::new("a", &["ok: result"]))]).has_failed)
-    }
-
-    #[test]
-    pub fn one_job_failure_fails_scheduling() {
-        assert!(test_pipeline(&[Arc::from(SimpleJob::new("c", &["ko: result"]))]).has_failed)
-    }
-
-    #[test]
-    pub fn one_job_crash_fails_scheduling() {
-        assert!(test_pipeline(&[Arc::from(SimpleJob::new("c", &["crash: result"]))]).has_failed)
-    }
 
     pub struct TestJobStarter {}
 

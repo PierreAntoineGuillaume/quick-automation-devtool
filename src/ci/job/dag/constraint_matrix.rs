@@ -1,8 +1,8 @@
 use crate::ci::job::dag::constraint_matrix_constraint_iterator::ConstraintMatrixConstraintIterator;
 use crate::ci::job::dag::{Constraint, DagError};
-use crate::ci::job::SharedJob;
+use crate::ci::job::JobTrait;
+use crate::ci::JobType;
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct ConstraintMatrix {
@@ -11,10 +11,7 @@ pub struct ConstraintMatrix {
 }
 
 impl ConstraintMatrix {
-    pub fn new(
-        jobs: &[Arc<SharedJob>],
-        constraints: &[(String, String)],
-    ) -> Result<Self, DagError> {
+    pub fn new(jobs: &[JobType], constraints: &[(String, String)]) -> Result<Self, DagError> {
         let mut matrix = BTreeMap::<(String, String), Constraint>::new();
         let mut blocks_jobs = BTreeMap::new();
         let mut blocked_by_jobs = BTreeMap::new();

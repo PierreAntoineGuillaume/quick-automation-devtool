@@ -3,7 +3,7 @@ use crate::ci::job::schedule::CommandRunner;
 use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
 use std::collections::HashMap;
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub struct DockerJob {
     name: String,
     group: Option<String>,
@@ -40,6 +40,13 @@ impl JobTrait for DockerJob {
     fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer) {
         let mut success = true;
 
+        let env = self
+            .env
+            .iter()
+            .map(|key| format!(r#"--env "{key}=${key}""#))
+            .collect::<Vec<String>>()
+            .join(" ");
+
         for instruction in &self.instructions {
             consumer.consume(JobProgress::new(
                 &self.name,
@@ -49,7 +56,7 @@ impl JobTrait for DockerJob {
             let output = runner.run(&[
                 "bash",
                 "-c",
-                &format!(r#"{} {} {}"#, DOCKER_RUN, self.image, instruction),
+                &format!(r#"{} {} {} {}"#, DOCKER_RUN, env, self.image, instruction),
             ]);
 
             success = output.succeeded();

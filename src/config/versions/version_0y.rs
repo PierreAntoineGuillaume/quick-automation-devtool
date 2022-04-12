@@ -1,11 +1,11 @@
 use crate::ci::display::Mode;
 use crate::ci::job::docker_job::DockerJob;
 use crate::ci::job::simple_job::SimpleJob;
-use crate::ci::job::JobIntrospector;
+use crate::ci::job::{JobIntrospector, JobTrait};
+use crate::ci::JobType;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct FullJobDesc {
@@ -78,20 +78,19 @@ pub struct Version0y {
 impl ConfigLoader for Version0y {
     fn load(&self, payload: &mut ConfigPayload) {
         for (name, full_desc) in &self.jobs {
-            if let Some(image) = &full_desc.image {
-                payload.ci.jobs.push(Arc::from(DockerJob::long(
+            payload.ci.jobs.push(match &full_desc.image {
+                None => JobType::Simple(SimpleJob::long(
+                    name.clone(),
+                    full_desc.script.clone(),
+                    full_desc.group.clone(),
+                )),
+                Some(image) => JobType::Docker(DockerJob::long(
                     name.clone(),
                     full_desc.script.clone(),
                     image.clone(),
                     full_desc.group.clone(),
-                )))
-            } else {
-                payload.ci.jobs.push(Arc::from(SimpleJob::long(
-                    name.clone(),
-                    full_desc.script.clone(),
-                    full_desc.group.clone(),
-                )))
-            }
+                )),
+            })
         }
         if let Some(groups) = &self.groups {
             payload.ci.groups = groups.clone();

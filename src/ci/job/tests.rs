@@ -2,7 +2,7 @@ use super::*;
 use crate::ci::job::simple_job::SimpleJob;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
-use std::sync::Arc;
+use crate::ci::JobType;
 
 #[derive(Default)]
 struct JobInput {
@@ -48,7 +48,7 @@ impl CommandRunner for JobTester {
     }
 }
 
-pub type ScheduleType = (Vec<Arc<SharedJob>>, Vec<(String, String)>, Vec<String>);
+pub type ScheduleType = (Vec<JobType>, Vec<(String, String)>, Vec<String>);
 
 pub fn simple_job_schedule() -> ScheduleType {
     let jobs = vec![job("deploy"), job("build"), job("test")];
@@ -97,12 +97,12 @@ pub fn group_job_schedule() -> ScheduleType {
     (jobs, vec![], config)
 }
 
-pub fn job(name: &str) -> Arc<SharedJob> {
-    Arc::from(SimpleJob::short(name.to_string(), vec![]))
+pub fn job(name: &str) -> JobType {
+    JobType::Simple(SimpleJob::short(name.to_string(), vec![]))
 }
 
-fn job_group(name: &str, group: &str) -> Arc<SharedJob> {
-    Arc::from(SimpleJob::long(
+fn job_group(name: &str, group: &str) -> JobType {
+    JobType::Simple(SimpleJob::long(
         name.to_string(),
         vec![],
         Some(group.to_string()),

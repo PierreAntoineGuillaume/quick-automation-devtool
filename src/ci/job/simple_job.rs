@@ -3,7 +3,7 @@ use crate::ci::job::schedule::CommandRunner;
 use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
 use std::collections::HashMap;
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub struct SimpleJob {
     name: String,
     group: Option<String>,

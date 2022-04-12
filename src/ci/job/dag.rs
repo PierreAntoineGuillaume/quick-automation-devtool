@@ -1,5 +1,6 @@
 use crate::ci::job::dag::constraint_matrix::ConstraintMatrix;
-use crate::ci::job::SharedJob;
+use crate::ci::job::{JobTrait, SharedJob};
+use crate::ci::JobType;
 use indexmap::IndexMap;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
@@ -181,12 +182,12 @@ impl Ord for JobEnumeration {
 
 impl Dag {
     pub fn new(
-        jobs: &[Arc<SharedJob>],
+        jobs: &[JobType],
         constraints: &[(String, String)],
         groups: &[String],
-        _: &HashMap<String, Vec<String>>
+        env: &HashMap<String, Vec<String>>,
     ) -> Result<Self, DagError> {
-        let jobs: Vec<Arc<SharedJob>> = jobs.to_vec();
+        let jobs: Vec<JobType> = jobs.to_vec();
         let mut constraints: Vec<(String, String)> = constraints.to_vec();
 
         constraints.extend(Self::compute_group_constraints(&jobs, groups));
@@ -195,7 +196,8 @@ impl Dag {
 
         let mut all_jobs = BTreeMap::<String, JobWatcher>::new();
 
-        for job in &jobs {
+        for mut job in jobs {
+            job.forward_env(env);
             let blocking = matrix.blocked_by(job.name());
             let blocked_by_jobs: Vec<String> = matrix.blocking(job.name()).collect();
             let state = if blocked_by_jobs.is_empty() {
@@ -211,7 +213,7 @@ impl Dag {
             all_jobs.insert(
                 job.name().to_string(),
                 JobWatcher::new(
-                    job.clone(),
+                    job.to_arc(),
                     state,
                     blocking.collect(),
                     JobList::from(blocked_by_jobs),
@@ -229,10 +231,7 @@ impl Dag {
         Ok(dag)
     }
 
-    fn compute_group_constraints(
-        jobs: &[Arc<SharedJob>],
-        groups: &[String],
-    ) -> Vec<(String, String)> {
+    fn compute_group_constraints(jobs: &[JobType], groups: &[String]) -> Vec<(String, String)> {
         let mut group_constraints = vec![];
         let mut blocking_jobs_by_groups = IndexMap::<String, Vec<String>>::new();
 
@@ -409,6 +408,7 @@ impl Dag {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use crate::ci::job::dag::{Dag, DagError, JobEnumeration, JobList, JobResult};
     use crate::ci::job::tests::{
         complex_job_schedule, cons, group_job_schedule, job, simple_job_schedule,
@@ -439,7 +439,7 @@ mod tests {
     #[test]
     pub fn record_good() {
         let (jobs, constraints, groups) = simple_job_schedule();
-        let mut dag = Dag::new(&jobs, &constraints, &groups).unwrap();
+        let mut dag = Dag::new(&jobs, &constraints, &groups, &HashMap::new()).unwrap();
         let build = dag.poll().expect("this is not None");
 
         assert_eq!("build", build.name());
@@ -457,7 +457,7 @@ mod tests {
     #[test]
     pub fn record_bad() {
         let (jobs, constraints, groups) = simple_job_schedule();
-        let mut dag = Dag::new(&jobs, &constraints, &groups).unwrap();
+        let mut dag = Dag::new(&jobs, &constraints, &groups, &HashMap::new()).unwrap();
 
         let job = dag.poll().expect("this is not None");
 
@@ -471,14 +471,14 @@ mod tests {
     #[test]
     pub fn test_complex() {
         let (jobs, constraints, groups) = complex_job_schedule();
-        let mut dag = Dag::new(&jobs, &constraints, &groups).unwrap();
+        let mut dag = Dag::new(&jobs, &constraints, &groups, &HashMap::new()).unwrap();
         full_dag_test(&mut dag);
     }
 
     #[test]
     pub fn test_group() {
         let (jobs, constraints, groups) = group_job_schedule();
-        let mut dag = Dag::new(&jobs, &constraints, &groups).unwrap();
+        let mut dag = Dag::new(&jobs, &constraints, &groups, &HashMap::new()).unwrap();
         full_dag_test(&mut dag);
     }
 
@@ -514,7 +514,7 @@ mod tests {
     #[test]
     pub fn test_enumerate_base() {
         let (jobs, constraints, groups) = complex_job_schedule();
-        let dag = Dag::new(&jobs, &constraints, &groups).unwrap();
+        let dag = Dag::new(&jobs, &constraints, &groups, &HashMap::new()).unwrap();
         let actual = dag.enumerate();
         assert_eq!(
             String::from("[build1(pending), build2(pending), test1(blocked), test2(blocked), deploy(blocked)]"),
@@ -525,7 +525,7 @@ mod tests {
     #[test]
     pub fn test_enumerate_failure() {
         let (jobs, constraints, groups) = complex_job_schedule();
-        let mut dag = Dag::new(&jobs, &constraints, &groups).unwrap();
+        let mut dag = Dag::new(&jobs, &constraints, &groups, &HashMap::new()).unwrap();
 
         dag.poll();
         dag.record_event("build1", JobResult::Failure);
@@ -550,7 +550,7 @@ mod tests {
     pub fn test_cycle() {
         let jobs = vec![job("A"), job("B"), job("C")];
         let cons = vec![cons("A", "B"), cons("B", "C"), cons("C", "A")];
-        let error = Dag::new(&jobs, &cons, &[]).err().unwrap();
+        let error = Dag::new(&jobs, &cons, &[], &HashMap::new()).err().unwrap();
 
         if let DagError::CycleExistsBecauseOf(letter) = error {
             assert_eq!(&letter, "A");
