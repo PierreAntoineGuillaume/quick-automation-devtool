@@ -1,15 +1,15 @@
 pub mod argh;
 pub mod migrate;
-mod serialization;
 mod versions;
+pub mod yaml_parser;
 
 use crate::ci::ci_config::CiConfig;
 use crate::ci::display::CiDisplayConfig;
-use crate::config::serialization::yaml_parser::YamlParser;
 use anyhow::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use yaml_parser::YamlParser;
 
 #[derive(Debug)]
 pub enum ConfigError {
