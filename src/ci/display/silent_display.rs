@@ -1,5 +1,5 @@
 use crate::ci::job::inspection::JobProgressTracker;
-use crate::ci::job::schedule::UserFacade;
+use crate::ci::job::ports::UserFacade;
 
 pub struct SilentDisplay {}
 impl UserFacade for SilentDisplay {

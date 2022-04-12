@@ -3,6 +3,7 @@ pub mod dag;
 pub mod docker_job;
 mod env_parser;
 pub mod inspection;
+pub mod ports;
 pub mod schedule;
 pub mod shell_interpreter;
 pub mod simple_job;
@@ -11,7 +12,7 @@ pub mod tests;
 
 use crate::ci::job::docker_job::DockerJob;
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
-use crate::ci::job::schedule::CommandRunner;
+use crate::ci::job::ports::CommandRunner;
 use crate::ci::job::simple_job::SimpleJob;
 use std::collections::HashMap;
 use std::sync::Arc;

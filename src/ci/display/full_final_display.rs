@@ -1,6 +1,6 @@
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::JobProgressTracker;
-use crate::ci::job::schedule::FinalCiDisplay;
+use crate::ci::job::ports::FinalCiDisplay;
 use crate::ci::job::{JobOutput, Progress};
 use regex::Regex;
 use std::time::SystemTime;

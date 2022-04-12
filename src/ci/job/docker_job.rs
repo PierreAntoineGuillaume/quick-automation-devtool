@@ -1,5 +1,5 @@
 use crate::ci::job::inspection::JobProgress;
-use crate::ci::job::schedule::CommandRunner;
+use crate::ci::job::ports::CommandRunner;
 use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
 use std::collections::HashMap;
 

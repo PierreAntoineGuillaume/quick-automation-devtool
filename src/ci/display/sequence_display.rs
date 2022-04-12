@@ -2,7 +2,7 @@ use crate::ci::display::spinner::Spinner;
 use crate::ci::display::term_wrapper::TermWrapper;
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::{JobProgressTracker, ProgressCollector};
-use crate::ci::job::schedule::UserFacade;
+use crate::ci::job::ports::UserFacade;
 use crate::ci::job::Progress;
 
 pub struct SequenceDisplay<'a> {
