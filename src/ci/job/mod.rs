@@ -8,9 +8,12 @@ pub mod simple_job;
 #[cfg(test)]
 pub mod tests;
 
+use crate::ci::job::docker_job::DockerJob;
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
 use crate::ci::job::schedule::CommandRunner;
+use crate::ci::job::simple_job::SimpleJob;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JobOutput {
@@ -41,6 +44,62 @@ pub trait JobIntrospector {
 }
 
 pub type SharedJob = dyn JobTrait + Send + Sync;
+
+#[derive(Clone)]
+pub enum JobType {
+    Simple(SimpleJob),
+    Docker(DockerJob),
+}
+
+impl JobType {
+    pub fn to_arc(&self) -> Arc<SharedJob> {
+        match self {
+            JobType::Simple(job) => {
+                Arc::from(Box::new(job.clone()) as Box<dyn JobTrait + Send + Sync>)
+            }
+            JobType::Docker(job) => {
+                Arc::from(Box::new(job.clone()) as Box<dyn JobTrait + Send + Sync>)
+            }
+        }
+    }
+}
+
+impl JobTrait for JobType {
+    fn introspect(&self, introspector: &mut dyn JobIntrospector) {
+        match self {
+            JobType::Docker(job) => job.introspect(introspector),
+            JobType::Simple(job) => job.introspect(introspector),
+        }
+    }
+
+    fn name(&self) -> &str {
+        match self {
+            JobType::Docker(job) => job.name(),
+            JobType::Simple(job) => job.name(),
+        }
+    }
+
+    fn forward_env(&mut self, env: &HashMap<String, Vec<String>>) {
+        match self {
+            JobType::Simple(job) => job.forward_env(env),
+            JobType::Docker(job) => job.forward_env(env),
+        }
+    }
+
+    fn group(&self) -> Option<&str> {
+        match self {
+            JobType::Docker(job) => job.group(),
+            JobType::Simple(job) => job.group(),
+        }
+    }
+
+    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer) {
+        match self {
+            JobType::Simple(job) => job.start(runner, consumer),
+            JobType::Docker(job) => job.start(runner, consumer),
+        }
+    }
+}
 
 pub trait JobTrait {
     fn introspect(&self, introspector: &mut dyn JobIntrospector);

@@ -1,8 +1,10 @@
+use crate::ci::ci_config::CiConfig;
 use crate::ci::job::dag::{Dag, JobResult, JobState};
+use crate::ci::job::docker_job::DockerJob;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::shell_interpreter::ShellInterpreter;
-use crate::ci::job::{JobOutput, JobProgressTracker, Progress, SharedJob};
-use crate::ci::CiConfig;
+use crate::ci::job::simple_job::SimpleJob;
+use crate::ci::job::{JobOutput, JobProgressTracker, JobType, Progress, SharedJob};
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
@@ -43,13 +45,17 @@ pub fn schedule(
         parser.interpret(envtext)?
     };
 
-    let mut jobs = Dag::new(
-        &ci_config.jobs,
-        &ci_config.constraints,
-        &ci_config.groups,
-        &env,
-    )
-    .unwrap();
+    let jobs = ci_config
+        .jobs
+        .iter()
+        .cloned()
+        .map(|job| match job.image {
+            None => JobType::Simple(SimpleJob::long(job.name, job.script, job.group)),
+            Some(image) => JobType::Docker(DockerJob::long(job.name, job.script, image, job.group)),
+        })
+        .collect::<Vec<JobType>>();
+
+    let mut jobs = Dag::new(&jobs, &ci_config.constraints, &ci_config.groups, &env).unwrap();
 
     if jobs.is_finished() {
         tracker.finish();

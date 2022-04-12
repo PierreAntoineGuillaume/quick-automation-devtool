@@ -59,8 +59,4 @@ impl SimpleJob {
             group,
         }
     }
-
-    pub fn short(name: String, instructions: Vec<String>) -> Self {
-        Self::long(name, instructions, None)
-    }
 }

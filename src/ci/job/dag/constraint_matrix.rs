@@ -1,7 +1,6 @@
 use crate::ci::job::dag::constraint_matrix_constraint_iterator::ConstraintMatrixConstraintIterator;
 use crate::ci::job::dag::{Constraint, DagError};
-use crate::ci::job::JobTrait;
-use crate::ci::JobType;
+use crate::ci::job::{JobTrait, JobType};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug)]

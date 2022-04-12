@@ -2,11 +2,9 @@ use crate::ci::display::full_final_display::FullFinalDisplay;
 use crate::ci::display::silent_display::SilentDisplay;
 use crate::ci::display::summary_display::SummaryDisplay;
 use crate::ci::display::Mode;
-use crate::ci::job::docker_job::DockerJob;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{schedule, CommandRunner, FinalCiDisplay, SystemFacade, UserFacade};
-use crate::ci::job::simple_job::SimpleJob;
-use crate::ci::job::{JobIntrospector, JobOutput, JobProgressConsumer, JobTrait, SharedJob};
+use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
 use crate::SequenceDisplay;
 use anyhow::{anyhow, Result};
@@ -18,71 +16,9 @@ use std::thread;
 use std::thread::{sleep, JoinHandle};
 use std::time::{Duration, SystemTime};
 
+pub mod ci_config;
 pub mod display;
 pub mod job;
-
-#[derive(Clone)]
-pub enum JobType {
-    Simple(SimpleJob),
-    Docker(DockerJob),
-}
-
-impl JobType {
-    pub fn to_arc(&self) -> Arc<SharedJob> {
-        match self {
-            JobType::Simple(job) => {
-                Arc::from(Box::new(job.clone()) as Box<dyn JobTrait + Send + Sync>)
-            }
-            JobType::Docker(job) => {
-                Arc::from(Box::new(job.clone()) as Box<dyn JobTrait + Send + Sync>)
-            }
-        }
-    }
-}
-
-impl JobTrait for JobType {
-    fn introspect(&self, introspector: &mut dyn JobIntrospector) {
-        match self {
-            JobType::Docker(job) => job.introspect(introspector),
-            JobType::Simple(job) => job.introspect(introspector),
-        }
-    }
-
-    fn name(&self) -> &str {
-        match self {
-            JobType::Docker(job) => job.name(),
-            JobType::Simple(job) => job.name(),
-        }
-    }
-
-    fn forward_env(&mut self, env: &HashMap<String, Vec<String>>) {
-        match self {
-            JobType::Simple(job) => job.forward_env(env),
-            JobType::Docker(job) => job.forward_env(env),
-        }
-    }
-
-    fn group(&self) -> Option<&str> {
-        match self {
-            JobType::Docker(job) => job.group(),
-            JobType::Simple(job) => job.group(),
-        }
-    }
-
-    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer) {
-        match self {
-            JobType::Simple(job) => job.start(runner, consumer),
-            JobType::Docker(job) => job.start(runner, consumer),
-        }
-    }
-}
-
-#[derive(Default, Clone)]
-pub struct CiConfig {
-    pub jobs: Vec<JobType>,
-    pub groups: Vec<String>,
-    pub constraints: Vec<(String, String)>,
-}
 
 pub struct Ci {}
 

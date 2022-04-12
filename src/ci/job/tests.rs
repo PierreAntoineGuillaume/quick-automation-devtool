@@ -2,7 +2,6 @@ use super::*;
 use crate::ci::job::simple_job::SimpleJob;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
-use crate::ci::JobType;
 
 #[derive(Default)]
 struct JobInput {
@@ -98,7 +97,7 @@ pub fn group_job_schedule() -> ScheduleType {
 }
 
 pub fn job(name: &str) -> JobType {
-    JobType::Simple(SimpleJob::short(name.to_string(), vec![]))
+    JobType::Simple(SimpleJob::long(name.to_string(), vec![], None))
 }
 
 fn job_group(name: &str, group: &str) -> JobType {

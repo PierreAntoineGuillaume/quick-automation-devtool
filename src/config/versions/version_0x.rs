@@ -1,6 +1,4 @@
-use crate::ci::job::simple_job::SimpleJob;
-use crate::ci::job::JobIntrospector;
-use crate::ci::JobType;
+use crate::ci::ci_config::JobDesc;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -34,11 +32,13 @@ impl ConfigLoader for Version0x {
     fn load(&self, payload: &mut ConfigPayload) {
         let ci_config = &mut payload.ci;
 
-        for (name, instruction) in &self.jobs {
-            ci_config.jobs.push(JobType::Simple(SimpleJob::short(
-                name.clone(),
-                instruction.clone(),
-            )))
+        for (name, instruction) in self.jobs.clone() {
+            ci_config.jobs.push(JobDesc {
+                name,
+                script: instruction,
+                image: None,
+                group: None,
+            })
         }
 
         if let Some(constraint) = &self.constraints {
@@ -66,20 +66,5 @@ impl ConfigLoader for Version0x {
                 payload.display.cancelled = cancelled.clone()
             }
         }
-    }
-}
-
-#[derive(Default)]
-struct VersionXJobConverter {
-    data: Option<(String, Vec<String>)>,
-}
-
-impl JobIntrospector for VersionXJobConverter {
-    fn basic_job(&mut self, name: &str, _: &Option<String>, instructions: &[String]) {
-        self.data = Some((name.to_string(), instructions.to_vec()))
-    }
-
-    fn docker_job(&mut self, name: &str, _: &str, _: &Option<String>, instructions: &[String]) {
-        self.data = Some((name.to_string(), instructions.to_vec()))
     }
 }

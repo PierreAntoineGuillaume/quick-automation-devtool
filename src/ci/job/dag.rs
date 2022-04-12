@@ -1,6 +1,5 @@
 use crate::ci::job::dag::constraint_matrix::ConstraintMatrix;
-use crate::ci::job::{JobTrait, SharedJob};
-use crate::ci::JobType;
+use crate::ci::job::{JobTrait, JobType, SharedJob};
 use indexmap::IndexMap;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
@@ -408,11 +407,11 @@ impl Dag {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
     use crate::ci::job::dag::{Dag, DagError, JobEnumeration, JobList, JobResult};
     use crate::ci::job::tests::{
         complex_job_schedule, cons, group_job_schedule, job, simple_job_schedule,
     };
+    use std::collections::HashMap;
     use std::fmt::{Debug, Display, Formatter};
 
     impl Display for JobList {

@@ -1,13 +1,11 @@
+use crate::ci::ci_config::JobDesc;
 use crate::ci::display::Mode;
-use crate::ci::job::docker_job::DockerJob;
-use crate::ci::job::simple_job::SimpleJob;
-use crate::ci::job::{JobIntrospector, JobTrait};
-use crate::ci::JobType;
+use crate::ci::job::JobIntrospector;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct FullJobDesc {
     script: Vec<String>,
     image: Option<String>,
@@ -77,19 +75,12 @@ pub struct Version0y {
 
 impl ConfigLoader for Version0y {
     fn load(&self, payload: &mut ConfigPayload) {
-        for (name, full_desc) in &self.jobs {
-            payload.ci.jobs.push(match &full_desc.image {
-                None => JobType::Simple(SimpleJob::long(
-                    name.clone(),
-                    full_desc.script.clone(),
-                    full_desc.group.clone(),
-                )),
-                Some(image) => JobType::Docker(DockerJob::long(
-                    name.clone(),
-                    full_desc.script.clone(),
-                    image.clone(),
-                    full_desc.group.clone(),
-                )),
+        for (name, full_desc) in self.jobs.clone() {
+            payload.ci.jobs.push(JobDesc {
+                name,
+                script: full_desc.script,
+                image: full_desc.image,
+                group: full_desc.group,
             })
         }
         if let Some(groups) = &self.groups {
@@ -185,10 +176,16 @@ impl Version0y {
         let job_ref = payload.ci.jobs;
         let jobs = job_ref
             .iter()
+            .cloned()
             .map(|job| {
-                let mut convertor = VersionYJobConverter::default();
-                job.introspect(&mut convertor);
-                convertor.data.expect("Visitor has been set")
+                (
+                    job.name,
+                    FullJobDesc {
+                        script: job.script,
+                        image: job.image,
+                        group: job.group,
+                    },
+                )
             })
             .collect();
         Self {
