@@ -2,7 +2,7 @@ use crate::ci::job::dag::constraint_matrix::ConstraintMatrix;
 use crate::ci::job::SharedJob;
 use indexmap::IndexMap;
 use std::cmp::Ordering;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
@@ -184,6 +184,7 @@ impl Dag {
         jobs: &[Arc<SharedJob>],
         constraints: &[(String, String)],
         groups: &[String],
+        _: &HashMap<String, Vec<String>>
     ) -> Result<Self, DagError> {
         let jobs: Vec<Arc<SharedJob>> = jobs.to_vec();
         let mut constraints: Vec<(String, String)> = constraints.to_vec();

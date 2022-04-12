@@ -1,8 +1,7 @@
 use crate::ci::display::full_final_display::FullFinalDisplay;
 use crate::ci::display::silent_display::SilentDisplay;
 use crate::ci::display::summary_display::SummaryDisplay;
-use crate::ci::display::{CiDisplayConfig, Mode};
-use crate::ci::job::dag::Dag;
+use crate::ci::display::Mode;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::{schedule, CommandRunner, FinalCiDisplay, SystemFacade, UserFacade};
 use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
@@ -20,12 +19,11 @@ use std::time::{Duration, SystemTime};
 pub mod display;
 pub mod job;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct CiConfig {
     pub jobs: Vec<Arc<SharedJob>>,
     pub groups: Vec<String>,
     pub constraints: Vec<(String, String)>,
-    pub display: CiDisplayConfig,
 }
 
 pub struct Ci {}
@@ -36,23 +34,20 @@ impl Ci {
         config.load_with_args_into(&mut payload)?;
         let ci_config = payload.ci;
 
-        let mut display: Box<dyn UserFacade> = match &ci_config.display.mode {
+        let mut display: Box<dyn UserFacade> = match &payload.display.mode {
             Mode::Silent => Box::new(SilentDisplay {}),
-            Mode::AllOutput => Box::new(SequenceDisplay::new(&ci_config.display)),
-            Mode::Summary => Box::new(SummaryDisplay::new(&ci_config.display)),
+            Mode::AllOutput => Box::new(SequenceDisplay::new(&payload.display)),
+            Mode::Summary => Box::new(SummaryDisplay::new(&payload.display)),
         };
 
-        let dag = Dag::new(&ci_config.jobs, &ci_config.constraints, &ci_config.groups).unwrap();
-
         let tracker = schedule(
-            dag,
+            ci_config.clone(),
             &mut ParrallelJobStarter::new(),
             &mut *display,
             payload.env,
         )?;
 
-        (&mut FullFinalDisplay::new(&ci_config.display) as &mut dyn FinalCiDisplay)
-            .finish(&tracker);
+        (&mut FullFinalDisplay::new(&payload.display) as &mut dyn FinalCiDisplay).finish(&tracker);
 
         Ok(!tracker.has_failed)
     }
@@ -87,14 +82,10 @@ impl CommandRunner for ParrallelJobStarter {
 }
 
 impl SystemFacade for ParrallelJobStarter {
-    fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>) {
-        while let Some(job) = jobs.poll() {
-            let consumer = tx.clone();
-            let arc: Arc<SharedJob> = job.clone();
-            self.threads.push(thread::spawn(move || {
-                arc.start(&mut CommandJobRunner, &consumer);
-            }));
-        }
+    fn consume_job(&mut self, job: Arc<SharedJob>, tx: Sender<JobProgress>) {
+        self.threads.push(thread::spawn(move || {
+            job.start(&mut CommandJobRunner, &tx);
+        }));
     }
 
     fn join(&mut self) {

@@ -1,16 +1,18 @@
 use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::shell_interpreter::ShellInterpreter;
-use crate::ci::job::{JobOutput, JobProgressTracker, Progress};
+use crate::ci::job::{JobOutput, JobProgressTracker, Progress, SharedJob};
+use crate::ci::CiConfig;
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
+use std::sync::Arc;
 
 pub trait CommandRunner {
     fn run(&self, args: &[&str]) -> JobOutput;
 }
 
 pub trait SystemFacade: CommandRunner {
-    fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>);
+    fn consume_job(&mut self, jobs: Arc<SharedJob>, tx: Sender<JobProgress>);
     fn join(&mut self);
     fn delay(&mut self) -> usize;
     fn write_env(&self, env: HashMap<String, Vec<String>>);
@@ -29,22 +31,29 @@ pub trait FinalCiDisplay {
 }
 
 pub fn schedule(
-    mut jobs: Dag,
+    ci_config: CiConfig,
     system_facade: &mut dyn SystemFacade,
     user_facade: &mut dyn UserFacade,
     envtext: Option<String>,
 ) -> anyhow::Result<JobProgressTracker> {
     let mut tracker = JobProgressTracker::new();
 
-    if jobs.is_finished() {
-        tracker.finish();
-        return Ok(tracker);
-    }
-
     let env = {
         let parser = ShellInterpreter::new(user_facade, system_facade);
         parser.interpret(envtext)?
     };
+
+    let mut jobs = Dag::new(
+        &ci_config.jobs,
+        &ci_config.constraints,
+        &ci_config.groups,
+        &env
+    ).unwrap();
+
+    if jobs.is_finished() {
+        tracker.finish();
+        return Ok(tracker);
+    }
 
     system_facade.write_env(env);
 
@@ -67,7 +76,9 @@ pub fn schedule(
 
     let mut delay: usize = 0;
     loop {
-        system_facade.consume_some_jobs(&mut jobs, tx.clone());
+        while let Some(job) = jobs.poll() {
+            system_facade.consume_job(job.clone(), tx.clone());
+        }
 
         while let Some(progress) = read(&rx) {
             let mut cancel_list: Vec<String> = vec![];
@@ -141,13 +152,6 @@ mod tests {
         }
     }
 
-    fn test_pipeline(jobs: &[Arc<SharedJob>]) -> JobProgressTracker {
-        let mut job_start = TestJobStarter {};
-        let mut job_display = SilentDisplay {};
-        let dag = Dag::new(jobs, &[], &[]).unwrap();
-        schedule(dag, &mut job_start, &mut job_display, None).unwrap()
-    }
-
     #[test]
     pub fn every_job_is_initialisated() {
         assert!(!test_pipeline(&[Arc::from(SimpleJob::new("a", &["ok: result"]))]).has_failed)
@@ -172,10 +176,8 @@ mod tests {
     }
 
     impl SystemFacade for TestJobStarter {
-        fn consume_some_jobs(&mut self, jobs: &mut Dag, tx: Sender<JobProgress>) {
-            while let Some(job) = jobs.poll() {
-                job.start(&mut TestJobRunner {}, &tx.clone());
-            }
+        fn consume_job(&mut self, job: Arc<SharedJob>, tx: Sender<JobProgress>) {
+            job.start(&mut TestJobRunner {}, &tx);
         }
 
         fn join(&mut self) {}

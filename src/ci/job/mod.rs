@@ -10,6 +10,7 @@ pub mod tests;
 
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
 use crate::ci::job::schedule::CommandRunner;
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JobOutput {
@@ -44,6 +45,7 @@ pub type SharedJob = dyn JobTrait + Send + Sync;
 pub trait JobTrait {
     fn introspect(&self, introspector: &mut dyn JobIntrospector);
     fn name(&self) -> &str;
+    fn forward_env(&mut self, env: &HashMap<String, Vec<String>>);
     fn group(&self) -> Option<&str>;
     fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer);
 }

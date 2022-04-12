@@ -3,6 +3,7 @@ pub mod migrate;
 mod serialization;
 mod versions;
 
+use crate::ci::display::CiDisplayConfig;
 use crate::ci::CiConfig;
 use crate::config::serialization::yaml_parser::YamlParser;
 use anyhow::{Error, Result};
@@ -63,6 +64,7 @@ pub struct Config {
 #[derive(Default)]
 pub struct ConfigPayload {
     pub ci: CiConfig,
+    pub display: CiDisplayConfig,
     pub env: Option<String>,
 }
 

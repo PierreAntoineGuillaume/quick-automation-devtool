@@ -122,22 +122,22 @@ impl ConfigLoader for Version0y {
 
         if let Some(display) = &self.display {
             if let Some(ok) = &display.ok {
-                payload.ci.display.ok = ok.to_string()
+                payload.display.ok = ok.to_string()
             }
             if let Some(ko) = &display.ko {
-                payload.ci.display.ko = ko.to_string()
+                payload.display.ko = ko.to_string()
             }
             if let Some(cancelled) = &display.cancelled {
-                payload.ci.display.cancelled = cancelled.to_string()
+                payload.display.cancelled = cancelled.to_string()
             }
             if let Some(spinner) = &display.spinner {
-                payload.ci.display.spinner = (spinner.frames.clone(), spinner.per_frames)
+                payload.display.spinner = (spinner.frames.clone(), spinner.per_frames)
             }
             if let Some(mode) = &display.mode {
                 match mode {
-                    DisplayMode::silent => payload.ci.display.mode = Mode::Silent,
-                    DisplayMode::sequence => payload.ci.display.mode = Mode::AllOutput,
-                    DisplayMode::summary => payload.ci.display.mode = Mode::Summary,
+                    DisplayMode::silent => payload.display.mode = Mode::Silent,
+                    DisplayMode::sequence => payload.display.mode = Mode::AllOutput,
+                    DisplayMode::summary => payload.display.mode = Mode::Summary,
                 }
             }
         }
@@ -198,18 +198,18 @@ impl Version0y {
             constraints: Some(from_vec(&payload.ci.constraints)),
             groups: Some(payload.ci.groups.clone()),
             display: Some(Display {
-                mode: Some(match payload.ci.display.mode {
+                mode: Some(match payload.display.mode {
                     Mode::Silent => DisplayMode::silent,
                     Mode::AllOutput => DisplayMode::sequence,
                     Mode::Summary => DisplayMode::summary,
                 }),
-                ok: Some(payload.ci.display.ok.to_string()),
-                ko: Some(payload.ci.display.ko.to_string()),
-                cancelled: Some(payload.ci.display.cancelled.to_string()),
+                ok: Some(payload.display.ok.to_string()),
+                ko: Some(payload.display.ko.to_string()),
+                cancelled: Some(payload.display.cancelled.to_string()),
                 display: None,
                 spinner: Some(Spinner {
-                    frames: payload.ci.display.spinner.0.clone(),
-                    per_frames: payload.ci.display.spinner.1,
+                    frames: payload.display.spinner.0.clone(),
+                    per_frames: payload.display.spinner.1,
                 }),
             }),
             env: payload.env,

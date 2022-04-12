@@ -1,6 +1,7 @@
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::CommandRunner;
 use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
+use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct DockerJob {
@@ -8,6 +9,7 @@ pub struct DockerJob {
     group: Option<String>,
     image: String,
     instructions: Vec<String>,
+    env: Vec<String>,
 }
 
 const DOCKER_RUN: &str =
@@ -20,6 +22,12 @@ impl JobTrait for DockerJob {
 
     fn name(&self) -> &str {
         &self.name
+    }
+
+    fn forward_env(&mut self, env: &HashMap<String, Vec<String>>) {
+        for key in env.keys() {
+            self.env.push(key.clone())
+        }
     }
 
     fn group(&self) -> Option<&str> {
@@ -68,6 +76,7 @@ impl DockerJob {
             instructions,
             image,
             group,
+            env: vec![],
         }
     }
 }

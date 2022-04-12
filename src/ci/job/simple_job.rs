@@ -1,6 +1,7 @@
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::schedule::CommandRunner;
 use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
+use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct SimpleJob {
@@ -17,6 +18,8 @@ impl JobTrait for SimpleJob {
     fn name(&self) -> &str {
         &self.name
     }
+
+    fn forward_env(&mut self, _: &HashMap<String, Vec<String>>) {}
 
     fn group(&self) -> Option<&str> {
         match &self.group {

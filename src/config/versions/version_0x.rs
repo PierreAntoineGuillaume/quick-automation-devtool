@@ -32,7 +32,8 @@ pub struct Version0x {
 
 impl ConfigLoader for Version0x {
     fn load(&self, payload: &mut ConfigPayload) {
-        let mut ci_config = &mut payload.ci;
+        let ci_config = &mut payload.ci;
+
         for (name, instruction) in &self.jobs {
             ci_config.jobs.push(Arc::from(SimpleJob::short(
                 name.clone(),
@@ -51,18 +52,18 @@ impl ConfigLoader for Version0x {
         }
 
         if let Some(spinner) = &self.ci_spinner {
-            ci_config.display.spinner = (spinner.frames.clone(), spinner.per_frames)
+            payload.display.spinner = (spinner.frames.clone(), spinner.per_frames)
         }
 
         if let Some(icons) = &self.ci_icons {
             if let Some(ok) = &icons.ok {
-                ci_config.display.ok = ok.clone()
+                payload.display.ok = ok.clone()
             }
             if let Some(ko) = &icons.ko {
-                ci_config.display.ko = ko.clone()
+                payload.display.ko = ko.clone()
             }
             if let Some(cancelled) = &icons.cancelled {
-                ci_config.display.cancelled = cancelled.clone()
+                payload.display.cancelled = cancelled.clone()
             }
         }
     }
