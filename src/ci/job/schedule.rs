@@ -98,7 +98,6 @@ pub fn schedule(
         delay = system_facade.delay();
     }
 
-    system_facade.join();
     user_facade.tear_down(&tracker);
 
     Ok(tracker)
@@ -135,8 +134,6 @@ mod tests {
         fn consume_job(&mut self, job: Arc<SharedJob>, tx: Sender<JobProgress>) {
             job.start(&mut TestJobRunner {}, &tx);
         }
-
-        fn join(&mut self) {}
 
         fn delay(&mut self) -> usize {
             0

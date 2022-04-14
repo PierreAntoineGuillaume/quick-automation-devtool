@@ -10,7 +10,6 @@ pub trait CommandRunner {
 
 pub trait SystemFacade: CommandRunner {
     fn consume_job(&mut self, jobs: Arc<SharedJob>, tx: Sender<JobProgress>);
-    fn join(&mut self);
     fn delay(&mut self) -> usize;
     fn write_env(&self, env: HashMap<String, Vec<String>>);
     fn read_env(&self, key: &str, default: Option<&str>) -> anyhow::Result<String>;

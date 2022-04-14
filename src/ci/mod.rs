@@ -85,12 +85,6 @@ impl SystemFacade for ParrallelJobStarter {
         }));
     }
 
-    fn join(&mut self) {
-        while let Some(handle) = self.threads.pop() {
-            handle.join().expect("Could not join handle")
-        }
-    }
-
     fn delay(&mut self) -> usize {
         let time_for = match AWAIT_TIME.checked_sub(self.last_occurence.elapsed().unwrap()) {
             None => Duration::new(0, 0),
