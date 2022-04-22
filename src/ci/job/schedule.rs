@@ -1,10 +1,8 @@
 use crate::ci::ci_config::{CiConfig, CliConfig};
 use crate::ci::job::dag::{Dag, JobResult, JobState};
-use crate::ci::job::docker_job::DockerJob;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{SystemFacade, UserFacade};
 use crate::ci::job::shell_interpreter::ShellInterpreter;
-use crate::ci::job::simple_job::SimpleJob;
 use crate::ci::job::{JobProgressTracker, JobType, Progress};
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 
@@ -15,8 +13,6 @@ pub fn schedule(
     user_facade: &mut dyn UserFacade,
     envtext: Option<String>,
 ) -> anyhow::Result<JobProgressTracker> {
-    let mut tracker = JobProgressTracker::new();
-
     let env = {
         let parser = ShellInterpreter::new(user_facade, system_facade);
         parser.interpret(envtext)?
@@ -27,10 +23,7 @@ pub fn schedule(
         .iter()
         .cloned()
         .filter(|job| cli_config.job.is_none() || cli_config.job.as_ref().unwrap() == &job.name)
-        .map(|job| match job.image {
-            None => JobType::Simple(SimpleJob::long(job.name, job.script, job.group)),
-            Some(image) => JobType::Docker(DockerJob::long(job.name, job.script, image, job.group)),
-        })
+        .map(|job| job.into())
         .collect::<Vec<JobType>>();
 
     let constraints = if cli_config.job.is_none() {
@@ -40,6 +33,8 @@ pub fn schedule(
     };
 
     let mut jobs = Dag::new(&jobs, &constraints, &ci_config.groups, &env).unwrap();
+
+    let mut tracker = JobProgressTracker::new();
 
     if jobs.is_finished() {
         tracker.finish();

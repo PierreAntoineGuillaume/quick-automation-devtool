@@ -50,6 +50,24 @@ impl Ci {
 
         Ok(!tracker.has_failed)
     }
+    pub fn list(&mut self, config: Config) -> Result<()> {
+        let mut payload = ConfigPayload::default();
+        config.load_with_args_into(&mut payload)?;
+        let ci_config = payload.ci;
+
+        let mut jobs = ci_config
+            .jobs
+            .iter()
+            .cloned()
+            .map(|job| job.name)
+            .collect::<Vec<String>>();
+
+        jobs.sort();
+
+        jobs.iter().for_each(|name| println!("{}", name));
+
+        Ok(())
+    }
 }
 
 pub struct ParrallelJobStarter {

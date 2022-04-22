@@ -17,12 +17,11 @@ unit() {
   fi
 }
 
-unit "qad " "autocomplete" "ci" "config" "--version" "--help"
+unit "qad " "autocomplete" "ci" "config" "list" "--version" "--help"
 unit "qad az" ""
 unit "qad a" "autocomplete"
 unit "qad auto" "autocomplete"
 unit "qad c" "ci"
-unit "qad ci " ""
 unit "qad co" "config"
 unit "qad config " "migrate" "--help"
 unit "qad config m" "migrate"

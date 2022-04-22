@@ -14,6 +14,7 @@ pub struct Args {
 #[argh(subcommand)]
 pub enum Subcommands {
     Ci(CiArgs),
+    List(ListArgs),
     Autocomplete(AutocompleteArgs),
     Config(ConfigArgs),
 }
@@ -24,6 +25,10 @@ pub struct CiArgs {
     #[argh(positional)]
     pub nested: Option<String>,
 }
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "list", description = "list jobs")]
+pub struct ListArgs {}
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(

@@ -48,6 +48,13 @@ fn main() {
                 std::process::exit(2)
             }
         },
+        Subcommands::List(_) => match (Ci {}).list(config) {
+            Ok(()) => {}
+            Err(str) => {
+                eprintln!("{PACKAGE_NAME}: {}", str);
+                std::process::exit(2)
+            }
+        },
         Subcommands::Autocomplete(_) => {
             if atty::is(atty::Stream::Stdout) {
                 eprintln!(

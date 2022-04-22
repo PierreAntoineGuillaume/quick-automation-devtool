@@ -12,7 +12,7 @@ _qad() {
       mapfile -t COMPREPLY < <(compgen -W "ci" -- "${cur}")
       return 0
     fi
-    mapfile -t COMPREPLY < <(compgen -W "autocomplete ci config --version --help" -- "${cur}")
+    mapfile -t COMPREPLY < <(compgen -W "autocomplete ci config list --version --help" -- "${cur}")
     return 0
   fi
   COMPREPLY=()
@@ -23,6 +23,11 @@ _qad() {
         return 0
       fi
       mapfile -t COMPREPLY < <(compgen -W "migrate --help" -- "${cur}")
+      return 0
+    fi
+    if [ "$prev" == "ci" ]; then
+      mapfile -t jobs < <(qad list)
+      mapfile -t COMPREPLY < <(compgen -W "${jobs[*]}" -- "${cur}")
       return 0
     fi
     return 0
