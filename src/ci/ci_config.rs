@@ -7,6 +7,11 @@ pub struct JobDesc {
 }
 
 #[derive(Default, Clone)]
+pub struct CliConfig {
+    pub job: Option<String>,
+}
+
+#[derive(Default, Clone)]
 pub struct CiConfig {
     pub jobs: Vec<JobDesc>,
     pub groups: Vec<String>,

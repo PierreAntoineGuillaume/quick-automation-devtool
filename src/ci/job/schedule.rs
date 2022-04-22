@@ -1,4 +1,4 @@
-use crate::ci::ci_config::CiConfig;
+use crate::ci::ci_config::{CiConfig, CliConfig};
 use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::docker_job::DockerJob;
 use crate::ci::job::inspection::JobProgress;
@@ -9,6 +9,7 @@ use crate::ci::job::{JobProgressTracker, JobType, Progress};
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 
 pub fn schedule(
+    cli_config: CliConfig,
     ci_config: CiConfig,
     system_facade: &mut dyn SystemFacade,
     user_facade: &mut dyn UserFacade,
@@ -25,13 +26,20 @@ pub fn schedule(
         .jobs
         .iter()
         .cloned()
+        .filter(|job| cli_config.job.is_none() || cli_config.job.as_ref().unwrap() == &job.name)
         .map(|job| match job.image {
             None => JobType::Simple(SimpleJob::long(job.name, job.script, job.group)),
             Some(image) => JobType::Docker(DockerJob::long(job.name, job.script, image, job.group)),
         })
         .collect::<Vec<JobType>>();
 
-    let mut jobs = Dag::new(&jobs, &ci_config.constraints, &ci_config.groups, &env).unwrap();
+    let constraints = if cli_config.job.is_none() {
+        ci_config.constraints
+    } else {
+        vec![]
+    };
+
+    let mut jobs = Dag::new(&jobs, &constraints, &ci_config.groups, &env).unwrap();
 
     if jobs.is_finished() {
         tracker.finish();
@@ -119,8 +127,8 @@ mod tests {
     use crate::ci::job::ports::CommandRunner;
     use crate::ci::job::{JobOutput, SharedJob};
     use std::collections::HashMap;
-    use std::sync::Arc;
     use std::sync::mpsc::Sender;
+    use std::sync::Arc;
 
     pub struct TestJobStarter {}
 
@@ -147,6 +155,7 @@ mod tests {
     }
 
     pub struct TestJobRunner {}
+
     impl CommandRunner for TestJobRunner {
         fn run(&self, args: &[&str]) -> JobOutput {
             let job = args[2].to_string();

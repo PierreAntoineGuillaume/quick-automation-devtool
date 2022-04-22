@@ -1,3 +1,4 @@
+use crate::ci::ci_config::CliConfig;
 use crate::ci::display::full_final_display::FullFinalDisplay;
 use crate::ci::display::silent_display::SilentDisplay;
 use crate::ci::display::summary_display::SummaryDisplay;
@@ -24,7 +25,7 @@ pub mod job;
 pub struct Ci {}
 
 impl Ci {
-    pub fn run(&mut self, config: Config) -> Result<bool> {
+    pub fn run(&mut self, config: Config, cli_config: CliConfig) -> Result<bool> {
         let mut payload = ConfigPayload::default();
         config.load_with_args_into(&mut payload)?;
         let ci_config = payload.ci;
@@ -38,6 +39,7 @@ impl Ci {
         };
 
         let tracker = schedule(
+            cli_config,
             ci_config,
             &mut ParrallelJobStarter::new(),
             &mut *display,
