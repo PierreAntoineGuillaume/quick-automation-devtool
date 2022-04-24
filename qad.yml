@@ -5,7 +5,7 @@ jobs:
       - cargo fmt
   clippy:
     script:
-      - cargo clippy --tests --color always
+      - cargo clippy --tests --color always -- -D warnings
   tests:
     script:
       - cargo test --color always
