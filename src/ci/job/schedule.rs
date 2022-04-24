@@ -18,13 +18,33 @@ pub fn schedule(
         parser.interpret(envtext)?
     };
 
-    let jobs = ci_config
-        .jobs
-        .iter()
-        .cloned()
-        .filter(|job| cli_config.job.is_none() || cli_config.job.as_ref().unwrap() == &job.name)
-        .map(|job| job.into())
-        .collect::<Vec<JobType>>();
+    let jobs = if cli_config.job.is_none() {
+        ci_config
+            .jobs
+            .iter()
+            .cloned()
+            .map(|job| job.into())
+            .collect::<Vec<JobType>>()
+    } else {
+        let filter = cli_config.job.as_ref().unwrap();
+        if let Some(group) = filter.strip_prefix("group:") {
+            ci_config
+                .jobs
+                .iter()
+                .cloned()
+                .filter(|job| job.group.is_some() && group == job.group.as_ref().unwrap())
+                .map(|job| job.into())
+                .collect::<Vec<JobType>>()
+        } else {
+            ci_config
+                .jobs
+                .iter()
+                .cloned()
+                .filter(|job| filter == &job.name)
+                .map(|job| job.into())
+                .collect::<Vec<JobType>>()
+        }
+    };
 
     let constraints = if cli_config.job.is_none() {
         ci_config.constraints

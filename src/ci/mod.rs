@@ -50,6 +50,7 @@ impl Ci {
 
         Ok(!tracker.has_failed)
     }
+
     pub fn list(&mut self, config: Config) -> Result<()> {
         let mut payload = ConfigPayload::default();
         config.load_with_args_into(&mut payload)?;
@@ -65,6 +66,10 @@ impl Ci {
         jobs.sort();
 
         jobs.iter().for_each(|name| println!("{}", name));
+        ci_config
+            .groups
+            .iter()
+            .for_each(|name| println!("group:{}", name));
 
         Ok(())
     }
