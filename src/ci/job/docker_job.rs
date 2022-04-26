@@ -47,6 +47,7 @@ impl JobTrait for DockerJob {
     fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer) {
         if let Some(condition) = &self.skip_if {
             if runner.run(&["bash", "-c", condition]).succeeded() {
+                consumer.consume(JobProgress::new(&self.name, Progress::Skipped));
                 consumer.consume(JobProgress::new(&self.name, Progress::Terminated(true)));
                 return;
             }

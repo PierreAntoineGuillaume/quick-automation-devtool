@@ -125,6 +125,7 @@ pub enum Progress {
     Cancelled,
     Started(String),
     Partial(String, JobOutput),
+    Skipped,
     Terminated(bool),
 }
 

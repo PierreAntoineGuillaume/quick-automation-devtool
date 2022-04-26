@@ -3,6 +3,7 @@ use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::ports::FinalCiDisplay;
 use crate::ci::job::{JobOutput, Progress};
 use regex::Regex;
+use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
 
 pub fn try_cleanup(input: String) -> String {
@@ -28,6 +29,23 @@ impl<'a> FullFinalDisplay<'a> {
         Self { config }
     }
 }
+
+struct UnderlineChar();
+
+impl Display for UnderlineChar {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}[4m", 27 as char)
+    }
+}
+
+struct ResetChar();
+
+impl Display for ResetChar {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}[0m", 27 as char)
+    }
+}
+
 impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
     fn finish(&mut self, tracker: &JobProgressTracker) {
         for (job_name, progress_collector) in &tracker.states {
@@ -38,6 +56,7 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                     Progress::Cancelled => {
                         icon = self.config.cancelled.clone();
                     }
+                    Progress::Skipped => string.push_str("  job was skipped\n"),
                     Progress::Partial(instruction, job_output) => match job_output {
                         JobOutput::Success(stdout, stderr)
                         | JobOutput::JobError(stdout, stderr) => {
@@ -46,18 +65,18 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                             } else {
                                 &self.config.ko
                             };
-                            string.push_str(&format!("{} {}", symbol, instruction,));
-                            string.push_str(&format!(
-                                "\n  {}\n  {}\n",
-                                try_cleanup(stdout.clone()).replace('\n', "\n  "),
-                                stderr.clone().trim_end().replace('\n', "\n  ")
-                            ))
+                            string.push_str(&format!("  {} {}\n", symbol, instruction));
+                            string.push_str(&try_cleanup(format!(
+                                "  {}\n  {}",
+                                try_cleanup(stdout.clone()).replace('\n', "\n    "),
+                                try_cleanup(stderr.clone().replace('\n', "\n    "))
+                            )))
                         }
                         JobOutput::ProcessError(stderr) => {
                             string.push_str(&format!(
-                                "{} {instruction}: {}",
+                                "  {} {instruction}: {}",
                                 self.config.ko,
-                                try_cleanup(stderr.clone()).replace('\n', "\n  ")
+                                try_cleanup(stderr.clone()).replace('\n', "\n    ")
                             ));
                         }
                     },
@@ -69,8 +88,13 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                             icon = self.config.ko.clone();
                             &self.config.ko
                         };
-                        string
-                            .push_str(&format!("{} all tasks done for job {}\n", emoji, job_name));
+                        string.push_str(&format!(
+                            "  {} {}all tasks done for job {}{}\n",
+                            emoji,
+                            UnderlineChar(),
+                            job_name,
+                            ResetChar()
+                        ));
                     }
                     _ => {}
                 }

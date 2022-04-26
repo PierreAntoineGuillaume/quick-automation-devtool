@@ -59,6 +59,10 @@ impl<'a> SequenceDisplay<'a> {
             Progress::Partial(_, _) => {
                 self.term.write(&format!(" {}", self.spin));
             }
+            Progress::Skipped => {
+                self.term
+                    .write(&format!(" {} job was skipped", self.config.ok));
+            }
             Progress::Blocked(blocked_by) => {
                 self.term.write(" blocked by ");
                 let mut len = blocked_by.len();
