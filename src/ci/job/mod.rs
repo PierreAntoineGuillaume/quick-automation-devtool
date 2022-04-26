@@ -35,13 +35,20 @@ pub trait JobProgressConsumer {
 }
 
 pub trait JobIntrospector {
-    fn basic_job(&mut self, name: &str, group: &Option<String>, instructions: &[String]);
+    fn basic_job(
+        &mut self,
+        name: &str,
+        group: &Option<String>,
+        instructions: &[String],
+        skip_if: &Option<String>,
+    );
     fn docker_job(
         &mut self,
         name: &str,
         image: &str,
         group: &Option<String>,
         instructions: &[String],
+        skip_if: &Option<String>,
     );
 }
 

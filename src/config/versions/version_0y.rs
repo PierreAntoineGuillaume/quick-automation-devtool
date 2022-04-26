@@ -10,6 +10,7 @@ pub struct FullJobDesc {
     script: Vec<String>,
     image: Option<String>,
     group: Option<String>,
+    skip_if: Option<String>,
 }
 
 pub type JobSet = std::collections::HashMap<String, FullJobDesc>;
@@ -81,6 +82,7 @@ impl ConfigLoader for Version0y {
                 script: full_desc.script,
                 image: full_desc.image,
                 group: full_desc.group,
+                skip_if: full_desc.skip_if,
             })
         }
         if let Some(groups) = &self.groups {
@@ -142,13 +144,20 @@ struct VersionYJobConverter {
 }
 
 impl JobIntrospector for VersionYJobConverter {
-    fn basic_job(&mut self, name: &str, group: &Option<String>, instructions: &[String]) {
+    fn basic_job(
+        &mut self,
+        name: &str,
+        group: &Option<String>,
+        instructions: &[String],
+        skip_if: &Option<String>,
+    ) {
         self.data = Some((
             name.to_string(),
             FullJobDesc {
                 image: None,
                 group: group.clone(),
                 script: instructions.to_vec(),
+                skip_if: skip_if.clone(),
             },
         ))
     }
@@ -159,6 +168,7 @@ impl JobIntrospector for VersionYJobConverter {
         image: &str,
         group: &Option<String>,
         instructions: &[String],
+        skip_if: &Option<String>,
     ) {
         self.data = Some((
             name.to_string(),
@@ -166,6 +176,7 @@ impl JobIntrospector for VersionYJobConverter {
                 image: Some(image.to_string()),
                 group: group.clone(),
                 script: instructions.to_vec(),
+                skip_if: skip_if.clone(),
             },
         ))
     }
@@ -184,6 +195,7 @@ impl Version0y {
                         script: job.script,
                         image: job.image,
                         group: job.group,
+                        skip_if: job.skip_if,
                     },
                 )
             })

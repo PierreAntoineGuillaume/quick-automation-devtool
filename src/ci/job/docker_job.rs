@@ -10,6 +10,7 @@ pub struct DockerJob {
     image: String,
     instructions: Vec<String>,
     env: Vec<String>,
+    skip_if: Option<String>,
 }
 
 const DOCKER_RUN: &str =
@@ -17,7 +18,13 @@ const DOCKER_RUN: &str =
 
 impl JobTrait for DockerJob {
     fn introspect(&self, introspector: &mut dyn JobIntrospector) {
-        introspector.docker_job(&self.name, &self.image, &self.group, &self.instructions)
+        introspector.docker_job(
+            &self.name,
+            &self.image,
+            &self.group,
+            &self.instructions,
+            &self.skip_if,
+        )
     }
 
     fn name(&self) -> &str {
@@ -38,6 +45,13 @@ impl JobTrait for DockerJob {
     }
 
     fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer) {
+        if let Some(condition) = &self.skip_if {
+            if runner.run(&["bash", "-c", condition]).succeeded() {
+                consumer.consume(JobProgress::new(&self.name, Progress::Terminated(true)));
+                return;
+            }
+        }
+
         let mut success = true;
 
         let env = self
@@ -77,6 +91,7 @@ impl DockerJob {
         instructions: Vec<String>,
         image: String,
         group: Option<String>,
+        skip_if: Option<String>,
     ) -> Self {
         Self {
             name,
@@ -84,6 +99,7 @@ impl DockerJob {
             image,
             group,
             env: vec![],
+            skip_if,
         }
     }
 }

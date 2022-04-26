@@ -97,7 +97,7 @@ pub fn group_job_schedule() -> ScheduleType {
 }
 
 pub fn job(name: &str) -> JobType {
-    JobType::Simple(SimpleJob::long(name.to_string(), vec![], None))
+    JobType::Simple(SimpleJob::long(name.to_string(), vec![], None, None))
 }
 
 fn job_group(name: &str, group: &str) -> JobType {
@@ -105,6 +105,7 @@ fn job_group(name: &str, group: &str) -> JobType {
         name.to_string(),
         vec![],
         Some(group.to_string()),
+        None,
     ))
 }
 

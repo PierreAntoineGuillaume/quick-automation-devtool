@@ -8,11 +8,12 @@ pub struct SimpleJob {
     name: String,
     group: Option<String>,
     instructions: Vec<String>,
+    skip_if: Option<String>,
 }
 
 impl JobTrait for SimpleJob {
     fn introspect(&self, introspector: &mut dyn JobIntrospector) {
-        introspector.basic_job(&self.name, &self.group, &self.instructions)
+        introspector.basic_job(&self.name, &self.group, &self.instructions, &self.skip_if)
     }
 
     fn name(&self) -> &str {
@@ -29,8 +30,14 @@ impl JobTrait for SimpleJob {
     }
 
     fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer) {
-        let mut success = true;
+        if let Some(condition) = &self.skip_if {
+            if runner.run(&["bash", "-c", condition]).succeeded() {
+                consumer.consume(JobProgress::new(&self.name, Progress::Terminated(true)));
+                return;
+            }
+        }
 
+        let mut success = true;
         for instruction in &self.instructions {
             consumer.consume(JobProgress::new(
                 &self.name,
@@ -52,11 +59,17 @@ impl JobTrait for SimpleJob {
 }
 
 impl SimpleJob {
-    pub fn long(name: String, instructions: Vec<String>, group: Option<String>) -> Self {
+    pub fn long(
+        name: String,
+        instructions: Vec<String>,
+        group: Option<String>,
+        skip_if: Option<String>,
+    ) -> Self {
         Self {
             name,
             instructions,
             group,
+            skip_if,
         }
     }
 }

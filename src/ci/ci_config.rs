@@ -8,15 +8,25 @@ pub struct JobDesc {
     pub script: Vec<String>,
     pub image: Option<String>,
     pub group: Option<String>,
+    pub skip_if: Option<String>,
 }
 
 impl From<JobDesc> for JobType {
     fn from(desc: JobDesc) -> Self {
         match desc.image {
-            None => JobType::Simple(SimpleJob::long(desc.name, desc.script, desc.group)),
-            Some(image) => {
-                JobType::Docker(DockerJob::long(desc.name, desc.script, image, desc.group))
-            }
+            None => JobType::Simple(SimpleJob::long(
+                desc.name,
+                desc.script,
+                desc.group,
+                desc.skip_if,
+            )),
+            Some(image) => JobType::Docker(DockerJob::long(
+                desc.name,
+                desc.script,
+                image,
+                desc.group,
+                desc.skip_if,
+            )),
         }
     }
 }

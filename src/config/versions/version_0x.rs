@@ -38,6 +38,7 @@ impl ConfigLoader for Version0x {
                 script: instruction,
                 image: None,
                 group: None,
+                skip_if: None,
             })
         }
 
