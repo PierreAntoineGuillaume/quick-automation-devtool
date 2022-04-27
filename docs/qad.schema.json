@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitlab.com/pag-station/quick-automation-devtool/-/raw/main/docs/qad.schema.json",
+  "title": "QAD",
+  "description": "qad configuration file",
+  "properties": {
+    "version": {
+      "description": "The version of the version to be parsed",
+      "type": "integer"
+    },
+    "jobs": {
+      "description": "The list of jobs to be run in ci",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "script": {
+            "type": "array",
+            "description": "the list of instruction to be executed for that job",
+            "items": {
+              "type": "string"
+            }
+          },
+          "image": {
+            "type": "string",
+            "description": "the docker image to run the job into"
+          },
+          "group": {
+            "type": "string",
+            "description": "the scheduling group"
+          },
+          "skip_if": {
+            "type": "string",
+            "description": "A shell ($SHELL) is invoked with the string, and if its exit code is zero, the job is skipped."
+          }
+        },
+        "required": "script"
+      },
+      "minItems": 0
+    },
+    "groups": {
+      "description": "The list and ordering of available groups in ci",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "contraints": {
+      "description": "The constraints to add to the jobs scheduling"
+    },
+    "display": {
+      "description": "The configuration how qad should output the jobs",
+      "type": "object"
+    },
+    "env": {
+      "description": "The env to be calculated and injected within the ci jobs",
+      "type": "string"
+    }
+  },
+  "required": ["version"]
+}

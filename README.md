@@ -2,8 +2,14 @@
 
 quick automation dev-tool `qad` is a CLI tool to help with local developpement.
 
-Prepare a dev-tool file `qad.yaml` in your working directory, then just run `qad ci`
+Prepare a configuration file `qad.yaml` in your working directory, then just run `qad ci`
 
-## Communication channel
+The configuration filename should match the perl regex: `/qad.ya?ml(.dist)?/`.
 
-You can join the slack channel by clicking [here](https://join.slack.com/t/devtool-for-auto-ci/shared_invite/zt-12wd1k6w7-6PnQBAAyrnvoo60tovV3Gw).
+A single configuration file will be parsed. `qad.yaml` is prioritary over `qad.yaml.dist`
+
+A `version` key pilots the format of the configuration to avoid breaking changes.
+
+More details on [the current configuration version file](docs/VERSION_1.md).
+
+
