@@ -1,5 +1,5 @@
 use crate::config::versions::version_0x::Version0x;
-use crate::config::versions::version_0y::Version0y;
+use crate::config::versions::version_1::Version1;
 use crate::config::{ConfigLoader, FormatParser, Version};
 use crate::Format;
 use regex::Regex;
@@ -28,9 +28,9 @@ impl FormatParser for YamlParser {
         ))
     }
 
-    fn version0y(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String> {
+    fn version1(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String> {
         Ok(Box::new(
-            serde_yaml::from_str::<Version0y>(text).map_err(|error| error.to_string())?,
+            serde_yaml::from_str::<Version1>(text).map_err(|error| error.to_string())?,
         ))
     }
 

@@ -76,7 +76,7 @@ pub trait FormatParser {
     fn supports(&self, filename: &str) -> bool;
     fn version(&self, text: &str) -> Result<Version, ()>;
     fn version0x(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
-    fn version0y(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
+    fn version1(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
     fn format(&self) -> Format;
 }
 
@@ -147,12 +147,12 @@ impl Config {
             .expect("This could not be reached, else no content would be provided in parse");
         let version = parser
             .version(content)
-            .map_err(|_| ConfigError::NoVersion("unstable"))?;
+            .map_err(|_| ConfigError::NoVersion("1"))?;
 
         let ver = match version.version.as_str() {
             "0.x" => parser.version0x(content),
-            "unstable" => parser.version0y(content),
-            _ => return Err(ConfigError::BadVersion(version.version, "unstable")),
+            "1" => parser.version1(content),
+            _ => return Err(ConfigError::BadVersion(version.version, "1")),
         }
         .map_err(|parse_error| ConfigError::ParseError(version.version.clone(), parse_error))?;
 

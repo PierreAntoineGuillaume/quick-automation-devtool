@@ -13,7 +13,7 @@ pub struct FullJobDesc {
     skip_if: Option<String>,
 }
 
-pub type JobSet = std::collections::HashMap<String, FullJobDesc>;
+pub type JobSet = HashMap<String, FullJobDesc>;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Constraints {
@@ -30,14 +30,6 @@ fn from_vec(constraints: &[(String, String)]) -> Constraints {
         blocks: Some(map),
         needs: Some(HashMap::new()),
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-enum Verbose {
-    All,
-    Process,
-    Failed,
-    Result,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -60,12 +52,11 @@ struct Display {
     ok: Option<String>,
     ko: Option<String>,
     cancelled: Option<String>,
-    display: Option<Vec<Verbose>>,
     spinner: Option<Spinner>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct Version0y {
+pub struct Version1 {
     version: String,
     jobs: JobSet,
     groups: Option<Vec<String>>,
@@ -74,7 +65,7 @@ pub struct Version0y {
     env: Option<String>,
 }
 
-impl ConfigLoader for Version0y {
+impl ConfigLoader for Version1 {
     fn load(&self, payload: &mut ConfigPayload) {
         for (name, full_desc) in self.jobs.clone() {
             payload.ci.jobs.push(JobDesc {
@@ -182,7 +173,7 @@ impl JobIntrospector for VersionYJobConverter {
     }
 }
 
-impl Version0y {
+impl Version1 {
     pub fn from(payload: ConfigPayload) -> Self {
         let job_ref = payload.ci.jobs;
         let jobs = job_ref
@@ -201,7 +192,7 @@ impl Version0y {
             })
             .collect();
         Self {
-            version: String::from("unstable"),
+            version: String::from("1"),
             jobs,
             constraints: Some(from_vec(&payload.ci.constraints)),
             groups: Some(payload.ci.groups.clone()),
@@ -214,7 +205,6 @@ impl Version0y {
                 ok: Some(payload.display.ok.to_string()),
                 ko: Some(payload.display.ko.to_string()),
                 cancelled: Some(payload.display.cancelled.to_string()),
-                display: None,
                 spinner: Some(Spinner {
                     frames: payload.display.spinner.0.clone(),
                     per_frames: payload.display.spinner.1,

@@ -1,4 +1,4 @@
-version: unstable
+version: 1
 jobs:
   fmt:
     script:

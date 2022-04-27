@@ -69,13 +69,9 @@ pub struct MigrateArgs {
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand)]
 pub enum MigrateToSubCommands {
-    V0y(V0yArgs),
+    V1(V1Args),
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
-#[argh(
-    subcommand,
-    name = "unstable",
-    description = "migrate config to unstable"
-)]
-pub struct V0yArgs {}
+#[argh(subcommand, name = "1", description = "migrate config to version 1")]
+pub struct V1Args {}

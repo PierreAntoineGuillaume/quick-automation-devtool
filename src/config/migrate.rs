@@ -1,4 +1,4 @@
-use crate::config::versions::version_0y::Version0y;
+use crate::config::versions::version_1::Version1;
 use crate::{Config, ConfigPayload};
 use anyhow::Result;
 
@@ -8,7 +8,7 @@ pub struct Migrate {
 
 #[derive(Debug)]
 pub enum Migration {
-    Version0y(Version0y),
+    Version1(Version1),
 }
 
 impl Migrate {
@@ -19,12 +19,12 @@ impl Migrate {
     pub fn to0y(&self) -> Result<Migration> {
         let mut payload = ConfigPayload::default();
         self.config.load_into(&mut payload)?;
-        Ok(Migration::Version0y(Version0y::from(payload)))
+        Ok(Migration::Version1(Version1::from(payload)))
     }
 
     pub fn yaml(&self, migration: Migration) -> String {
         match migration {
-            Migration::Version0y(version) => serde_yaml::to_string(&version).unwrap(),
+            Migration::Version1(version) => serde_yaml::to_string(&version).unwrap(),
         }
     }
 }

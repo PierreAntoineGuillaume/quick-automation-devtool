@@ -81,7 +81,7 @@ fn main() {
 
                     let migrate = Migrate::new(config);
                     let migration = match version.to {
-                        MigrateToSubCommands::V0y(_) => migrate.to0y(),
+                        MigrateToSubCommands::V1(_) => migrate.to0y(),
                     };
                     if migration.is_err() {
                         eprintln!("{PACKAGE_NAME}: {}", migration.unwrap_err());
