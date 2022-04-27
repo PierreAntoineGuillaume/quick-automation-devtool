@@ -13,3 +13,37 @@ A `version` key pilots the format of the configuration to avoid breaking changes
 More details on [the current configuration version file](docs/VERSION_1.md).
 
 ![A cute quad drawing](qad.png)
+
+# Major commands
+
+̀`̀qad --help` displays a list and description of default jobs.
+
+```shell
+$ qad --help
+Usage: qad [--version] [<command>] [<args>]
+
+A tool to help with testing, and dev-related tasks
+
+Options:
+  --version         show the executable version
+  --help            display usage information
+
+Commands:
+  ci [nested]               play the ci
+  list              list jobs
+  autocomplete      generate bash completion script
+  config            interract with configuration
+```
+
+# Examples
+
+```shell
+# play the whole process
+$ qad ci fmt
+
+# play only the fmt job
+$ qad ci fmt
+
+# play the run gorup
+$ qad ci group:run
+```
