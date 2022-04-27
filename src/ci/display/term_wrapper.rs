@@ -7,7 +7,7 @@ pub struct TermWrapper<'a> {
     write: &'a mut dyn Write,
 }
 
-/// https://handwiki.org/wiki/ANSI_escape_code#Colors
+/// ANSI escape code documentation <https://handwiki.org/wiki/ANSI_escape_code#Colors>
 const CLEAR_TIL_EOL: [u8; 5] = [27, b'[', b'0', b'K', b'\n'];
 const CLEAR_TIL_EO_SCREEN: [u8; 4] = [27, b'[', b'0', b'J'];
 
