@@ -38,12 +38,12 @@ struct Spinner {
     per_frames: usize,
 }
 
-#[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "snake_case")]
 pub enum DisplayMode {
-    silent,
-    sequence,
-    summary,
+    Silent,
+    Sequence,
+    Summary,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -118,9 +118,9 @@ impl ConfigLoader for Version1 {
             }
             if let Some(mode) = &display.mode {
                 match mode {
-                    DisplayMode::silent => payload.display.mode = Mode::Silent,
-                    DisplayMode::sequence => payload.display.mode = Mode::AllOutput,
-                    DisplayMode::summary => payload.display.mode = Mode::Summary,
+                    DisplayMode::Silent => payload.display.mode = Mode::Silent,
+                    DisplayMode::Sequence => payload.display.mode = Mode::AllOutput,
+                    DisplayMode::Summary => payload.display.mode = Mode::Summary,
                 }
             }
         }
@@ -198,9 +198,9 @@ impl Version1 {
             groups: Some(payload.ci.groups.clone()),
             display: Some(Display {
                 mode: Some(match payload.display.mode {
-                    Mode::Silent => DisplayMode::silent,
-                    Mode::AllOutput => DisplayMode::sequence,
-                    Mode::Summary => DisplayMode::summary,
+                    Mode::Silent => DisplayMode::Silent,
+                    Mode::AllOutput => DisplayMode::Sequence,
+                    Mode::Summary => DisplayMode::Summary,
                 }),
                 ok: Some(payload.display.ok.to_string()),
                 ko: Some(payload.display.ko.to_string()),
