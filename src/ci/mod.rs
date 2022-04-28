@@ -98,7 +98,7 @@ impl JobProgressConsumer for Sender<JobProgress> {
 }
 
 impl CommandRunner for ParrallelJobStarter {
-    fn run(&self, args: &[&str]) -> JobOutput {
+    fn run(&self, args: &str) -> JobOutput {
         CommandJobRunner {}.run(args)
     }
 }
@@ -144,11 +144,9 @@ impl SystemFacade for ParrallelJobStarter {
 pub struct CommandJobRunner;
 
 impl CommandRunner for CommandJobRunner {
-    fn run(&self, args: &[&str]) -> JobOutput {
-        let program = args[0];
-        let args: Vec<String> = args.iter().skip(1).map(|str| str.to_string()).collect();
-
-        match Command::new(program).args(args).output() {
+    fn run(&self, args: &str) -> JobOutput {
+        let default_shell = std::env::var("SHELL").unwrap_or_else(|_| String::from("/bin/bash"));
+        match Command::new(&default_shell).args(["-c", args]).output() {
             Ok(output) => {
                 let stdout = String::from(std::str::from_utf8(&output.stdout).unwrap());
                 let stderr = String::from(std::str::from_utf8(&output.stderr).unwrap());

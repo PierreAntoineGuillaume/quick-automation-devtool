@@ -46,8 +46,7 @@ impl<'a> ShellInterpreter<'a> {
             });
 
         let script = format!("{env_text}\n{control}");
-        let default_shell = self.system_facade.read_env("SHELL", Some("/bin/bash"))?;
-        let out = self.system_facade.run(&[&default_shell, "-c", &script]);
+        let out = self.system_facade.run(&script);
 
         let envlist = match out {
             JobOutput::Success(stdout, stderr) => {

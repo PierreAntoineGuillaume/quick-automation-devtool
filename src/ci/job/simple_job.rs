@@ -31,7 +31,7 @@ impl JobTrait for SimpleJob {
 
     fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer) {
         if let Some(condition) = &self.skip_if {
-            if runner.run(&["bash", "-c", condition]).succeeded() {
+            if runner.run(condition).succeeded() {
                 consumer.consume(JobProgress::new(&self.name, Progress::Skipped));
                 consumer.consume(JobProgress::new(&self.name, Progress::Terminated(true)));
                 return;
@@ -45,7 +45,7 @@ impl JobTrait for SimpleJob {
                 Progress::Started(instruction.clone()),
             ));
 
-            let output = runner.run(&["bash", "-c", instruction]);
+            let output = runner.run(instruction);
 
             success = output.succeeded();
             let partial = Progress::Partial(instruction.clone(), output);

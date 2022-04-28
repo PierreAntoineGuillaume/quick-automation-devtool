@@ -5,7 +5,7 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Default)]
 struct JobInput {
-    args: Vec<String>,
+    args: Option<String>,
 }
 
 #[derive(Default)]
@@ -15,15 +15,10 @@ struct JobTester {
 
 impl Display for JobInput {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.args[0])?;
+        write!(f, "{}", self.args.clone().unwrap_or_default())?;
         write!(f, "(")?;
-        let mut len = self.args.len() - 1;
-        for arg in self.args.iter().skip(1) {
+        if let Some(arg) = &self.args {
             write!(f, "{}", arg)?;
-            len -= 1;
-            if len > 0 {
-                write!(f, ", ")?;
-            }
         }
         write!(f, ")")
     }
@@ -39,9 +34,9 @@ impl Display for JobTester {
 }
 
 impl CommandRunner for JobTester {
-    fn run(&self, args: &[&str]) -> JobOutput {
+    fn run(&self, args: &str) -> JobOutput {
         self.inputs.borrow_mut().push(JobInput {
-            args: args.iter().map(|str| str.to_string()).collect(),
+            args: Some(args.to_string()),
         });
         JobOutput::ProcessError(String::default())
     }

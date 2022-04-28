@@ -5,7 +5,7 @@ use std::sync::mpsc::Sender;
 use std::sync::Arc;
 
 pub trait CommandRunner {
-    fn run(&self, args: &[&str]) -> JobOutput;
+    fn run(&self, args: &str) -> JobOutput;
 }
 
 pub trait SystemFacade: CommandRunner {

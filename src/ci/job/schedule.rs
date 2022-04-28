@@ -148,7 +148,7 @@ mod tests {
     pub struct TestJobStarter {}
 
     impl CommandRunner for TestJobStarter {
-        fn run(&self, _: &[&str]) -> JobOutput {
+        fn run(&self, _: &str) -> JobOutput {
             JobOutput::Success("".to_string(), "".to_string())
         }
     }
@@ -172,8 +172,7 @@ mod tests {
     pub struct TestJobRunner {}
 
     impl CommandRunner for TestJobRunner {
-        fn run(&self, args: &[&str]) -> JobOutput {
-            let job = args[2].to_string();
+        fn run(&self, job: &str) -> JobOutput {
             if let Some(stripped) = job.strip_prefix("ok:") {
                 JobOutput::Success(stripped.into(), "".into())
             } else if let Some(stripped) = job.strip_prefix("ko:") {
