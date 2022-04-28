@@ -1,19 +1,16 @@
 version: 1
 jobs:
   fmt:
-    script:
-      - cargo fmt
+    script: [ cargo fmt ]
   clippy:
-    script:
-      - cargo clippy --tests --color always -- -D warnings
+    script: [ cargo clippy --tests --color always -- -D warnings ]
   tests:
-    script:
-      - cargo test --color always
+    script: [ cargo test --color always ]
 constraints:
   blocks:
     fmt: [ clippy, tests]
   needs:
 display:
   spinner:
-    frames: [".  ", ".. ", "...", ".. ", ".  "]
+    frames: [ ".  ", ".. ", "...", ".. ", ".  " ]
     per_frames: 80
