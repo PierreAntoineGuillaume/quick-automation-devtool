@@ -47,16 +47,71 @@
       "uniqueItems": true
     },
     "contraints": {
-      "description": "The constraints to add to the jobs scheduling"
+      "description": "The constraints to add to the jobs scheduling",
+      "type": "object",
+      "properties": {
+        "needs": {
+          "type": "array",
+          "description": "what the job depends on",
+          "items": {
+            "type": "string"
+          }
+        },
+        "blocks": {
+          "type": "array",
+          "description": "what depends on the job",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "display": {
       "description": "The configuration how qad should output the jobs",
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "string",
+          "description": "Success job icon"
+        },
+        "ko": {
+          "type": "string",
+          "description": "Failed job icon"
+        },
+        "cancelled": {
+          "type": "string",
+          "description": "Cancelled job icon"
+        },
+        "mode": {
+          "type": "string",
+          "description": "What runtime output do you want",
+          "enum": ["silent", "sequence", "summary"]
+        },
+        "spinner": {
+          "type": "object",
+          "description": "Spinner to display for runnning jobs",
+          "properties": {
+            "per_frame": {
+              "type": "int",
+              "description": "How much time each frame should stay"
+            },
+            "frames": {
+              "type": "array",
+              "description": "Succession of frames to display",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     },
     "env": {
       "description": "The env to be calculated and injected within the ci jobs",
       "type": "string"
     }
   },
-  "required": ["version"]
+  "required": [
+    "version"
+  ]
 }
