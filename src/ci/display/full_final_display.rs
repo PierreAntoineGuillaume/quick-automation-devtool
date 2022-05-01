@@ -104,21 +104,29 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                 print!("{}", string);
             }
         }
-        let time = tracker
-            .end_time
-            .or_else(|| Some(SystemTime::now()))
-            .unwrap();
-        let elasped = time.duration_since(tracker.start_time).unwrap().as_millis() as f64;
+
         let status = if !tracker.has_failed {
             (&self.config.ok, "succeeded")
         } else {
             (&self.config.ko, "failed")
         };
+
         println!(
             "\n{} ci {} in {:.2} seconds",
             status.0,
             status.1,
-            elasped / 1000f64
+            Self::elapsed(tracker).unwrap_or(0 as f64) / 1000f64
         );
+    }
+}
+
+impl<'a> FullFinalDisplay<'a> {
+    /// I'd rather have no info over a system error when reporting time
+    fn elapsed(tracker: &JobProgressTracker) -> Option<f64> {
+        let time = tracker.end_time.or_else(|| Some(SystemTime::now()))?;
+
+        let since = time.duration_since(tracker.start_time).ok()?;
+
+        Some(since.as_millis() as f64)
     }
 }
