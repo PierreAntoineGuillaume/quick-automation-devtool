@@ -32,10 +32,14 @@ impl Ci {
 
         let mut stdout = std::io::stdout();
 
-        let mut display: Box<dyn UserFacade> = match &payload.display.mode {
-            Mode::Silent => Box::new(SilentDisplay {}),
-            Mode::AllOutput => Box::new(SequenceDisplay::new(&payload.display, &mut stdout)),
-            Mode::Summary => Box::new(SummaryDisplay::new(&payload.display, &mut stdout)),
+        let mut display: Box<dyn UserFacade> = if !atty::is(atty::Stream::Stdout) {
+            Box::new(SilentDisplay {})
+        } else {
+            match &payload.display.mode {
+                Mode::Silent => Box::new(SilentDisplay {}),
+                Mode::AllOutput => Box::new(SequenceDisplay::new(&payload.display, &mut stdout)),
+                Mode::Summary => Box::new(SummaryDisplay::new(&payload.display, &mut stdout)),
+            }
         };
 
         let tracker = schedule(
@@ -76,11 +80,11 @@ impl Ci {
 }
 
 pub struct ParrallelJobStarter {
-    threads: std::vec::Vec<JoinHandle<()>>,
+    threads: Vec<JoinHandle<()>>,
     last_occurence: SystemTime,
 }
 
-const AWAIT_TIME: Duration = std::time::Duration::from_millis(40);
+const AWAIT_TIME: Duration = Duration::from_millis(40);
 
 impl ParrallelJobStarter {
     pub fn new() -> Self {
@@ -130,7 +134,7 @@ impl SystemFacade for ParrallelJobStarter {
         }
     }
 
-    fn read_env(&self, key: &str, default: Option<&str>) -> anyhow::Result<String> {
+    fn read_env(&self, key: &str, default: Option<&str>) -> Result<String> {
         if let Ok(env) = std::env::var(key) {
             Ok(env)
         } else if let Some(env) = default {

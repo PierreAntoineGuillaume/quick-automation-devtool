@@ -50,7 +50,7 @@ impl<'a> TermWrapper<'a> {
     }
 
     pub fn write(&mut self, message: &str) {
-        let termsize = terminal_size().unwrap().0 .0 as usize;
+        let termsize = terminal_size().expect("Terminal has no sizes").0 .0 as usize;
         let mut redo = false;
         for sub in message.split('\n') {
             if redo {
