@@ -3,7 +3,7 @@ use crate::ci::job::{JobTrait, JobType, SharedJob};
 use indexmap::IndexMap;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -34,7 +34,33 @@ pub enum DagError {
     JobCannotBlockItself(String),
     UnknownJobInConstraint(String),
     CycleExistsBecauseOf(String),
+    UnknownGroup(String, String),
 }
+
+impl Display for DagError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DagError::JobCannotBlockItself(jobname) => {
+                write!(f, "job {} is blocking itself", jobname)
+            }
+            DagError::UnknownJobInConstraint(jobname) => {
+                write!(f, "job {} in constraint list doesn't exist", jobname)
+            }
+            DagError::CycleExistsBecauseOf(blocking_job) => write!(
+                f,
+                "a cycle exists in the job DAG because of {}",
+                blocking_job
+            ),
+            DagError::UnknownGroup(job, group) => write!(
+                f,
+                "group {} associated with job {} is not in group list",
+                group, job
+            ),
+        }
+    }
+}
+
+impl std::error::Error for DagError {}
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum JobResult {
@@ -186,7 +212,7 @@ impl Dag {
         let jobs: Vec<JobType> = jobs.to_vec();
         let mut constraints: Vec<(String, String)> = constraints.to_vec();
 
-        constraints.extend(Self::compute_group_constraints(&jobs, groups));
+        constraints.extend(Self::compute_group_constraints(&jobs, groups)?);
 
         let matrix = ConstraintMatrix::new(&jobs, &constraints)?;
 
@@ -227,7 +253,10 @@ impl Dag {
         Ok(dag)
     }
 
-    fn compute_group_constraints(jobs: &[JobType], groups: &[String]) -> Vec<(String, String)> {
+    fn compute_group_constraints(
+        jobs: &[JobType],
+        groups: &[String],
+    ) -> Result<Vec<(String, String)>, DagError> {
         let mut group_constraints = vec![];
         let mut blocking_jobs_by_groups = IndexMap::<String, Vec<String>>::new();
 
@@ -237,7 +266,14 @@ impl Dag {
 
         for job in jobs {
             if let Some(group) = job.group() {
-                blocking_jobs_by_groups[group].push(job.name().to_string());
+                if let Some(collection) = blocking_jobs_by_groups.get_mut(group) {
+                    collection.push(job.name().to_string())
+                } else {
+                    return Err(DagError::UnknownGroup(
+                        job.name().to_string(),
+                        group.to_string(),
+                    ));
+                }
             }
         }
 
@@ -253,7 +289,7 @@ impl Dag {
                 }
             }
         }
-        group_constraints
+        Ok(group_constraints)
     }
 
     /// Poll will return a job if a job is available

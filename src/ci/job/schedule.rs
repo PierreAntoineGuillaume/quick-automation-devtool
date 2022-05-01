@@ -52,7 +52,7 @@ pub fn schedule(
         vec![]
     };
 
-    let mut jobs = Dag::new(&jobs, &constraints, &ci_config.groups, &env).unwrap();
+    let mut jobs = Dag::new(&jobs, &constraints, &ci_config.groups, &env)?;
 
     let mut tracker = JobProgressTracker::new();
 
