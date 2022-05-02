@@ -60,9 +60,10 @@ impl<'a> TermWrapper<'a> {
                 self.written_chars = 0;
             }
             print!("{}", sub);
+            self.written_chars += sub.len();
             if self.written_chars > termsize {
+                self.written_lines += (self.written_chars / termsize) as u16;
                 self.written_chars %= termsize;
-                self.written_lines += 1;
             }
             redo = true;
         }
