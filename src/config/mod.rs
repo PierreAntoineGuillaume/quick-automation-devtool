@@ -78,11 +78,15 @@ pub trait FormatParser {
     fn version(&self, text: &str) -> Result<Version, ()>;
     fn version0x(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
     fn version1(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
-    fn latest(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
+    fn latest_with_warning(
+        &self,
+        text: &str,
+        requested_version: &str,
+    ) -> Result<Box<dyn ConfigLoader>, String>;
     fn format(&self) -> Format;
 }
 
-const LATEST: &str = "1.0";
+pub const LATEST: &str = "1.0";
 
 impl Config {
     pub fn get_first_available_config_file(&self) -> Result<String> {
@@ -153,23 +157,26 @@ impl Config {
             .version(content)
             .map_err(|_| ConfigError::NoVersion("1"))?;
 
-        let regex = Regex::new(r#"^(\d+)(\.\S+)?$"#).unwrap();
+        let regex = Regex::new(r#"^(\d+)(?:\.(\S+))?$"#).unwrap();
         let version_numbers = regex.captures(version.version.as_str());
 
         if version_numbers.is_none() {
             return Err(ConfigError::BadVersion(version.version, LATEST));
         }
 
-        let ver = match version.version.as_str() {
-            "0.x" => parser.version0x(content),
-            "1" => parser.version1(content),
-            ver_number => {
-                if ver_number.strip_prefix("1.").is_some() {
-                    parser.latest(content)
-                } else {
-                    unreachable!("Already filtered with check l160")
-                }
-            }
+        let version_numbers = version_numbers.unwrap();
+
+        let ver = match (
+            version_numbers
+                .get(1)
+                .expect("Filtered Previously")
+                .as_str(),
+            version_numbers.get(2).map(|item| item.as_str()),
+        ) {
+            ("0", _) => parser.version0x(content),
+            ("1", None | Some("0")) => parser.version1(content),
+            ("1", Some(_)) => parser.latest_with_warning(content, version.version.as_str()),
+            _ => return Err(ConfigError::BadVersion(version.version, LATEST)),
         }
         .map_err(|parse_error| ConfigError::ParseError(version.version.clone(), parse_error))?;
 

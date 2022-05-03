@@ -34,7 +34,18 @@ impl FormatParser for YamlParser {
         ))
     }
 
-    fn latest(&self, text: &str) -> anyhow::Result<Box<dyn ConfigLoader>, String> {
+    fn latest_with_warning(
+        &self,
+        text: &str,
+        requested_version: &str,
+    ) -> anyhow::Result<Box<dyn ConfigLoader>, String> {
+        const NAME: &str = crate::PACKAGE_NAME;
+        eprintln!(
+            "{NAME} config version {} is not available in {NAME} {} please check for new updates. Falling back to {NAME} config version {}",
+            requested_version,
+            crate::VERSION,
+            crate::config::LATEST
+        );
         self.version1(text)
     }
 

@@ -13,8 +13,8 @@ use crate::config::argh::{Args, ConfigSubcommands, MigrateToSubCommands, Subcomm
 use crate::config::migrate::Migrate;
 use crate::config::{Config, ConfigPayload, Format};
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
 
 fn main() {
     let args: Args = argh::from_env();
