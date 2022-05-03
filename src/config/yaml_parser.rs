@@ -34,6 +34,10 @@ impl FormatParser for YamlParser {
         ))
     }
 
+    fn latest(&self, text: &str) -> anyhow::Result<Box<dyn ConfigLoader>, String> {
+        self.version1(text)
+    }
+
     fn format(&self) -> Format {
         Format::Yaml
     }
