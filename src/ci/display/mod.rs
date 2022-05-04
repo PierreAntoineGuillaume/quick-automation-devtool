@@ -5,20 +5,34 @@ mod spinner;
 pub mod summary_display;
 mod term_wrapper;
 
-pub enum Mode {
+#[derive(Clone, Copy, Debug)]
+pub enum RunningDisplay {
     Silent,
-    AllOutput,
+    Sequence,
     Summary,
 }
 
-impl Default for Mode {
+#[derive(Clone, Copy, Debug)]
+pub enum FinalDisplayMode {
+    Full,
+    Silent,
+}
+
+impl Default for RunningDisplay {
     fn default() -> Self {
-        Self::AllOutput
+        Self::Sequence
+    }
+}
+
+impl Default for FinalDisplayMode {
+    fn default() -> Self {
+        Self::Full
     }
 }
 
 pub struct CiDisplayConfig {
-    pub mode: Mode,
+    pub running_display: RunningDisplay,
+    pub final_display: FinalDisplayMode,
     pub ok: String,
     pub ko: String,
     pub cancelled: String,
@@ -28,7 +42,8 @@ pub struct CiDisplayConfig {
 impl Default for CiDisplayConfig {
     fn default() -> Self {
         Self {
-            mode: Mode::default(),
+            running_display: RunningDisplay::default(),
+            final_display: FinalDisplayMode::default(),
             ok: String::from("✔"),
             ko: String::from("✕"),
             cancelled: String::from("✕"),

@@ -1,5 +1,5 @@
 use crate::ci::job::inspection::JobProgressTracker;
-use crate::ci::job::ports::UserFacade;
+use crate::ci::job::ports::{FinalCiDisplay, UserFacade};
 
 pub struct SilentDisplay {}
 impl UserFacade for SilentDisplay {
@@ -10,4 +10,8 @@ impl UserFacade for SilentDisplay {
     fn display_error(&self, error: String) {
         eprintln!("{}", error)
     }
+}
+
+impl FinalCiDisplay for SilentDisplay {
+    fn finish(&mut self, _: &JobProgressTracker) {}
 }

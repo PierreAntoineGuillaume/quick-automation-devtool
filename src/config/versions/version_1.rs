@@ -1,5 +1,5 @@
 use crate::ci::ci_config::JobDesc;
-use crate::ci::display::Mode;
+use crate::ci::display::{FinalDisplayMode, RunningDisplay};
 use crate::ci::job::JobIntrospector;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
@@ -38,7 +38,7 @@ struct Spinner {
     per_frames: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum DisplayMode {
     Silent,
@@ -46,9 +46,55 @@ pub enum DisplayMode {
     Summary,
 }
 
+impl From<DisplayMode> for RunningDisplay {
+    fn from(mode: DisplayMode) -> Self {
+        match mode {
+            DisplayMode::Silent => Self::Silent,
+            DisplayMode::Sequence => Self::Sequence,
+            DisplayMode::Summary => Self::Summary,
+        }
+    }
+}
+
+impl From<RunningDisplay> for DisplayMode {
+    fn from(mode: RunningDisplay) -> Self {
+        match mode {
+            RunningDisplay::Silent => Self::Silent,
+            RunningDisplay::Sequence => Self::Sequence,
+            RunningDisplay::Summary => Self::Summary,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum FinalDisplay {
+    Full,
+    Silent,
+}
+
+impl From<FinalDisplayMode> for FinalDisplay {
+    fn from(mode: FinalDisplayMode) -> Self {
+        match mode {
+            FinalDisplayMode::Full => Self::Full,
+            FinalDisplayMode::Silent => Self::Silent,
+        }
+    }
+}
+impl From<FinalDisplay> for FinalDisplayMode {
+    fn from(mode: FinalDisplay) -> Self {
+        match mode {
+            FinalDisplay::Full => Self::Full,
+            FinalDisplay::Silent => Self::Silent,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct Display {
     mode: Option<DisplayMode>,
+    #[serde(rename = "final")]
+    final_display: Option<FinalDisplay>,
     ok: Option<String>,
     ko: Option<String>,
     cancelled: Option<String>,
@@ -117,11 +163,10 @@ impl ConfigLoader for Version1 {
                 payload.display.spinner = (spinner.frames.clone(), spinner.per_frames)
             }
             if let Some(mode) = &display.mode {
-                match mode {
-                    DisplayMode::Silent => payload.display.mode = Mode::Silent,
-                    DisplayMode::Sequence => payload.display.mode = Mode::AllOutput,
-                    DisplayMode::Summary => payload.display.mode = Mode::Summary,
-                }
+                payload.display.running_display = RunningDisplay::from(*mode);
+            }
+            if let Some(final_display) = &display.final_display {
+                payload.display.final_display = FinalDisplayMode::from(*final_display);
             }
         }
 
@@ -197,11 +242,8 @@ impl Version1 {
             constraints: Some(from_vec(&payload.ci.constraints)),
             groups: Some(payload.ci.groups.clone()),
             display: Some(Display {
-                mode: Some(match payload.display.mode {
-                    Mode::Silent => DisplayMode::Silent,
-                    Mode::AllOutput => DisplayMode::Sequence,
-                    Mode::Summary => DisplayMode::Summary,
-                }),
+                mode: Some(payload.display.running_display.into()),
+                final_display: Some(payload.display.final_display.into()),
                 ok: Some(payload.display.ok.to_string()),
                 ko: Some(payload.display.ko.to_string()),
                 cancelled: Some(payload.display.cancelled.to_string()),

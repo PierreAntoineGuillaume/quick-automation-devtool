@@ -2,7 +2,7 @@ use crate::ci::ci_config::CliConfig;
 use crate::ci::display::full_final_display::FullFinalDisplay;
 use crate::ci::display::silent_display::SilentDisplay;
 use crate::ci::display::summary_display::SummaryDisplay;
-use crate::ci::display::Mode;
+use crate::ci::display::{FinalDisplayMode, RunningDisplay};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{CommandRunner, FinalCiDisplay, SystemFacade, UserFacade};
 use crate::ci::job::schedule::schedule;
@@ -31,14 +31,19 @@ impl Ci {
         let ci_config = payload.ci;
 
         let mut stdout = std::io::stdout();
+        let output_is_non_interactive = !atty::is(atty::Stream::Stdout);
 
-        let mut display: Box<dyn UserFacade> = if !atty::is(atty::Stream::Stdout) {
+        let mut display: Box<dyn UserFacade> = if output_is_non_interactive {
             Box::new(SilentDisplay {})
         } else {
-            match &payload.display.mode {
-                Mode::Silent => Box::new(SilentDisplay {}),
-                Mode::AllOutput => Box::new(SequenceDisplay::new(&payload.display, &mut stdout)),
-                Mode::Summary => Box::new(SummaryDisplay::new(&payload.display, &mut stdout)),
+            match &payload.display.running_display {
+                RunningDisplay::Silent => Box::new(SilentDisplay {}),
+                RunningDisplay::Sequence => {
+                    Box::new(SequenceDisplay::new(&payload.display, &mut stdout))
+                }
+                RunningDisplay::Summary => {
+                    Box::new(SummaryDisplay::new(&payload.display, &mut stdout))
+                }
             }
         };
 
@@ -50,7 +55,12 @@ impl Ci {
             payload.env,
         )?;
 
-        (&mut FullFinalDisplay::new(&payload.display) as &mut dyn FinalCiDisplay).finish(&tracker);
+        let mut display: Box<dyn FinalCiDisplay> = match payload.display.final_display {
+            FinalDisplayMode::Silent => Box::new(SilentDisplay {}),
+            FinalDisplayMode::Full => Box::new(FullFinalDisplay::new(&payload.display)),
+        };
+
+        display.finish(&tracker);
 
         Ok(!tracker.has_failed)
     }
