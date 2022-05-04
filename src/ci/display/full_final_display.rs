@@ -1,9 +1,9 @@
+use crate::ci::display::ansi_control_sequence::{ResetChar, UnderlineChar};
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::ports::FinalCiDisplay;
 use crate::ci::job::{JobOutput, Progress};
 use regex::Regex;
-use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
 
 pub fn try_cleanup(input: String) -> String {
@@ -27,22 +27,6 @@ pub struct FullFinalDisplay<'a> {
 impl<'a> FullFinalDisplay<'a> {
     pub fn new(config: &'a CiDisplayConfig) -> Self {
         Self { config }
-    }
-}
-
-struct UnderlineChar();
-
-impl Display for UnderlineChar {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}[4m", 27 as char)
-    }
-}
-
-struct ResetChar();
-
-impl Display for ResetChar {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}[0m", 27 as char)
     }
 }
 

@@ -1,5 +1,6 @@
 use crate::ci::ci_config::CliConfig;
 use crate::ci::display::full_final_display::FullFinalDisplay;
+use crate::ci::display::interactive_display::InteractiveDisplay;
 use crate::ci::display::silent_display::SilentDisplay;
 use crate::ci::display::summary_display::SummaryDisplay;
 use crate::ci::display::{FinalDisplayMode, RunningDisplay};
@@ -58,6 +59,7 @@ impl Ci {
         let mut display: Box<dyn FinalCiDisplay> = match payload.display.final_display {
             FinalDisplayMode::Silent => Box::new(SilentDisplay {}),
             FinalDisplayMode::Full => Box::new(FullFinalDisplay::new(&payload.display)),
+            FinalDisplayMode::Interactive => Box::new(InteractiveDisplay::new(&payload.display)),
         };
 
         display.finish(&tracker);

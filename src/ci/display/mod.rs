@@ -1,4 +1,6 @@
+mod ansi_control_sequence;
 pub mod full_final_display;
+pub mod interactive_display;
 pub mod sequence_display;
 pub mod silent_display;
 mod spinner;
@@ -15,6 +17,7 @@ pub enum RunningDisplay {
 #[derive(Clone, Copy, Debug)]
 pub enum FinalDisplayMode {
     Full,
+    Interactive,
     Silent,
 }
 

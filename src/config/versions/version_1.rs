@@ -71,6 +71,7 @@ impl From<RunningDisplay> for DisplayMode {
 pub enum FinalDisplay {
     Full,
     Silent,
+    Interactive,
 }
 
 impl From<FinalDisplayMode> for FinalDisplay {
@@ -78,6 +79,7 @@ impl From<FinalDisplayMode> for FinalDisplay {
         match mode {
             FinalDisplayMode::Full => Self::Full,
             FinalDisplayMode::Silent => Self::Silent,
+            FinalDisplayMode::Interactive => Self::Interactive,
         }
     }
 }
@@ -86,6 +88,7 @@ impl From<FinalDisplay> for FinalDisplayMode {
         match mode {
             FinalDisplay::Full => Self::Full,
             FinalDisplay::Silent => Self::Silent,
+            FinalDisplay::Interactive => Self::Interactive,
         }
     }
 }
