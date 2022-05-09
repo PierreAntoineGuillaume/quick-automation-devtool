@@ -14,7 +14,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::ci::display::tui::StatefulList;
+use crate::ci::display::tui::stateful_list::StatefulList;
 use crate::ci::job::{JobOutput, Progress};
 use tui::style::Color;
 use tui::{
