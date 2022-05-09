@@ -9,14 +9,17 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 
+use crossterm::event::{KeyEvent, KeyModifiers, MouseEventKind};
 use std::{
     io,
     time::{Duration, Instant},
 };
 
 use crate::ci::display::tui::stateful_list::StatefulList;
+use crate::ci::display::tui::stateful_text::StatefulText;
 use crate::ci::job::{JobOutput, Progress};
 use tui::style::Color;
+use tui::widgets::{Paragraph, Wrap};
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -97,7 +100,70 @@ impl From<&Progress> for JobResult {
 struct App<'a> {
     items: StatefulList<(JobResult, String)>,
     tracker: &'a JobProgressTracker,
-    window: Option<StatefulList<String>>, // This should be a
+    result: (bool, StatefulText),
+}
+
+impl<'a> App<'a> {
+    pub fn previous(&mut self) {
+        if self.result.0 {
+            self.result.1.previous();
+        } else {
+            self.items.previous();
+            self.result = (false, StatefulText::with_text(self.selected_text()))
+        }
+    }
+    pub fn next(&mut self) {
+        if self.result.0 {
+            self.result.1.next();
+        } else {
+            self.items.next();
+            self.result = (false, StatefulText::with_text(self.selected_text()))
+        }
+    }
+
+    pub fn prepare(&mut self) {
+        self.result = (false, StatefulText::with_text(self.selected_text()))
+    }
+
+    pub fn select(&mut self) {
+        self.result = (true, self.result.1.clone())
+    }
+
+    pub fn unselect(&mut self) {
+        self.result = (false, self.result.1.clone())
+    }
+
+    fn selected_text(&self) -> String {
+        let selected = self.items.state.selected().expect("selected by default");
+
+        let collector = self
+            .tracker
+            .states
+            .iter()
+            .nth(selected)
+            .expect("Only interested in nth job")
+            .1;
+
+        let progress_items = collector
+            .progresses
+            .iter()
+            .flat_map(|progres| match progres {
+                Progress::Partial(_, JobOutput::Success(out, err)) => {
+                    Some(format!("{}\n{}", out, err))
+                }
+                Progress::Partial(_, JobOutput::JobError(out, err)) => {
+                    Some(format!("{}\n{}", out, err))
+                }
+                Progress::Partial(_, JobOutput::ProcessError(err)) => Some(err.to_string()),
+                Progress::Skipped => Some("skipped".to_string()),
+                Progress::Cancelled => Some("cancelled".to_string()),
+                Progress::Terminated(true) => Some("success".to_string()),
+                Progress::Terminated(false) => Some("failure".to_string()),
+                _ => None,
+            })
+            .collect::<Vec<String>>();
+        progress_items.join("\n")
+    }
 }
 
 impl<'a> From<&'a JobProgressTracker> for App<'a> {
@@ -109,7 +175,7 @@ impl<'a> From<&'a JobProgressTracker> for App<'a> {
         Self {
             items: StatefulList::with_items(items),
             tracker,
-            window: None,
+            result: (false, StatefulText::with_text(String::new())),
         }
     }
 }
@@ -120,6 +186,7 @@ fn run_app<B: Backend>(
     tick_rate: Duration,
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
+    app.prepare();
     loop {
         terminal.draw(|f| ui(f, &mut app))?;
 
@@ -127,60 +194,24 @@ fn run_app<B: Backend>(
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
         if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                if should_exit(&key.code) {
+            let event = event::read()?;
+            if let Event::Key(key) = event {
+                if should_exit(&key) {
                     return Ok(());
                 }
-                match &mut app.window {
-                    None => match key.code {
-                        KeyCode::Right | KeyCode::Enter => {
-                            let selected = app.items.state.selected().expect("selected by default");
-
-                            let collector = app
-                                .tracker
-                                .states
-                                .iter()
-                                .nth(selected)
-                                .expect("Only interested in nth job")
-                                .1;
-
-                            let progress_items = collector
-                                .progresses
-                                .iter()
-                                .flat_map(|progres| match progres {
-                                    Progress::Partial(_, JobOutput::Success(out, err)) => {
-                                        Some(format!("{}\n{}", out, err))
-                                    }
-                                    Progress::Partial(_, JobOutput::JobError(out, err)) => {
-                                        Some(format!("{}\n{}", out, err))
-                                    }
-                                    Progress::Partial(_, JobOutput::ProcessError(err)) => {
-                                        Some(err.to_string())
-                                    }
-                                    Progress::Skipped => Some("skipped".to_string()),
-                                    Progress::Cancelled => Some("cancelled".to_string()),
-                                    Progress::Terminated(true) => Some("success".to_string()),
-                                    Progress::Terminated(false) => Some("failure".to_string()),
-                                    _ => None,
-                                })
-                                .flat_map(|msg: String| {
-                                    msg.lines()
-                                        .map(|line| line.to_string())
-                                        .collect::<Vec<String>>()
-                                })
-                                .collect::<Vec<String>>();
-                            app.window = Some(StatefulList::with_items(progress_items));
-                        }
-                        KeyCode::Down => app.items.next(),
-                        KeyCode::Up => app.items.previous(),
-                        _ => {}
-                    },
-                    Some(window) => match key.code {
-                        KeyCode::Left | KeyCode::Backspace => app.window = None,
-                        KeyCode::Down => window.next(),
-                        KeyCode::Up => window.previous(),
-                        _ => {}
-                    },
+                match key.code {
+                    KeyCode::Right | KeyCode::Enter => app.select(),
+                    KeyCode::Left | KeyCode::Backspace => app.unselect(),
+                    KeyCode::Down => app.next(),
+                    KeyCode::Up => app.previous(),
+                    _ => {}
+                }
+            }
+            if let Event::Mouse(event) = event {
+                match event.kind {
+                    MouseEventKind::ScrollUp => app.previous(),
+                    MouseEventKind::ScrollDown => app.next(),
+                    _ => {}
                 }
             }
         }
@@ -195,12 +226,12 @@ fn run_app<B: Backend>(
 /// q-c (standard signal for sigquit)
 /// q   (for quit)
 /// esc (for escape)
-/// but since we don't need use c and d, we don't try to match control at all.
-fn should_exit(code: &KeyCode) -> bool {
-    matches!(
-        code,
-        KeyCode::Char('q') | KeyCode::Char('d') | KeyCode::Char('c') | KeyCode::Esc
-    )
+fn should_exit(e: &KeyEvent) -> bool {
+    match e.modifiers {
+        KeyModifiers::CONTROL => matches!(e.code, KeyCode::Char('d') | KeyCode::Char('c')),
+        KeyModifiers::NONE => matches!(e.code, KeyCode::Char('q') | KeyCode::Esc),
+        _ => false,
+    }
 }
 
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
@@ -226,30 +257,19 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let items = List::new(items)
         .block(Block::default().borders(Borders::ALL).title("jobs"))
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
-        .highlight_symbol(match &app.window {
-            None => ">  ",
-            Some(_) => ">> ",
+        .highlight_symbol(match &app.result.0 {
+            false => ">  ",
+            true => ">> ",
         });
 
     // We can now render the item list
     f.render_stateful_widget(items, app_chunks[0], &mut app.items.state);
 
-    if let Some(content) = &mut app.window {
-        let mut counter = 0;
-        let progress_items = content
-            .items
-            .iter()
-            .map(|item| {
-                counter += 1;
-                ListItem::new(Span::from(format!("{: >3} {}", counter, item)))
-            })
-            .collect::<Vec<ListItem>>();
-        f.render_stateful_widget(
-            List::new(progress_items)
-                .block(Block::default().borders(Borders::ALL).title("result"))
-                .highlight_symbol(">"),
-            app_chunks[1],
-            &mut content.state,
-        );
-    }
+    f.render_widget(
+        Paragraph::new(app.result.1.text.to_string())
+            .wrap(Wrap { trim: false })
+            .scroll((app.result.1.scroll, 0))
+            .block(Block::default().borders(Borders::ALL).title("result")),
+        app_chunks[1],
+    );
 }
