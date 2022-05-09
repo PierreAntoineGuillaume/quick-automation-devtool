@@ -4,6 +4,7 @@ use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::ports::FinalCiDisplay;
 use crate::ci::job::{JobOutput, Progress};
 use regex::Regex;
+use std::fmt::Write;
 use std::time::SystemTime;
 
 pub fn try_cleanup(input: String) -> String {
@@ -49,20 +50,20 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                             } else {
                                 &self.config.ko
                             };
-                            string.push_str(&format!("  {} {}\n", symbol, instruction));
+                            writeln!(string, "  {} {}", symbol, instruction).expect("write");
                             string.push_str(&try_cleanup(format!(
                                 "  {}\n  {}",
                                 try_cleanup(stdout.clone()).replace('\n', "\n    "),
                                 try_cleanup(stderr.clone().replace('\n', "\n    "))
                             )))
                         }
-                        JobOutput::ProcessError(stderr) => {
-                            string.push_str(&format!(
-                                "  {} {instruction}: {}",
-                                self.config.ko,
-                                try_cleanup(stderr.clone()).replace('\n', "\n    ")
-                            ));
-                        }
+                        JobOutput::ProcessError(stderr) => write!(
+                            string,
+                            "  {} {instruction}: {}",
+                            self.config.ko,
+                            try_cleanup(stderr.clone()).replace('\n', "\n    ")
+                        )
+                        .expect("write"),
                     },
                     Progress::Terminated(bool) => {
                         let emoji: &str = if *bool {
@@ -72,13 +73,15 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                             icon = self.config.ko.clone();
                             &self.config.ko
                         };
-                        string.push_str(&format!(
-                            "  {} {}all tasks done for job {}{}\n",
+                        writeln!(
+                            string,
+                            "  {} {}all tasks done for job {}{}",
                             emoji,
                             UnderlineChar(),
                             job_name,
                             ResetChar()
-                        ));
+                        )
+                        .expect("write")
                     }
                     _ => {}
                 }

@@ -5,6 +5,7 @@ use crate::strvec;
 use anyhow::{anyhow, Result};
 use regex::Regex;
 use std::collections::HashMap;
+use std::fmt::Write;
 
 pub struct ShellInterpreter<'a> {
     user_facade: &'a dyn UserFacade,
@@ -41,7 +42,7 @@ impl<'a> ShellInterpreter<'a> {
                 None => {}
                 Some(captures) => {
                     let name = captures.get(1).unwrap().as_str().to_string();
-                    control.push_str(&format!("printf {}=; printf '%s\n' ${}\n", name, name))
+                    writeln!(control, "printf {}=; printf '%s\n' ${}", name, name).expect("write")
                 }
             });
 

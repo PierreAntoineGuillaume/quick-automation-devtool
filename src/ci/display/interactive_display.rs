@@ -33,7 +33,7 @@ pub struct InteractiveDisplay {
     _config: Option<CiDisplayConfig>,
 }
 
-impl<'a> InteractiveDisplay {
+impl InteractiveDisplay {
     pub fn new(config: &CiDisplayConfig) -> Self {
         Self {
             _config: Some((*config).clone()),
@@ -41,7 +41,7 @@ impl<'a> InteractiveDisplay {
     }
 }
 
-impl<'a> FinalCiDisplay for InteractiveDisplay {
+impl FinalCiDisplay for InteractiveDisplay {
     fn finish(&mut self, tracker: &JobProgressTracker) {
         match self.finish_error(tracker) {
             Ok(()) => {}
