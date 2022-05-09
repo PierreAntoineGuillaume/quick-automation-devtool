@@ -59,7 +59,13 @@ impl Ci {
         let mut display: Box<dyn FinalCiDisplay> = match payload.display.final_display {
             FinalDisplayMode::Silent => Box::new(SilentDisplay {}),
             FinalDisplayMode::Full => Box::new(FullFinalDisplay::new(&payload.display)),
-            FinalDisplayMode::Interactive => Box::new(InteractiveDisplay::new(&payload.display)),
+            FinalDisplayMode::Interactive => {
+                if output_is_non_interactive {
+                    Box::new(FullFinalDisplay::new(&payload.display))
+                } else {
+                    Box::new(InteractiveDisplay::new(&payload.display))
+                }
+            }
         };
 
         display.finish(&tracker);

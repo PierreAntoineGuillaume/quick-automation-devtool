@@ -6,6 +6,7 @@ pub mod silent_display;
 mod spinner;
 pub mod summary_display;
 mod term_wrapper;
+mod tui;
 
 #[derive(Clone, Copy, Debug)]
 pub enum RunningDisplay {
@@ -33,6 +34,7 @@ impl Default for FinalDisplayMode {
     }
 }
 
+#[derive(Clone)]
 pub struct CiDisplayConfig {
     pub running_display: RunningDisplay,
     pub final_display: FinalDisplayMode,

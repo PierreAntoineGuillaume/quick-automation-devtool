@@ -3,8 +3,10 @@ mod config;
 
 extern crate anyhow;
 extern crate atty;
+extern crate crossterm;
 extern crate indexmap;
 extern crate terminal_size;
+extern crate tui;
 
 use crate::ci::ci_config::CliConfig;
 use crate::ci::display::sequence_display::SequenceDisplay;
