@@ -22,7 +22,7 @@ pub enum Subcommands {
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "ci", description = "play the ci")]
 pub struct CiArgs {
-    #[argh(positional)]
+    #[argh(positional, description = "an optionnal job or group to run")]
     pub nested: Option<String>,
 }
 

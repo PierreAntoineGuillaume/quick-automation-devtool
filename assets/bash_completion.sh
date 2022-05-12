@@ -18,16 +18,16 @@ _qad() {
   COMPREPLY=()
   if [ "$COMP_CWORD" == 2 ]; then
     if [ "$prev" == "config" ]; then
-      if [ "$cur" == "m" ]; then
-        mapfile -t COMPREPLY < <(compgen -W "migrate" -- "${cur}")
-        return 0
-      fi
       mapfile -t COMPREPLY < <(compgen -W "migrate --help" -- "${cur}")
       return 0
     fi
     if [ "$prev" == "ci" ]; then
-      mapfile -t jobs < <(qad list)
-      mapfile -t COMPREPLY < <(compgen -W "${jobs[*]}" -- "${cur}")
+      if compgen -G "qad.y*ml*" > /dev/null; then
+        mapfile -t jobs < <(qad list 2>/dev/null)
+      else
+        jobs=()
+      fi
+      mapfile -t COMPREPLY < <(compgen -W "--help ${jobs[*]}" -- "${cur}")
       return 0
     fi
     return 0
@@ -35,10 +35,12 @@ _qad() {
   if [ "$COMP_CWORD" == 3 ]; then
     if [ "${COMP_WORDS[1]}" == "config" ] && [ "${COMP_WORDS[2]}" == "migrate" ]; then
       mapfile -t versions < <(qad config migrate --help | awk ' $1 ~ /./ { print $1 }' | sed '1,/Commands:/ d')
-      mapfile -t COMPREPLY < <(compgen -W "$(printf "%s " "${versions[@]}")--help" -- "${cur}")
+      mapfile -t COMPREPLY < <(compgen -W "--help $(printf "%s " "${versions[@]}")" -- "${cur}")
       return 0
     fi
-    return 0
+  fi
+  if ! [[ "${COMP_WORDS[*]}" =~ "--help" ]]; then
+    mapfile -t COMPREPLY < <(compgen -W "--help" -- "${cur}")
   fi
   return 0
 }
