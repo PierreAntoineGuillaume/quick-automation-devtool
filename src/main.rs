@@ -59,9 +59,12 @@ fn main() {
         },
         Subcommands::Autocomplete(_) => {
             if atty::is(atty::Stream::Stdout) {
-                eprintln!(
-                    "#{PACKAGE_NAME} autocomplete > ~/.local/share/bash-completion/completions/{PACKAGE_NAME}",
-                );
+                const DIR: &str = "~/.local/share/bash-completion/completions";
+                eprintln!("# To register {PACKAGE_NAME}'s bash autocompletion script");
+                eprintln!("# put the following content including the shebang (#!/bin/bash) in");
+                eprintln!("# {DIR}/{PACKAGE_NAME}:");
+                eprintln!("# mkdir -p {}", DIR);
+                eprintln!("# {PACKAGE_NAME} autocomplete > {DIR}/{PACKAGE_NAME}",);
             }
             print!("{}", include_str!("../assets/bash_completion.sh"));
             std::process::exit(0);
