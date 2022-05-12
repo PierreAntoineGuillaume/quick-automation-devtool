@@ -6,7 +6,7 @@
   "properties": {
     "version": {
       "description": "The version of the version to be parsed",
-      "type": "integer"
+      "type": "string"
     },
     "jobs": {
       "description": "The list of jobs to be run in ci",
