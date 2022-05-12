@@ -16,8 +16,6 @@ More details on [the current configuration version file](docs/VERSION_1.md).
 
 # Major commands
 
-̀`̀qad --help` displays a list and description of default jobs.
-
 ```shell
 $ qad --help
 Usage: qad [--version] [<command>] [<args>]
@@ -39,7 +37,7 @@ Commands:
 
 ```shell
 # play the whole process
-$ qad ci fmt
+$ qad ci
 
 # play only the fmt job
 $ qad ci fmt
