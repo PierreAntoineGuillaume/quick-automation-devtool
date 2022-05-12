@@ -77,7 +77,7 @@ rust-nightly:
 
 shellcheck:
   image: koalaman/shellcheck-alpine:stable
-  script: find -name '*.sh' -type f -exec shellcheck {} '+'
+  script: find -name '*.sh' -not -path '*/.*' -not -path '*/target/*' -type f -exec shellcheck {} '+'
 
 test-autocomplete:
   image: bash
