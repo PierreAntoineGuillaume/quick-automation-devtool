@@ -12,7 +12,7 @@ pub enum Migration {
 }
 
 impl Migrate {
-    pub fn new(config: Config) -> Self {
+    pub const fn new(config: Config) -> Self {
         Self { config }
     }
 

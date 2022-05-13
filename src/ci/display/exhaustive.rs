@@ -26,7 +26,7 @@ pub struct FullFinalDisplay<'a> {
 }
 
 impl<'a> FullFinalDisplay<'a> {
-    pub fn new(config: &'a CiDisplayConfig) -> Self {
+    pub const fn new(config: &'a CiDisplayConfig) -> Self {
         Self { config }
     }
 }

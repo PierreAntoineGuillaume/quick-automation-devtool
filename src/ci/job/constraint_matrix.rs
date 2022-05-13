@@ -59,7 +59,7 @@ impl ConstraintMatrix {
             }
         }
 
-        Ok(ConstraintMatrix {
+        Ok(Self {
             blocked_by_jobs,
             blocks_jobs,
         })

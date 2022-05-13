@@ -1,7 +1,6 @@
 use crate::config::versions::version_0x::Version0x;
 use crate::config::versions::version_1::Version1;
 use crate::config::{FormatParser, Loader, Version};
-use crate::Format;
 use regex::Regex;
 
 #[derive(Default)]
@@ -9,7 +8,7 @@ pub struct YamlParser {}
 
 impl YamlParser {
     pub fn boxed() -> Box<dyn FormatParser> {
-        Box::new(YamlParser {})
+        Box::new(Self {})
     }
 }
 
@@ -47,9 +46,5 @@ impl FormatParser for YamlParser {
             crate::config::LATEST
         );
         self.version1(text)
-    }
-
-    fn format(&self) -> Format {
-        Format::Yaml
     }
 }

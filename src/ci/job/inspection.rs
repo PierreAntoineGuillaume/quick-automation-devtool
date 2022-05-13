@@ -6,17 +6,17 @@ pub struct JobProgress(String, pub Progress);
 
 impl JobProgress {
     pub fn new(job_name: &str, progress: Progress) -> Self {
-        JobProgress(job_name.to_string(), progress)
+        Self(job_name.to_string(), progress)
     }
-    pub fn cancel(job_name: String) -> Self {
-        JobProgress(job_name, Progress::Cancelled)
+    pub const fn cancel(job_name: String) -> Self {
+        Self(job_name, Progress::Cancelled)
     }
 
     pub fn name(&self) -> &str {
         &self.0
     }
 
-    pub fn failed(&self) -> bool {
+    pub const fn failed(&self) -> bool {
         self.1.failed()
     }
 }
@@ -83,7 +83,7 @@ pub struct JobProgressTracker {
 
 impl JobProgressTracker {
     pub fn new() -> Self {
-        JobProgressTracker {
+        Self {
             start_time: SystemTime::now(),
             end_time: None,
             states: IndexMap::new(),

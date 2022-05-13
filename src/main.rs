@@ -1,5 +1,8 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
+#![deny(clippy::nursery)]
+#![allow(clippy::use_self)]
+#![allow(clippy::option_if_let_else)]
 
 mod ci;
 mod config;
@@ -15,7 +18,7 @@ use crate::ci::config::CliOption;
 use crate::ci::Ci;
 use crate::config::argh::{Args, ConfigSubcommands, MigrateToSubCommands, Subcommands};
 use crate::config::migrate::Migrate;
-use crate::config::{Config, Format, Payload};
+use crate::config::{Config, Payload};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
@@ -78,13 +81,6 @@ fn main() {
                     eprintln!("{PACKAGE_NAME}: could not read config: {}", err);
                     std::process::exit(1);
                 } else {
-                    let used_conf_file = config
-                        .get_first_available_config_file()
-                        .expect("Error passed before");
-                    let format = Config::get_parser(&used_conf_file)
-                        .expect("Error passed before")
-                        .format();
-
                     let migrate = Migrate::new(config);
                     let migration = match version.to {
                         MigrateToSubCommands::V1(_) => migrate.to0y(),
@@ -94,9 +90,7 @@ fn main() {
                         std::process::exit(1)
                     }
 
-                    let serialization = match (format, migration.unwrap()) {
-                        (Format::Yaml, serializable) => Migrate::yaml(serializable),
-                    };
+                    let serialization = Migrate::yaml(migration.unwrap());
                     println!("{}", serialization);
                 }
             }

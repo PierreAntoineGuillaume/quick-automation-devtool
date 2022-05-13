@@ -8,7 +8,7 @@ use crate::ci::display::CiDisplayConfig;
 use anyhow::Error as AnyError;
 use anyhow::Result;
 use regex::Regex;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::fs;
 use std::path::Path;
 use yaml_parser::YamlParser;
@@ -49,11 +49,6 @@ impl Error {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialOrd, PartialEq, Clone)]
-pub enum Format {
-    Yaml,
-}
-
 #[derive(Deserialize, Debug, PartialEq)]
 pub struct Version {
     pub version: String,
@@ -84,7 +79,6 @@ pub trait FormatParser {
         text: &str,
         requested_version: &str,
     ) -> Result<Box<dyn Loader>, String>;
-    fn format(&self) -> Format;
 }
 
 pub const LATEST: &str = "1.0";
@@ -113,7 +107,7 @@ impl Config {
             .map(|str| format!("{}.{}", env, str))
             .collect();
 
-        Config { possible_files }
+        Self { possible_files }
     }
 
     pub fn load_into(&self, config: &mut Payload) -> Result<()> {

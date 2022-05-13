@@ -219,7 +219,7 @@ fn run_app<B: Backend>(
 /// q-c (standard signal for sigquit)
 /// q   (for quit)
 /// esc (for escape)
-fn should_exit(e: &KeyEvent) -> bool {
+const fn should_exit(e: &KeyEvent) -> bool {
     matches!(
         (e.modifiers, e.code),
         (KeyModifiers::CONTROL, KeyCode::Char('d' | 'c'))

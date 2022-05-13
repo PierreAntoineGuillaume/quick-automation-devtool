@@ -14,13 +14,13 @@ pub struct JobDesc {
 impl From<JobDesc> for Type {
     fn from(desc: JobDesc) -> Self {
         match desc.image {
-            None => Type::Simple(Simple::long(
+            None => Self::Simple(Simple::long(
                 desc.name,
                 desc.script,
                 desc.group,
                 desc.skip_if,
             )),
-            Some(image) => Type::Docker(Docker::long(
+            Some(image) => Self::Docker(Docker::long(
                 desc.name,
                 desc.script,
                 image,

@@ -14,11 +14,11 @@ pub enum Constraint {
 }
 
 impl Constraint {
-    pub(crate) fn constrain(&self) -> Result<Self, ()> {
+    pub const fn constrain(&self) -> Result<Self, ()> {
         match self {
-            Constraint::Free => Err(()),
-            Constraint::Indifferent => Ok(Constraint::Blocked(1)),
-            Constraint::Blocked(usize) => Ok(Constraint::Blocked(*usize + 1usize)),
+            Self::Free => Err(()),
+            Self::Indifferent => Ok(Self::Blocked(1)),
+            Self::Blocked(usize) => Ok(Self::Blocked(*usize + 1usize)),
         }
     }
 }
@@ -78,11 +78,8 @@ pub enum JobState {
 }
 
 impl JobState {
-    pub fn is_unresolved(&self) -> bool {
-        matches!(
-            self,
-            JobState::Pending | JobState::Started | JobState::Blocked
-        )
+    pub const fn is_unresolved(&self) -> bool {
+        matches!(self, Self::Pending | Self::Started | Self::Blocked)
     }
 }
 
@@ -92,12 +89,12 @@ impl Debug for JobState {
             f,
             "{}",
             match self {
-                JobState::Pending => "pending",
-                JobState::Started => "started",
-                JobState::Blocked => "blocked",
-                JobState::Terminated(JobResult::Success) => "success",
-                JobState::Terminated(JobResult::Failure) => "failure",
-                JobState::Cancelled(_) => "cancelled",
+                Self::Pending => "pending",
+                Self::Started => "started",
+                Self::Blocked => "blocked",
+                Self::Terminated(JobResult::Success) => "success",
+                Self::Terminated(JobResult::Failure) => "failure",
+                Self::Cancelled(_) => "cancelled",
             }
         )
     }
@@ -105,7 +102,7 @@ impl Debug for JobState {
 
 impl Default for JobState {
     fn default() -> Self {
-        JobState::Pending
+        Self::Pending
     }
 }
 
@@ -116,13 +113,13 @@ pub struct JobList {
 
 impl JobList {
     pub fn from(vec: &[String]) -> Self {
-        JobList {
+        Self {
             vec: vec.iter().rev().cloned().collect(),
         }
     }
 
-    pub fn new() -> Self {
-        JobList { vec: Vec::new() }
+    pub const fn new() -> Self {
+        Self { vec: Vec::new() }
     }
 
     pub fn remove_job(&mut self, name: &str) {
@@ -152,7 +149,7 @@ impl JobWatcher {
         blocks_job: Vec<String>,
         blocked_by_jobs: JobList,
     ) -> Self {
-        JobWatcher {
+        Self {
             job,
             state,
             blocks_job,
@@ -172,7 +169,7 @@ pub struct JobEnumeration {
     pub block: Vec<String>,
 }
 
-fn jobenum(name: String, state: JobState, block: Vec<String>) -> JobEnumeration {
+const fn jobenum(name: String, state: JobState, block: Vec<String>) -> JobEnumeration {
     JobEnumeration { name, state, block }
 }
 
@@ -243,7 +240,7 @@ impl Dag {
             );
         }
 
-        let mut dag = Dag {
+        let mut dag = Self {
             all_jobs,
             available_jobs: JobList::new(),
         };

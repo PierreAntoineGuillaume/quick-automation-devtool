@@ -25,7 +25,7 @@ pub enum Output {
 }
 
 impl Output {
-    pub fn succeeded(&self) -> bool {
+    pub const fn succeeded(&self) -> bool {
         matches!(self, Output::Success(_, _))
     }
 }
@@ -126,7 +126,7 @@ pub enum Progress {
 }
 
 impl Progress {
-    pub fn failed(&self) -> bool {
+    pub const fn failed(&self) -> bool {
         matches!(
             self,
             Progress::Partial(_, Output::JobError(_, _) | Output::ProcessError(_))

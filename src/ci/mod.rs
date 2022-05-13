@@ -104,7 +104,7 @@ const AWAIT_TIME: Duration = Duration::from_millis(40);
 
 impl ParrallelJobStarter {
     pub fn new() -> Self {
-        ParrallelJobStarter {
+        Self {
             threads: vec![],
             last_occurence: SystemTime::now(),
         }
