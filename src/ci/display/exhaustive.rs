@@ -7,7 +7,7 @@ use regex::Regex;
 use std::fmt::Write;
 use std::time::SystemTime;
 
-pub fn try_cleanup(input: String) -> String {
+pub fn try_cleanup(input: &str) -> String {
     let cleaned = input.trim_end().replace(27 as char, r"\E");
     if cleaned.is_empty() {
         String::new()
@@ -51,17 +51,17 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                                 &self.config.ko
                             };
                             writeln!(string, "  {} {}", symbol, instruction).expect("write");
-                            string.push_str(&try_cleanup(format!(
+                            string.push_str(&try_cleanup(&format!(
                                 "  {}\n  {}",
-                                try_cleanup(stdout.clone()).replace('\n', "\n    "),
-                                try_cleanup(stderr.clone().replace('\n', "\n    "))
-                            )))
+                                try_cleanup(stdout).replace('\n', "\n    "),
+                                try_cleanup(&stderr.replace('\n', "\n    "))
+                            )));
                         }
                         JobOutput::ProcessError(stderr) => write!(
                             string,
                             "  {} {instruction}: {}",
                             self.config.ko,
-                            try_cleanup(stderr.clone()).replace('\n', "\n    ")
+                            try_cleanup(stderr).replace('\n', "\n    ")
                         )
                         .expect("write"),
                     },
@@ -81,7 +81,7 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                             job_name,
                             ResetChar()
                         )
-                        .expect("write")
+                        .expect("write");
                     }
                     _ => {}
                 }
