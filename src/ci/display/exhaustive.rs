@@ -92,10 +92,10 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
             }
         }
 
-        let status = if !tracker.has_failed {
-            (&self.config.ok, "succeeded")
-        } else {
+        let status = if tracker.has_failed {
             (&self.config.ko, "failed")
+        } else {
+            (&self.config.ok, "succeeded")
         };
 
         println!(
