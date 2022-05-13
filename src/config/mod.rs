@@ -155,7 +155,7 @@ impl Config {
             .expect("This could not be reached, else no content would be provided in parse");
         let version = parser
             .version(content)
-            .map_err(|_| ConfigError::NoVersion("1"))?;
+            .map_err(|_| ConfigError::NoVersion(LATEST))?;
 
         let regex = Regex::new(r#"^(\d+)(?:\.(\S+))?$"#).unwrap();
         let version_numbers = regex.captures(version.version.as_str());
