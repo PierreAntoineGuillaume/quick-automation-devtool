@@ -32,7 +32,7 @@ impl From<JobDesc> for JobType {
 }
 
 #[derive(Default, Clone)]
-pub struct CliConfig {
+pub struct CliOption {
     pub job: Option<String>,
 }
 

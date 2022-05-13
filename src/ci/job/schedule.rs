@@ -1,4 +1,4 @@
-use crate::ci::ci_config::{CiConfig, CliConfig};
+use crate::ci::ci_config::{CiConfig, CliOption};
 use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{SystemFacade, UserFacade};
@@ -7,7 +7,7 @@ use crate::ci::job::{JobProgressTracker, JobType, Progress};
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 
 pub fn schedule(
-    cli_config: CliConfig,
+    cli_option: CliOption,
     ci_config: CiConfig,
     system_facade: &mut dyn SystemFacade,
     user_facade: &mut dyn UserFacade,
@@ -18,7 +18,7 @@ pub fn schedule(
         parser.interpret(envtext)?
     };
 
-    let jobs = if cli_config.job.is_none() {
+    let jobs = if cli_option.job.is_none() {
         ci_config
             .jobs
             .iter()
@@ -26,7 +26,7 @@ pub fn schedule(
             .map(|job| job.into())
             .collect::<Vec<JobType>>()
     } else {
-        let filter = cli_config.job.as_ref().unwrap();
+        let filter = cli_option.job.as_ref().unwrap();
         if let Some(group) = filter.strip_prefix("group:") {
             ci_config
                 .jobs
@@ -46,7 +46,7 @@ pub fn schedule(
         }
     };
 
-    let constraints = if cli_config.job.is_none() {
+    let constraints = if cli_option.job.is_none() {
         ci_config.constraints
     } else {
         vec![]

@@ -10,7 +10,7 @@ extern crate indexmap;
 extern crate terminal_size;
 extern crate tui;
 
-use crate::ci::ci_config::CliConfig;
+use crate::ci::ci_config::CliOption;
 use crate::ci::display::sequence_display::SequenceDisplay;
 use crate::ci::Ci;
 use crate::config::argh::{Args, ConfigSubcommands, MigrateToSubCommands, Subcommands};
@@ -42,7 +42,7 @@ fn main() {
     let config = Config::from(&envvar);
 
     match command {
-        Subcommands::Ci(arg) => match (Ci {}).run(config, CliConfig { job: arg.nested }) {
+        Subcommands::Ci(arg) => match (Ci {}).run(config, CliOption { job: arg.nested }) {
             Ok(true) => {}
             Ok(false) => {
                 std::process::exit(1);
