@@ -1,5 +1,6 @@
 #![deny(clippy::all)]
 #![deny(clippy::cast_precision_loss)]
+#![deny(clippy::module_name_repetitions)]
 
 mod ci;
 mod config;
