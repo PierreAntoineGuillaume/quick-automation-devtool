@@ -1,6 +1,6 @@
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::CommandRunner;
-use crate::ci::job::{JobIntrospector, JobTrait, Progress, ProgressConsumer};
+use crate::ci::job::{Introspector, JobTrait, Progress, ProgressConsumer};
 use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -17,7 +17,7 @@ const DOCKER_RUN: &str =
     r#"docker run --rm --user "$USER_ID:$GROUP_ID" --volume "$PWD:$PWD" --workdir "$PWD""#;
 
 impl JobTrait for Docker {
-    fn introspect(&self, introspector: &mut dyn JobIntrospector) {
+    fn introspect(&self, introspector: &mut dyn Introspector) {
         introspector.docker_job(
             &self.name,
             &self.image,

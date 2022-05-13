@@ -34,7 +34,7 @@ pub trait ProgressConsumer {
     fn consume(&self, job_progress: JobProgress);
 }
 
-pub trait JobIntrospector {
+pub trait Introspector {
     fn basic_job(
         &mut self,
         name: &str,
@@ -74,7 +74,7 @@ impl JobType {
 }
 
 impl JobTrait for JobType {
-    fn introspect(&self, introspector: &mut dyn JobIntrospector) {
+    fn introspect(&self, introspector: &mut dyn Introspector) {
         match self {
             JobType::Docker(job) => job.introspect(introspector),
             JobType::Simple(job) => job.introspect(introspector),
@@ -111,7 +111,7 @@ impl JobTrait for JobType {
 }
 
 pub trait JobTrait {
-    fn introspect(&self, introspector: &mut dyn JobIntrospector);
+    fn introspect(&self, introspector: &mut dyn Introspector);
     fn name(&self) -> &str;
     fn forward_env(&mut self, env: &HashMap<String, Vec<String>>);
     fn group(&self) -> Option<&str>;

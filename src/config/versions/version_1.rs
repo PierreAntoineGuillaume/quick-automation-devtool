@@ -1,7 +1,7 @@
 use crate::ci::config::JobDesc;
 use crate::ci::display::FinalDisplayMode;
 use crate::ci::display::Running as RunningDisplay;
-use crate::ci::job::JobIntrospector;
+use crate::ci::job::Introspector;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -183,7 +183,7 @@ struct VersionYJobConverter {
     data: Option<(String, FullJobDesc)>,
 }
 
-impl JobIntrospector for VersionYJobConverter {
+impl Introspector for VersionYJobConverter {
     fn basic_job(
         &mut self,
         name: &str,
