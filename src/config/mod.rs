@@ -5,7 +5,8 @@ pub mod yaml_parser;
 
 use crate::ci::config::Config as CiConfig;
 use crate::ci::display::CiDisplayConfig;
-use anyhow::{Error, Result};
+use anyhow::Error as AnyError;
+use anyhow::Result;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -13,32 +14,32 @@ use std::path::Path;
 use yaml_parser::YamlParser;
 
 #[derive(Debug)]
-pub enum ConfigError {
-    FileError(String),
+pub enum Error {
+    Parse(String),
     NoVersion(&'static str, String),
     BadVersion(String, &'static str),
     ParseError(String, String),
 }
 
-impl ConfigError {
+impl Error {
     fn explain(&self, filename: &str) -> String {
         match self {
-            ConfigError::FileError(error) => {
+            Error::Parse(error) => {
                 format!("{} could not be parsed: {}", filename, error,)
             }
-            ConfigError::NoVersion(latest, previous) => {
+            Error::NoVersion(latest, previous) => {
                 format!(
                     "{} could not parse version id (latest is {})\nbecause: {}",
                     filename, latest, previous,
                 )
             }
-            ConfigError::BadVersion(version, latest) => {
+            Error::BadVersion(version, latest) => {
                 format!(
                     "unknown version {} in {} (latest is {})",
                     version, filename, latest
                 )
             }
-            ConfigError::ParseError(version, prev) => {
+            Error::ParseError(version, prev) => {
                 format!(
                     "could not parse {} with version {} ({})",
                     filename, version, prev
@@ -99,7 +100,7 @@ impl Config {
         }
 
         filename.ok_or_else(|| {
-            Error::msg(format!(
+            AnyError::msg(format!(
                 "no config file could be found (looked in files {:?})",
                 self.possible_files
             ))
@@ -118,13 +119,12 @@ impl Config {
     pub fn load_into(&self, config: &mut ConfigPayload) -> Result<()> {
         let filename = self.get_first_available_config_file()?;
 
-        let content = fs::read_to_string(&filename).map_err(|error| {
-            Error::msg(ConfigError::FileError(error.to_string()).explain(&filename))
-        })?;
+        let content = fs::read_to_string(&filename)
+            .map_err(|error| AnyError::msg(Error::Parse(error.to_string()).explain(&filename)))?;
 
         let loader = self
             .parse(&filename, &content)
-            .map_err(|error| Error::msg(error.explain(&filename)))?;
+            .map_err(|error| AnyError::msg(error.explain(&filename)))?;
         loader.load(config);
         Ok(())
     }
@@ -145,23 +145,19 @@ impl Config {
         None
     }
 
-    pub fn parse(
-        &self,
-        filename: &str,
-        content: &str,
-    ) -> Result<Box<dyn ConfigLoader>, ConfigError> {
+    pub fn parse(&self, filename: &str, content: &str) -> Result<Box<dyn ConfigLoader>, Error> {
         let parser = self
             .get_parser(filename)
             .expect("This could not be reached, else no content would be provided in parse");
         let version = parser
             .version(content)
-            .map_err(|why| ConfigError::NoVersion(LATEST, why))?;
+            .map_err(|why| Error::NoVersion(LATEST, why))?;
 
         let regex = Regex::new(r#"^(\d+)(?:\.(\S+))?$"#).unwrap();
         let version_numbers = regex.captures(version.version.as_str());
 
         if version_numbers.is_none() {
-            return Err(ConfigError::BadVersion(version.version, LATEST));
+            return Err(Error::BadVersion(version.version, LATEST));
         }
 
         let version_numbers = version_numbers.unwrap();
@@ -176,9 +172,9 @@ impl Config {
             ("0", _) => parser.version0x(content),
             ("1", None | Some("0")) => parser.version1(content),
             ("1", Some(_)) => parser.latest_with_warning(content, version.version.as_str()),
-            _ => return Err(ConfigError::BadVersion(version.version, LATEST)),
+            _ => return Err(Error::BadVersion(version.version, LATEST)),
         }
-        .map_err(|parse_error| ConfigError::ParseError(version.version.clone(), parse_error))?;
+        .map_err(|parse_error| Error::ParseError(version.version.clone(), parse_error))?;
 
         Ok(ver)
     }
