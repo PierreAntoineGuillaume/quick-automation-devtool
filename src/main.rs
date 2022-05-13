@@ -1,4 +1,5 @@
 #![deny(clippy::all)]
+#![deny(clippy::cast_precision_loss)]
 
 mod ci;
 mod config;

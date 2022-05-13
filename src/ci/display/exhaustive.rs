@@ -113,7 +113,7 @@ impl<'a> FullFinalDisplay<'a> {
         let time = tracker.end_time.or_else(|| Some(SystemTime::now()))?;
 
         let since = time.duration_since(tracker.start_time).ok()?;
-
+        #[allow(clippy::cast_precision_loss)]
         Some(since.as_millis() as f64)
     }
 }
