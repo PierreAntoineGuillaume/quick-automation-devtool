@@ -1,9 +1,9 @@
-version: 1
+version: "1.0"
 jobs:
   fmt:
     script: [ cargo fmt ]
   clippy:
-    script: [ cargo clippy --tests --color always -- -D warnings ]
+    script: [ cargo clippy --tests --color always ]
   tests:
     script: [ cargo test --color always ]
 constraints:
