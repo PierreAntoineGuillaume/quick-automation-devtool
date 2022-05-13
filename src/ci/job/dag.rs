@@ -1,5 +1,5 @@
 use crate::ci::job::constraint_matrix::ConstraintMatrix;
-use crate::ci::job::{JobTrait, JobType, SharedJob};
+use crate::ci::job::{JobTrait, JobType, Shared};
 use indexmap::IndexMap;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
@@ -139,7 +139,7 @@ impl JobList {
 }
 
 pub struct JobWatcher {
-    job: Arc<SharedJob>,
+    job: Arc<Shared>,
     state: JobState,
     blocks_job: Vec<String>,
     blocked_by_jobs: JobList,
@@ -147,7 +147,7 @@ pub struct JobWatcher {
 
 impl JobWatcher {
     pub fn new(
-        job: Arc<SharedJob>,
+        job: Arc<Shared>,
         state: JobState,
         blocks_job: Vec<String>,
         blocked_by_jobs: JobList,
@@ -295,7 +295,7 @@ impl Dag {
     /// Poll will return a job if a job is available
     /// Available jobs are Pending
     /// When a job is polled, it is considered Started
-    pub fn poll(&mut self) -> Option<Arc<SharedJob>> {
+    pub fn poll(&mut self) -> Option<Arc<Shared>> {
         let jobname = self.available_jobs.shift()?;
         let job = self.all_jobs.get_mut(&jobname);
 

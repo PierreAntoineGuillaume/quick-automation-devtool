@@ -52,7 +52,7 @@ pub trait Introspector {
     );
 }
 
-pub type SharedJob = dyn JobTrait + Send + Sync;
+pub type Shared = dyn JobTrait + Send + Sync;
 
 #[derive(Clone)]
 pub enum JobType {
@@ -61,7 +61,7 @@ pub enum JobType {
 }
 
 impl JobType {
-    pub fn to_arc(&self) -> Arc<SharedJob> {
+    pub fn to_arc(&self) -> Arc<Shared> {
         match self {
             JobType::Simple(job) => {
                 Arc::from(Box::new(job.clone()) as Box<dyn JobTrait + Send + Sync>)

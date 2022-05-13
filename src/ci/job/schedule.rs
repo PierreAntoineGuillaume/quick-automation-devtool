@@ -140,7 +140,7 @@ pub fn read(rx: &Receiver<JobProgress>) -> Option<JobProgress> {
 mod tests {
     use super::*;
     use crate::ci::job::ports::CommandRunner;
-    use crate::ci::job::{Output, SharedJob};
+    use crate::ci::job::{Output, Shared};
     use std::collections::HashMap;
     use std::sync::mpsc::Sender;
     use std::sync::Arc;
@@ -154,7 +154,7 @@ mod tests {
     }
 
     impl SystemFacade for TestJobStarter {
-        fn consume_job(&mut self, job: Arc<SharedJob>, tx: Sender<JobProgress>) {
+        fn consume_job(&mut self, job: Arc<Shared>, tx: Sender<JobProgress>) {
             job.start(&mut TestJobRunner {}, &tx);
         }
 

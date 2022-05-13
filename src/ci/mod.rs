@@ -8,7 +8,7 @@ use crate::ci::display::{FinalDisplayMode, Running};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{CommandRunner, FinalCiDisplay, SystemFacade, UserFacade};
 use crate::ci::job::schedule::schedule;
-use crate::ci::job::{Output, ProgressConsumer, SharedJob};
+use crate::ci::job::{Output, ProgressConsumer, Shared};
 use crate::config::{Config, ConfigPayload};
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
@@ -122,7 +122,7 @@ impl CommandRunner for ParrallelJobStarter {
 }
 
 impl SystemFacade for ParrallelJobStarter {
-    fn consume_job(&mut self, job: Arc<SharedJob>, tx: Sender<JobProgress>) {
+    fn consume_job(&mut self, job: Arc<Shared>, tx: Sender<JobProgress>) {
         self.threads.push(thread::spawn(move || {
             job.start(&mut CommandJobRunner, &tx);
         }));
