@@ -25,7 +25,7 @@ pub struct Constraints {
 fn from_vec(constraints: &[(String, String)]) -> Constraints {
     let mut map = HashMap::new();
     for (blocker, blocked) in constraints.iter().cloned() {
-        map.entry(blocker).or_insert_with(Vec::new).push(blocked)
+        map.entry(blocker).or_insert_with(Vec::new).push(blocked);
     }
     Constraints {
         blocks: Some(map),
@@ -124,7 +124,7 @@ impl Loader for Version1 {
                 image: full_desc.image,
                 group: full_desc.group,
                 skip_if: full_desc.skip_if,
-            })
+            });
         }
         if let Some(groups) = &self.groups {
             payload.ci.groups = groups.clone();
@@ -137,7 +137,7 @@ impl Loader for Version1 {
                         payload
                             .ci
                             .constraints
-                            .push((blocker.clone(), blocked.clone()))
+                            .push((blocker.clone(), blocked.clone()));
                     }
                 }
             }
@@ -147,7 +147,7 @@ impl Loader for Version1 {
                         payload
                             .ci
                             .constraints
-                            .push((blocker.clone(), blocked.clone()))
+                            .push((blocker.clone(), blocked.clone()));
                     }
                 }
             }
@@ -155,16 +155,16 @@ impl Loader for Version1 {
 
         if let Some(display) = &self.display {
             if let Some(ok) = &display.ok {
-                payload.display.ok = ok.to_string()
+                payload.display.ok = ok.to_string();
             }
             if let Some(ko) = &display.ko {
-                payload.display.ko = ko.to_string()
+                payload.display.ko = ko.to_string();
             }
             if let Some(cancelled) = &display.cancelled {
-                payload.display.cancelled = cancelled.to_string()
+                payload.display.cancelled = cancelled.to_string();
             }
             if let Some(spinner) = &display.spinner {
-                payload.display.spinner = (spinner.frames.clone(), spinner.per_frames)
+                payload.display.spinner = (spinner.frames.clone(), spinner.per_frames);
             }
             if let Some(mode) = &display.mode {
                 payload.display.running_display = RunningDisplay::from(*mode);
@@ -199,7 +199,7 @@ impl Introspector for VersionYJobConverter {
                 script: instructions.to_vec(),
                 skip_if: (*skip_if).clone(),
             },
-        ))
+        ));
     }
 
     fn docker_job(
@@ -218,7 +218,7 @@ impl Introspector for VersionYJobConverter {
                 script: instructions.to_vec(),
                 skip_if: (*skip_if).clone(),
             },
-        ))
+        ));
     }
 }
 

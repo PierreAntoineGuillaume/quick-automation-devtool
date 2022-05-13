@@ -8,7 +8,7 @@ impl UserFacade for Display {
     fn tear_down(&mut self, _: &JobProgressTracker) {}
 
     fn display_error(&self, error: String) {
-        eprintln!("{}", error)
+        eprintln!("{}", error);
     }
 }
 

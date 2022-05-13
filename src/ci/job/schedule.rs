@@ -73,7 +73,7 @@ pub fn schedule(
                     unreachable!("This state is impossible with no poll yet")
                 }
             },
-        ))
+        ));
     }
 
     let (tx, rx) = channel();
@@ -109,7 +109,7 @@ pub fn schedule(
             }
             tracker.record(progress);
             for cancel in cancel_list {
-                tracker.record(JobProgress::cancel(cancel))
+                tracker.record(JobProgress::cancel(cancel));
             }
         }
 

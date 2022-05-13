@@ -126,7 +126,7 @@ impl JobList {
     }
 
     pub fn remove_job(&mut self, name: &str) {
-        self.vec.retain(|contained| contained != name)
+        self.vec.retain(|contained| contained != name);
     }
 
     pub fn is_empty(&self) -> bool {
@@ -267,7 +267,7 @@ impl Dag {
         for job in jobs {
             if let Some(group) = job.group() {
                 if let Some(collection) = blocking_jobs_by_groups.get_mut(group) {
-                    collection.push(job.name().to_string())
+                    collection.push(job.name().to_string());
                 } else {
                     return Err(Error::UnknownGroup(
                         job.name().to_string(),
@@ -433,7 +433,7 @@ impl Dag {
                     unreachable!("This statement cannot happen")
                 }
             };
-            blocked_job.state = JobState::Cancelled(list)
+            blocked_job.state = JobState::Cancelled(list);
         }
     }
 }
@@ -497,7 +497,7 @@ mod tests {
 
         let none = dag.poll();
 
-        assert!(none.is_none())
+        assert!(none.is_none());
     }
 
     #[test]
@@ -540,7 +540,7 @@ mod tests {
         let deploy = dag.poll().unwrap();
         assert_eq!("deploy", deploy.name());
         dag.record_event(deploy.name(), JobResult::Success);
-        assert!(dag.is_finished())
+        assert!(dag.is_finished());
     }
 
     #[test]

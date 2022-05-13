@@ -37,7 +37,7 @@ impl<'a> UserFacade for Display<'a> {
     }
 
     fn display_error(&self, error: String) {
-        eprintln!("{}", error)
+        eprintln!("{}", error);
     }
 }
 
@@ -50,7 +50,7 @@ impl<'a> Display<'a> {
                 &self.config.ok
             } else {
                 &self.config.ko
-            })
+            });
         }
         self.term.clear_til_eol();
 
@@ -79,7 +79,7 @@ impl<'a> Display<'a> {
     }
 
     fn clear(&mut self) {
-        self.term.clear()
+        self.term.clear();
     }
 
     pub fn new(config: &'a CiDisplayConfig, write: &'a mut dyn Write) -> Self {

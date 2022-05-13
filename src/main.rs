@@ -1,6 +1,7 @@
 #![deny(clippy::all)]
 #![deny(clippy::cast_precision_loss)]
 #![deny(clippy::module_name_repetitions)]
+#![deny(clippy::semicolon_if_nothing_returned)]
 
 mod ci;
 mod config;
@@ -99,7 +100,7 @@ fn main() {
                     let serialization = match (format, migration.unwrap()) {
                         (Format::Yaml, serializable) => migrate.yaml(serializable),
                     };
-                    println!("{}", serialization)
+                    println!("{}", serialization);
                 }
             }
         },

@@ -23,7 +23,7 @@ impl EnvParser {
                     capturing = ValueWithKey(env_string[last_symbol_start..pos].to_string());
                     last_symbol_start = pos + 1;
                 }
-                (Capturing::ValueWithKey(key), '=') => {
+                (ValueWithKey(key), '=') => {
                     if last_symbol_start < last_new_line {
                         map.insert(
                             key.to_string(),
@@ -44,7 +44,7 @@ impl EnvParser {
             }
             pos += 1;
         }
-        if let Capturing::ValueWithKey(key) = capturing {
+        if let ValueWithKey(key) = capturing {
             map.insert(
                 key,
                 env_string[last_symbol_start..pos]
@@ -66,7 +66,7 @@ mod tests {
     fn extract_map(map: HashMap<String, Vec<String>>) -> String {
         let mut result = vec![];
         for (key, value) in map {
-            result.push(format!("{}: [{}]", key, value.join(", ")))
+            result.push(format!("{}: [{}]", key, value.join(", ")));
         }
         result.sort();
         result.join("")
@@ -76,7 +76,7 @@ mod tests {
     pub fn empty() {
         let parser = EnvParser {};
         let map = parser.parse("");
-        assert!(map.is_empty())
+        assert!(map.is_empty());
     }
 
     #[test]

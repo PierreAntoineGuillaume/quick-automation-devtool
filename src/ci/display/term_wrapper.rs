@@ -40,7 +40,7 @@ impl<'a> TermWrapper<'a> {
     }
 
     pub fn clear_til_eo_screen(&mut self) {
-        self.write.write_all(&CLEAR_TIL_EO_SCREEN).unwrap()
+        self.write.write_all(&CLEAR_TIL_EO_SCREEN).unwrap();
     }
 
     pub fn newline(&mut self) {

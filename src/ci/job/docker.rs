@@ -24,7 +24,7 @@ impl Job for Docker {
             &self.group,
             &self.instructions,
             &self.skip_if,
-        )
+        );
     }
 
     fn name(&self) -> &str {
@@ -33,7 +33,7 @@ impl Job for Docker {
 
     fn forward_env(&mut self, env: &HashMap<String, Vec<String>>) {
         for key in env.keys() {
-            self.env.push(key.clone())
+            self.env.push(key.clone());
         }
     }
 

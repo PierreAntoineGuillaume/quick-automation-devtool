@@ -23,12 +23,12 @@ impl JobProgress {
 
 #[derive(Default)]
 pub struct ProgressCollector {
-    pub progresses: std::vec::Vec<Progress>,
+    pub progresses: Vec<Progress>,
 }
 
 impl ProgressCollector {
     fn push(&mut self, progress: Progress) {
-        self.progresses.push(progress)
+        self.progresses.push(progress);
     }
 
     pub fn last(&self) -> &Progress {
@@ -52,7 +52,7 @@ impl ProgressCollector {
                     vec.push(InstructionState::Finished(
                         instruction.clone(),
                         output.succeeded(),
-                    ))
+                    ));
                 }
                 Progress::Started(instruction) => {
                     temp = Some(instruction.clone());
@@ -63,7 +63,7 @@ impl ProgressCollector {
             }
         }
         if let Some(instruction) = temp {
-            vec.push(InstructionState::Running(instruction))
+            vec.push(InstructionState::Running(instruction));
         }
         vec
     }

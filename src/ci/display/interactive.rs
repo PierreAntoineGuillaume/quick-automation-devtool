@@ -45,9 +45,7 @@ impl FinalCiDisplay for Interactive {
     fn finish(&mut self, tracker: &JobProgressTracker) {
         match self.finish_error(tracker) {
             Ok(()) => {}
-            Err(err) => {
-                eprintln!("{}", err)
-            }
+            Err(err) => eprintln!("{}", err),
         }
     }
 }
@@ -75,7 +73,7 @@ impl Interactive {
         terminal.show_cursor()?;
 
         if let Err(err) = res {
-            println!("{:?}", err)
+            println!("{:?}", err);
         }
 
         Ok(())
@@ -109,7 +107,7 @@ impl<'a> App<'a> {
             self.result.1.previous();
         } else {
             self.items.previous();
-            self.result = (false, StatefulText::with_text(self.selected_text()))
+            self.result = (false, StatefulText::with_text(self.selected_text()));
         }
     }
     pub fn next(&mut self) {
@@ -117,20 +115,20 @@ impl<'a> App<'a> {
             self.result.1.next();
         } else {
             self.items.next();
-            self.result = (false, StatefulText::with_text(self.selected_text()))
+            self.result = (false, StatefulText::with_text(self.selected_text()));
         }
     }
 
     pub fn prepare(&mut self) {
-        self.result = (false, StatefulText::with_text(self.selected_text()))
+        self.result = (false, StatefulText::with_text(self.selected_text()));
     }
 
     pub fn select(&mut self) {
-        self.result = (true, self.result.1.clone())
+        self.result = (true, self.result.1.clone());
     }
 
     pub fn unselect(&mut self) {
-        self.result = (false, self.result.1.clone())
+        self.result = (false, self.result.1.clone());
     }
 
     fn selected_text(&self) -> String {
@@ -170,7 +168,7 @@ impl<'a> From<&'a JobProgressTracker> for App<'a> {
     fn from(tracker: &'a JobProgressTracker) -> Self {
         let mut items = vec![];
         for (name, state) in &tracker.states {
-            items.push((JobResult::from(state.last()), name.to_string()))
+            items.push((JobResult::from(state.last()), name.to_string()));
         }
         Self {
             items: StatefulList::with_items(items),

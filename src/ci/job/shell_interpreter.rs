@@ -42,7 +42,7 @@ impl<'a> ShellInterpreter<'a> {
                 None => {}
                 Some(captures) => {
                     let name = captures.get(1).unwrap().as_str().to_string();
-                    writeln!(control, "printf {}=; printf '%s\n' ${}", name, name).expect("write")
+                    writeln!(control, "printf {}=; printf '%s\n' ${}", name, name).expect("write");
                 }
             });
 

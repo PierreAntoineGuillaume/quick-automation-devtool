@@ -48,7 +48,7 @@ impl ConstraintMatrix {
             if let Some(cons) = matrix.get_mut(new_constraint) {
                 *cons = cons
                     .constrain()
-                    .map_err(|_| Error::CycleExistsBecauseOf(new_constraint.0.to_string()))?
+                    .map_err(|_| Error::CycleExistsBecauseOf(new_constraint.0.to_string()))?;
             }
             if let Some(vec) = blocks_jobs.get_mut(&new_constraint.0) {
                 vec.insert(new_constraint.1.to_string());
@@ -124,7 +124,7 @@ mod tests {
         let constraints = vec![cons("build1", "test1")];
 
         let matrix = ConstraintMatrix::new(&jobs, &constraints);
-        assert!(matches!(matrix, Err(Error::UnknownJobInConstraint(_))))
+        assert!(matches!(matrix, Err(Error::UnknownJobInConstraint(_))));
     }
 
     #[test]
@@ -134,7 +134,7 @@ mod tests {
         let constraints = vec![cons("build", "build")];
 
         let matrix = ConstraintMatrix::new(&jobs, &constraints);
-        assert!(matches!(matrix, Err(Error::JobCannotBlockItself(_))))
+        assert!(matches!(matrix, Err(Error::JobCannotBlockItself(_))));
     }
 
     #[test]
@@ -143,13 +143,13 @@ mod tests {
         let mut vec: Vec<String> = pipeline.blocking("deploy").collect();
         vec.sort();
         let list = JobList::from(vec);
-        assert_eq!("[build1, build2, test1, test2]", format!("{}", list))
+        assert_eq!("[build1, build2, test1, test2]", format!("{}", list));
     }
 
     #[test]
     pub fn list_all_blocks() {
         let pipeline = complex_matrix().unwrap();
         let list = JobList::from(pipeline.blocked_by("test1").collect());
-        assert_eq!("[deploy]", format!("{}", list))
+        assert_eq!("[deploy]", format!("{}", list));
     }
 }

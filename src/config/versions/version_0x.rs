@@ -39,7 +39,7 @@ impl Loader for Version0x {
                 image: None,
                 group: None,
                 skip_if: None,
-            })
+            });
         }
 
         if let Some(constraint) = &self.constraints {
@@ -47,24 +47,24 @@ impl Loader for Version0x {
                 for blocked in blocked_jobs {
                     ci_config
                         .constraints
-                        .push((blocker.clone(), blocked.clone()))
+                        .push((blocker.clone(), blocked.clone()));
                 }
             }
         }
 
         if let Some(spinner) = &self.ci_spinner {
-            payload.display.spinner = (spinner.frames.clone(), spinner.per_frames)
+            payload.display.spinner = (spinner.frames.clone(), spinner.per_frames);
         }
 
         if let Some(icons) = &self.ci_icons {
             if let Some(ok) = &icons.ok {
-                payload.display.ok = ok.clone()
+                payload.display.ok = ok.clone();
             }
             if let Some(ko) = &icons.ko {
-                payload.display.ko = ko.clone()
+                payload.display.ko = ko.clone();
             }
             if let Some(cancelled) = &icons.cancelled {
-                payload.display.cancelled = cancelled.clone()
+                payload.display.cancelled = cancelled.clone();
             }
         }
     }

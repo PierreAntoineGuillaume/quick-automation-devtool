@@ -36,7 +36,7 @@ impl<'a> UserFacade for Display<'a> {
     }
 
     fn display_error(&self, error: String) {
-        eprintln!("{}", error)
+        eprintln!("{}", error);
     }
 }
 

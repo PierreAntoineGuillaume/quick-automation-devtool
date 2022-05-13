@@ -111,7 +111,7 @@ impl ParrallelJobStarter {
 
 impl ProgressConsumer for Sender<JobProgress> {
     fn consume(&self, job_progress: JobProgress) {
-        self.send(job_progress).unwrap()
+        self.send(job_progress).unwrap();
     }
 }
 
@@ -144,7 +144,7 @@ impl SystemFacade for ParrallelJobStarter {
 
     fn write_env(&self, env: HashMap<String, Vec<String>>) {
         for (key, vals) in env {
-            std::env::set_var(key, vals.join("\n"))
+            std::env::set_var(key, vals.join("\n"));
         }
     }
 

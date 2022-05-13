@@ -13,7 +13,7 @@ pub struct Simple {
 
 impl Job for Simple {
     fn introspect(&self, introspector: &mut dyn Introspector) {
-        introspector.basic_job(&self.name, &self.group, &self.instructions, &self.skip_if)
+        introspector.basic_job(&self.name, &self.group, &self.instructions, &self.skip_if);
     }
 
     fn name(&self) -> &str {
