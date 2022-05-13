@@ -133,8 +133,7 @@ impl Progress {
     pub fn failed(&self) -> bool {
         matches!(
             self,
-            Progress::Partial(_, JobOutput::JobError(_, _))
-                | Progress::Partial(_, JobOutput::ProcessError(_))
+            Progress::Partial(_, JobOutput::JobError(_, _) | JobOutput::ProcessError(_))
                 | Progress::Terminated(false)
         )
     }
