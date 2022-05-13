@@ -1,5 +1,4 @@
 variables:
-  RUSTFLAGS: "-D warnings"
   PACKAGE_NAME: qad
   CARGO_HOME: "$CI_PROJECT_DIR/.cargo"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_NAME}/${CI_COMMIT_TAG}/${PACKAGE_NAME}"
