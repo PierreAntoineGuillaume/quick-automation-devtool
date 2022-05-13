@@ -42,7 +42,7 @@ impl CommandRunner for JobTester {
     }
 }
 
-pub type ScheduleType = (Vec<JobType>, Vec<(String, String)>, Vec<String>);
+pub type ScheduleType = (Vec<Type>, Vec<(String, String)>, Vec<String>);
 
 pub fn simple_job_schedule() -> ScheduleType {
     let jobs = vec![job("deploy"), job("build"), job("test")];
@@ -91,12 +91,12 @@ pub fn group_job_schedule() -> ScheduleType {
     (jobs, vec![], config)
 }
 
-pub fn job(name: &str) -> JobType {
-    JobType::Simple(Simple::long(name.to_string(), vec![], None, None))
+pub fn job(name: &str) -> Type {
+    Type::Simple(Simple::long(name.to_string(), vec![], None, None))
 }
 
-fn job_group(name: &str, group: &str) -> JobType {
-    JobType::Simple(Simple::long(
+fn job_group(name: &str, group: &str) -> Type {
+    Type::Simple(Simple::long(
         name.to_string(),
         vec![],
         Some(group.to_string()),

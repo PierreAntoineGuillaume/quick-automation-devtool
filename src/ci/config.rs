@@ -1,6 +1,6 @@
 use crate::ci::job::docker::Docker;
 use crate::ci::job::simple::Simple;
-use crate::ci::job::JobType;
+use crate::ci::job::Type;
 
 #[derive(Default, Clone)]
 pub struct JobDesc {
@@ -11,16 +11,16 @@ pub struct JobDesc {
     pub skip_if: Option<String>,
 }
 
-impl From<JobDesc> for JobType {
+impl From<JobDesc> for Type {
     fn from(desc: JobDesc) -> Self {
         match desc.image {
-            None => JobType::Simple(Simple::long(
+            None => Type::Simple(Simple::long(
                 desc.name,
                 desc.script,
                 desc.group,
                 desc.skip_if,
             )),
-            Some(image) => JobType::Docker(Docker::long(
+            Some(image) => Type::Docker(Docker::long(
                 desc.name,
                 desc.script,
                 image,

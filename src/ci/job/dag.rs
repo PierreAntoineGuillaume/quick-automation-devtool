@@ -1,5 +1,5 @@
 use crate::ci::job::constraint_matrix::ConstraintMatrix;
-use crate::ci::job::{JobTrait, JobType, Shared};
+use crate::ci::job::{JobTrait, Shared, Type};
 use indexmap::IndexMap;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
@@ -204,12 +204,12 @@ impl Ord for JobEnumeration {
 
 impl Dag {
     pub fn new(
-        jobs: &[JobType],
+        jobs: &[Type],
         constraints: &[(String, String)],
         groups: &[String],
         env: &HashMap<String, Vec<String>>,
     ) -> Result<Self, Error> {
-        let jobs: Vec<JobType> = jobs.to_vec();
+        let jobs: Vec<Type> = jobs.to_vec();
         let mut constraints: Vec<(String, String)> = constraints.to_vec();
 
         constraints.extend(Self::compute_group_constraints(&jobs, groups)?);
@@ -254,7 +254,7 @@ impl Dag {
     }
 
     fn compute_group_constraints(
-        jobs: &[JobType],
+        jobs: &[Type],
         groups: &[String],
     ) -> Result<Vec<(String, String)>, Error> {
         let mut group_constraints = vec![];

@@ -3,7 +3,7 @@ use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{SystemFacade, UserFacade};
 use crate::ci::job::shell_interpreter::ShellInterpreter;
-use crate::ci::job::{JobProgressTracker, JobType, Progress};
+use crate::ci::job::{JobProgressTracker, Progress, Type};
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 
 pub fn schedule(
@@ -24,7 +24,7 @@ pub fn schedule(
             .iter()
             .cloned()
             .map(|job| job.into())
-            .collect::<Vec<JobType>>()
+            .collect::<Vec<Type>>()
     } else {
         let filter = cli_option.job.as_ref().unwrap();
         if let Some(group) = filter.strip_prefix("group:") {
@@ -34,7 +34,7 @@ pub fn schedule(
                 .cloned()
                 .filter(|job| job.group.is_some() && group == job.group.as_ref().unwrap())
                 .map(|job| job.into())
-                .collect::<Vec<JobType>>()
+                .collect::<Vec<Type>>()
         } else {
             ci_config
                 .jobs
@@ -42,7 +42,7 @@ pub fn schedule(
                 .cloned()
                 .filter(|job| filter == &job.name)
                 .map(|job| job.into())
-                .collect::<Vec<JobType>>()
+                .collect::<Vec<Type>>()
         }
     };
 

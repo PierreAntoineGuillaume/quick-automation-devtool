@@ -55,57 +55,57 @@ pub trait Introspector {
 pub type Shared = dyn JobTrait + Send + Sync;
 
 #[derive(Clone)]
-pub enum JobType {
+pub enum Type {
     Simple(Simple),
     Docker(Docker),
 }
 
-impl JobType {
+impl Type {
     pub fn to_arc(&self) -> Arc<Shared> {
         match self {
-            JobType::Simple(job) => {
+            Type::Simple(job) => {
                 Arc::from(Box::new(job.clone()) as Box<dyn JobTrait + Send + Sync>)
             }
-            JobType::Docker(job) => {
+            Type::Docker(job) => {
                 Arc::from(Box::new(job.clone()) as Box<dyn JobTrait + Send + Sync>)
             }
         }
     }
 }
 
-impl JobTrait for JobType {
+impl JobTrait for Type {
     fn introspect(&self, introspector: &mut dyn Introspector) {
         match self {
-            JobType::Docker(job) => job.introspect(introspector),
-            JobType::Simple(job) => job.introspect(introspector),
+            Type::Docker(job) => job.introspect(introspector),
+            Type::Simple(job) => job.introspect(introspector),
         }
     }
 
     fn name(&self) -> &str {
         match self {
-            JobType::Docker(job) => job.name(),
-            JobType::Simple(job) => job.name(),
+            Type::Docker(job) => job.name(),
+            Type::Simple(job) => job.name(),
         }
     }
 
     fn forward_env(&mut self, env: &HashMap<String, Vec<String>>) {
         match self {
-            JobType::Simple(job) => job.forward_env(env),
-            JobType::Docker(job) => job.forward_env(env),
+            Type::Simple(job) => job.forward_env(env),
+            Type::Docker(job) => job.forward_env(env),
         }
     }
 
     fn group(&self) -> Option<&str> {
         match self {
-            JobType::Docker(job) => job.group(),
-            JobType::Simple(job) => job.group(),
+            Type::Docker(job) => job.group(),
+            Type::Simple(job) => job.group(),
         }
     }
 
     fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn ProgressConsumer) {
         match self {
-            JobType::Simple(job) => job.start(runner, consumer),
-            JobType::Docker(job) => job.start(runner, consumer),
+            Type::Simple(job) => job.start(runner, consumer),
+            Type::Docker(job) => job.start(runner, consumer),
         }
     }
 }
