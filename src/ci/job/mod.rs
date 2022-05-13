@@ -1,19 +1,19 @@
 pub mod constraint_matrix;
 pub mod dag;
-pub mod docker_job;
+pub mod docker;
 mod env_parser;
 pub mod inspection;
 pub mod ports;
 pub mod schedule;
 pub mod shell_interpreter;
-pub mod simple_job;
+pub mod simple;
 #[cfg(test)]
 pub mod tests;
 
-use crate::ci::job::docker_job::DockerJob;
+use crate::ci::job::docker::Docker;
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
 use crate::ci::job::ports::CommandRunner;
-use crate::ci::job::simple_job::SimpleJob;
+use crate::ci::job::simple::Simple;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -56,8 +56,8 @@ pub type SharedJob = dyn JobTrait + Send + Sync;
 
 #[derive(Clone)]
 pub enum JobType {
-    Simple(SimpleJob),
-    Docker(DockerJob),
+    Simple(Simple),
+    Docker(Docker),
 }
 
 impl JobType {

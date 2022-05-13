@@ -5,14 +5,14 @@ use crate::ci::job::inspection::{InstructionState, JobProgressTracker, ProgressC
 use crate::ci::job::ports::UserFacade;
 use std::io::Write;
 
-pub struct SummaryDisplay<'a> {
+pub struct Display<'a> {
     spin: Spinner<'a>,
     term: TermWrapper<'a>,
     config: &'a CiDisplayConfig,
     max_job_name_len: usize,
 }
 
-impl<'a> UserFacade for SummaryDisplay<'a> {
+impl<'a> UserFacade for Display<'a> {
     fn set_up(&mut self, tracker: &JobProgressTracker) {
         self.max_job_name_len = tracker
             .states
@@ -41,7 +41,7 @@ impl<'a> UserFacade for SummaryDisplay<'a> {
     }
 }
 
-impl<'a> SummaryDisplay<'a> {
+impl<'a> Display<'a> {
     fn display(&mut self, job_name: &str, collector: &ProgressCollector) {
         self.term
             .write(&format!("{:1$} ", job_name, self.max_job_name_len));
@@ -83,7 +83,7 @@ impl<'a> SummaryDisplay<'a> {
     }
 
     pub fn new(config: &'a CiDisplayConfig, write: &'a mut dyn Write) -> Self {
-        SummaryDisplay {
+        Display {
             term: TermWrapper::new(write),
             spin: Spinner::new(&config.spinner.0, config.spinner.1),
             config,

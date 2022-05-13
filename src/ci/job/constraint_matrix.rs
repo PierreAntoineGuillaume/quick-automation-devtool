@@ -1,4 +1,4 @@
-use crate::ci::job::dag::{Constraint, DagError};
+use crate::ci::job::dag::{Constraint, Error};
 use crate::ci::job::{JobTrait, JobType};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -9,7 +9,7 @@ pub struct ConstraintMatrix {
 }
 
 impl ConstraintMatrix {
-    pub fn new(jobs: &[JobType], constraints: &[(String, String)]) -> Result<Self, DagError> {
+    pub fn new(jobs: &[JobType], constraints: &[(String, String)]) -> Result<Self, Error> {
         let mut matrix = BTreeMap::<(String, String), Constraint>::new();
         let mut blocks_jobs = BTreeMap::new();
         let mut blocked_by_jobs = BTreeMap::new();
@@ -35,20 +35,20 @@ impl ConstraintMatrix {
 
         for constraint in constraints {
             if constraint.0 == constraint.1 {
-                return Err(DagError::JobCannotBlockItself(constraint.1.to_string()));
+                return Err(Error::JobCannotBlockItself(constraint.1.to_string()));
             }
             if !job_names.contains(&constraint.0) {
-                return Err(DagError::UnknownJobInConstraint(constraint.0.to_string()));
+                return Err(Error::UnknownJobInConstraint(constraint.0.to_string()));
             }
             if !job_names.contains(&constraint.1) {
-                return Err(DagError::UnknownJobInConstraint(constraint.1.to_string()));
+                return Err(Error::UnknownJobInConstraint(constraint.1.to_string()));
             }
         }
         for new_constraint in constraints {
             if let Some(cons) = matrix.get_mut(new_constraint) {
                 *cons = cons
                     .constrain()
-                    .map_err(|_| DagError::CycleExistsBecauseOf(new_constraint.0.to_string()))?
+                    .map_err(|_| Error::CycleExistsBecauseOf(new_constraint.0.to_string()))?
             }
             if let Some(vec) = blocks_jobs.get_mut(&new_constraint.0) {
                 vec.insert(new_constraint.1.to_string());
@@ -65,20 +65,20 @@ impl ConstraintMatrix {
         })
     }
 
-    pub fn blocked_by(&self, link: &str) -> ConstraintMatrixConstraintIterator {
-        ConstraintMatrixConstraintIterator::new(&self.blocks_jobs, link.to_string())
+    pub fn blocked_by(&self, link: &str) -> ConstraintIterator {
+        ConstraintIterator::new(&self.blocks_jobs, link.to_string())
     }
 
-    pub fn blocking(&self, link: &str) -> ConstraintMatrixConstraintIterator {
-        ConstraintMatrixConstraintIterator::new(&self.blocked_by_jobs, link.to_string())
+    pub fn blocking(&self, link: &str) -> ConstraintIterator {
+        ConstraintIterator::new(&self.blocked_by_jobs, link.to_string())
     }
 }
 
-pub struct ConstraintMatrixConstraintIterator {
+pub struct ConstraintIterator {
     proximity: Vec<String>,
 }
 
-impl ConstraintMatrixConstraintIterator {
+impl ConstraintIterator {
     pub fn new(cm: &BTreeMap<String, BTreeSet<String>>, blocking: String) -> Self {
         let mut accumulator = BTreeSet::new();
         let mut stack = vec![blocking];
@@ -98,7 +98,7 @@ impl ConstraintMatrixConstraintIterator {
     }
 }
 
-impl Iterator for ConstraintMatrixConstraintIterator {
+impl Iterator for ConstraintIterator {
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -112,7 +112,7 @@ mod tests {
     use crate::ci::job::dag::JobList;
     use crate::ci::job::tests::*;
 
-    pub fn complex_matrix() -> Result<ConstraintMatrix, DagError> {
+    pub fn complex_matrix() -> Result<ConstraintMatrix, Error> {
         let list = complex_job_schedule();
         ConstraintMatrix::new(&list.0, &list.1)
     }
@@ -124,7 +124,7 @@ mod tests {
         let constraints = vec![cons("build1", "test1")];
 
         let matrix = ConstraintMatrix::new(&jobs, &constraints);
-        assert!(matches!(matrix, Err(DagError::UnknownJobInConstraint(_))))
+        assert!(matches!(matrix, Err(Error::UnknownJobInConstraint(_))))
     }
 
     #[test]
@@ -134,7 +134,7 @@ mod tests {
         let constraints = vec![cons("build", "build")];
 
         let matrix = ConstraintMatrix::new(&jobs, &constraints);
-        assert!(matches!(matrix, Err(DagError::JobCannotBlockItself(_))))
+        assert!(matches!(matrix, Err(Error::JobCannotBlockItself(_))))
     }
 
     #[test]

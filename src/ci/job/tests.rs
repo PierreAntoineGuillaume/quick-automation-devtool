@@ -1,5 +1,5 @@
 use super::*;
-use crate::ci::job::simple_job::SimpleJob;
+use crate::ci::job::simple::Simple;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 
@@ -92,11 +92,11 @@ pub fn group_job_schedule() -> ScheduleType {
 }
 
 pub fn job(name: &str) -> JobType {
-    JobType::Simple(SimpleJob::long(name.to_string(), vec![], None, None))
+    JobType::Simple(Simple::long(name.to_string(), vec![], None, None))
 }
 
 fn job_group(name: &str, group: &str) -> JobType {
-    JobType::Simple(SimpleJob::long(
+    JobType::Simple(Simple::long(
         name.to_string(),
         vec![],
         Some(group.to_string()),

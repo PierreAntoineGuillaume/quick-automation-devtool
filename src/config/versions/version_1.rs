@@ -1,5 +1,6 @@
 use crate::ci::config::JobDesc;
-use crate::ci::display::{FinalDisplayMode, RunningDisplay};
+use crate::ci::display::FinalDisplayMode;
+use crate::ci::display::Running as RunningDisplay;
 use crate::ci::job::JobIntrospector;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};

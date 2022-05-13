@@ -12,7 +12,6 @@ extern crate terminal_size;
 extern crate tui;
 
 use crate::ci::config::CliOption;
-use crate::ci::display::sequence::SequenceDisplay;
 use crate::ci::Ci;
 use crate::config::argh::{Args, ConfigSubcommands, MigrateToSubCommands, Subcommands};
 use crate::config::migrate::Migrate;

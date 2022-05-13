@@ -4,7 +4,7 @@ use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
 use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
-pub struct DockerJob {
+pub struct Docker {
     name: String,
     group: Option<String>,
     image: String,
@@ -16,7 +16,7 @@ pub struct DockerJob {
 const DOCKER_RUN: &str =
     r#"docker run --rm --user "$USER_ID:$GROUP_ID" --volume "$PWD:$PWD" --workdir "$PWD""#;
 
-impl JobTrait for DockerJob {
+impl JobTrait for Docker {
     fn introspect(&self, introspector: &mut dyn JobIntrospector) {
         introspector.docker_job(
             &self.name,
@@ -85,7 +85,7 @@ impl JobTrait for DockerJob {
     }
 }
 
-impl DockerJob {
+impl Docker {
     pub fn long(
         name: String,
         instructions: Vec<String>,

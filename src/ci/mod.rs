@@ -1,15 +1,15 @@
 use crate::ci::config::CliOption;
 use crate::ci::display::exhaustive::FullFinalDisplay;
-use crate::ci::display::interactive::InteractiveDisplay;
-use crate::ci::display::silent::SilentDisplay;
-use crate::ci::display::summary_display::SummaryDisplay;
-use crate::ci::display::{FinalDisplayMode, RunningDisplay};
+use crate::ci::display::interactive::Interactive;
+use crate::ci::display::sequence::Display as SequenceDisplay;
+use crate::ci::display::silent::Display as SilentDisplay;
+use crate::ci::display::summary::Display as SummaryDisplay;
+use crate::ci::display::{FinalDisplayMode, Running};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{CommandRunner, FinalCiDisplay, SystemFacade, UserFacade};
 use crate::ci::job::schedule::schedule;
 use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
-use crate::SequenceDisplay;
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::process::Command;
@@ -38,13 +38,9 @@ impl Ci {
             Box::new(SilentDisplay {})
         } else {
             match &payload.display.running_display {
-                RunningDisplay::Silent => Box::new(SilentDisplay {}),
-                RunningDisplay::Sequence => {
-                    Box::new(SequenceDisplay::new(&payload.display, &mut stdout))
-                }
-                RunningDisplay::Summary => {
-                    Box::new(SummaryDisplay::new(&payload.display, &mut stdout))
-                }
+                Running::Silent => Box::new(SilentDisplay {}),
+                Running::Sequence => Box::new(SequenceDisplay::new(&payload.display, &mut stdout)),
+                Running::Summary => Box::new(SummaryDisplay::new(&payload.display, &mut stdout)),
             }
         };
 
@@ -63,7 +59,7 @@ impl Ci {
                 if output_is_non_interactive {
                     Box::new(FullFinalDisplay::new(&payload.display))
                 } else {
-                    Box::new(InteractiveDisplay::new(&payload.display))
+                    Box::new(Interactive::new(&payload.display))
                 }
             }
         };

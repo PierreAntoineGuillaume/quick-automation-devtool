@@ -4,12 +4,12 @@ pub mod interactive;
 pub mod sequence;
 pub mod silent;
 mod spinner;
-pub mod summary_display;
+pub mod summary;
 mod term_wrapper;
 mod tui;
 
 #[derive(Clone, Copy, Debug)]
-pub enum RunningDisplay {
+pub enum Running {
     Silent,
     Sequence,
     Summary,
@@ -22,7 +22,7 @@ pub enum FinalDisplayMode {
     Silent,
 }
 
-impl Default for RunningDisplay {
+impl Default for Running {
     fn default() -> Self {
         Self::Sequence
     }
@@ -36,7 +36,7 @@ impl Default for FinalDisplayMode {
 
 #[derive(Clone)]
 pub struct CiDisplayConfig {
-    pub running_display: RunningDisplay,
+    pub running_display: Running,
     pub final_display: FinalDisplayMode,
     pub ok: String,
     pub ko: String,
@@ -47,7 +47,7 @@ pub struct CiDisplayConfig {
 impl Default for CiDisplayConfig {
     fn default() -> Self {
         Self {
-            running_display: RunningDisplay::default(),
+            running_display: Running::default(),
             final_display: FinalDisplayMode::default(),
             ok: String::from("✔"),
             ko: String::from("✕"),

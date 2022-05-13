@@ -30,28 +30,28 @@ impl Default for Constraint {
 }
 
 #[derive(Debug)]
-pub enum DagError {
+pub enum Error {
     JobCannotBlockItself(String),
     UnknownJobInConstraint(String),
     CycleExistsBecauseOf(String),
     UnknownGroup(String, String),
 }
 
-impl Display for DagError {
+impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            DagError::JobCannotBlockItself(jobname) => {
+            Error::JobCannotBlockItself(jobname) => {
                 write!(f, "job {} is blocking itself", jobname)
             }
-            DagError::UnknownJobInConstraint(jobname) => {
+            Error::UnknownJobInConstraint(jobname) => {
                 write!(f, "job {} in constraint list doesn't exist", jobname)
             }
-            DagError::CycleExistsBecauseOf(blocking_job) => write!(
+            Error::CycleExistsBecauseOf(blocking_job) => write!(
                 f,
                 "a cycle exists in the job DAG because of {}",
                 blocking_job
             ),
-            DagError::UnknownGroup(job, group) => write!(
+            Error::UnknownGroup(job, group) => write!(
                 f,
                 "group {} associated with job {} is not in group list",
                 group, job
@@ -60,7 +60,7 @@ impl Display for DagError {
     }
 }
 
-impl std::error::Error for DagError {}
+impl std::error::Error for Error {}
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum JobResult {
@@ -208,7 +208,7 @@ impl Dag {
         constraints: &[(String, String)],
         groups: &[String],
         env: &HashMap<String, Vec<String>>,
-    ) -> Result<Self, DagError> {
+    ) -> Result<Self, Error> {
         let jobs: Vec<JobType> = jobs.to_vec();
         let mut constraints: Vec<(String, String)> = constraints.to_vec();
 
@@ -227,7 +227,7 @@ impl Dag {
             } else {
                 for blocked_by_job in &blocked_by_jobs {
                     if blocked_by_job == job.name() {
-                        return Err(DagError::CycleExistsBecauseOf(blocked_by_job.clone()));
+                        return Err(Error::CycleExistsBecauseOf(blocked_by_job.clone()));
                     }
                 }
                 JobState::Blocked
@@ -256,7 +256,7 @@ impl Dag {
     fn compute_group_constraints(
         jobs: &[JobType],
         groups: &[String],
-    ) -> Result<Vec<(String, String)>, DagError> {
+    ) -> Result<Vec<(String, String)>, Error> {
         let mut group_constraints = vec![];
         let mut blocking_jobs_by_groups = IndexMap::<String, Vec<String>>::new();
 
@@ -269,7 +269,7 @@ impl Dag {
                 if let Some(collection) = blocking_jobs_by_groups.get_mut(group) {
                     collection.push(job.name().to_string())
                 } else {
-                    return Err(DagError::UnknownGroup(
+                    return Err(Error::UnknownGroup(
                         job.name().to_string(),
                         group.to_string(),
                     ));
@@ -440,7 +440,7 @@ impl Dag {
 
 #[cfg(test)]
 mod tests {
-    use crate::ci::job::dag::{Dag, DagError, JobEnumeration, JobList, JobResult};
+    use crate::ci::job::dag::{Dag, Error, JobEnumeration, JobList, JobResult};
     use crate::ci::job::tests::{
         complex_job_schedule, cons, group_job_schedule, job, simple_job_schedule,
     };
@@ -584,12 +584,12 @@ mod tests {
         let cons = vec![cons("A", "B"), cons("B", "C"), cons("C", "A")];
         let error = Dag::new(&jobs, &cons, &[], &HashMap::new()).err().unwrap();
 
-        if let DagError::CycleExistsBecauseOf(letter) = error {
+        if let Error::CycleExistsBecauseOf(letter) = error {
             assert_eq!(&letter, "A");
         } else {
             panic!(
                 "{error:?} should be a {:?}",
-                DagError::CycleExistsBecauseOf(String::from("A"))
+                Error::CycleExistsBecauseOf(String::from("A"))
             )
         }
     }

@@ -29,11 +29,11 @@ use tui::{
     Frame, Terminal,
 };
 
-pub struct InteractiveDisplay {
+pub struct Interactive {
     _config: Option<CiDisplayConfig>,
 }
 
-impl InteractiveDisplay {
+impl Interactive {
     pub fn new(config: &CiDisplayConfig) -> Self {
         Self {
             _config: Some((*config).clone()),
@@ -41,7 +41,7 @@ impl InteractiveDisplay {
     }
 }
 
-impl FinalCiDisplay for InteractiveDisplay {
+impl FinalCiDisplay for Interactive {
     fn finish(&mut self, tracker: &JobProgressTracker) {
         match self.finish_error(tracker) {
             Ok(()) => {}
@@ -52,7 +52,7 @@ impl FinalCiDisplay for InteractiveDisplay {
     }
 }
 
-impl InteractiveDisplay {
+impl Interactive {
     fn finish_error(&mut self, tracker: &JobProgressTracker) -> Result<()> {
         // setup terminal
         enable_raw_mode()?;

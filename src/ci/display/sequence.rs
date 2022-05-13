@@ -6,14 +6,14 @@ use crate::ci::job::ports::UserFacade;
 use crate::ci::job::Progress;
 use std::io::Write;
 
-pub struct SequenceDisplay<'a> {
+pub struct Display<'a> {
     spin: Spinner<'a>,
     term: TermWrapper<'a>,
     config: &'a CiDisplayConfig,
     max_job_name_len: usize,
 }
 
-impl<'a> UserFacade for SequenceDisplay<'a> {
+impl<'a> UserFacade for Display<'a> {
     fn set_up(&mut self, tracker: &JobProgressTracker) {
         self.max_job_name_len = tracker
             .states
@@ -40,7 +40,7 @@ impl<'a> UserFacade for SequenceDisplay<'a> {
     }
 }
 
-impl<'a> SequenceDisplay<'a> {
+impl<'a> Display<'a> {
     fn display(&mut self, job_name: &str, collector: &ProgressCollector) {
         let progress = collector.last();
 
@@ -85,7 +85,7 @@ impl<'a> SequenceDisplay<'a> {
     }
 
     pub fn new(config: &'a CiDisplayConfig, write: &'a mut dyn Write) -> Self {
-        SequenceDisplay {
+        Display {
             term: TermWrapper::new(write),
             spin: Spinner::new(&config.spinner.0, config.spinner.1),
             config,

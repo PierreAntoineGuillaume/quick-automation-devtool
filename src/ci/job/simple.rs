@@ -4,14 +4,14 @@ use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
 use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
-pub struct SimpleJob {
+pub struct Simple {
     name: String,
     group: Option<String>,
     instructions: Vec<String>,
     skip_if: Option<String>,
 }
 
-impl JobTrait for SimpleJob {
+impl JobTrait for Simple {
     fn introspect(&self, introspector: &mut dyn JobIntrospector) {
         introspector.basic_job(&self.name, &self.group, &self.instructions, &self.skip_if)
     }
@@ -59,7 +59,7 @@ impl JobTrait for SimpleJob {
     }
 }
 
-impl SimpleJob {
+impl Simple {
     pub fn long(
         name: String,
         instructions: Vec<String>,
