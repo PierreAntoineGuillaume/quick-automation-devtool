@@ -15,7 +15,7 @@ use yaml_parser::YamlParser;
 #[derive(Debug)]
 pub enum ConfigError {
     FileError(String),
-    NoVersion(&'static str),
+    NoVersion(&'static str, String),
     BadVersion(String, &'static str),
     ParseError(String, String),
 }
@@ -26,10 +26,10 @@ impl ConfigError {
             ConfigError::FileError(error) => {
                 format!("{} could not be parsed: {}", filename, error,)
             }
-            ConfigError::NoVersion(latest) => {
+            ConfigError::NoVersion(latest, previous) => {
                 format!(
-                    "{} should contain version id (latest is {})",
-                    filename, latest
+                    "{} could not parse version id (latest is {})\nbecause: {}",
+                    filename, latest, previous,
                 )
             }
             ConfigError::BadVersion(version, latest) => {
@@ -75,7 +75,7 @@ pub trait ConfigLoader {
 
 pub trait FormatParser {
     fn supports(&self, filename: &str) -> bool;
-    fn version(&self, text: &str) -> Result<Version, ()>;
+    fn version(&self, text: &str) -> Result<Version, String>;
     fn version0x(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
     fn version1(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
     fn latest_with_warning(
@@ -155,7 +155,7 @@ impl Config {
             .expect("This could not be reached, else no content would be provided in parse");
         let version = parser
             .version(content)
-            .map_err(|_| ConfigError::NoVersion(LATEST))?;
+            .map_err(|why| ConfigError::NoVersion(LATEST, why))?;
 
         let regex = Regex::new(r#"^(\d+)(?:\.(\S+))?$"#).unwrap();
         let version_numbers = regex.captures(version.version.as_str());

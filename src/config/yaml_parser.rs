@@ -18,8 +18,8 @@ impl FormatParser for YamlParser {
         Regex::new(r"\.ya?ml(\.dist)?$").unwrap().is_match(filename)
     }
 
-    fn version(&self, text: &str) -> Result<Version, ()> {
-        serde_yaml::from_str::<Version>(text).map_err(|_| ())
+    fn version(&self, text: &str) -> Result<Version, String> {
+        serde_yaml::from_str::<Version>(text).map_err(|why| why.to_string())
     }
 
     fn version0x(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String> {
