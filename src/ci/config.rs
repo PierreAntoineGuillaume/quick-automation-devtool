@@ -37,7 +37,7 @@ pub struct CliOption {
 }
 
 #[derive(Default, Clone)]
-pub struct CiConfig {
+pub struct Config {
     pub jobs: Vec<JobDesc>,
     pub groups: Vec<String>,
     pub constraints: Vec<(String, String)>,

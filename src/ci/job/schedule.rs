@@ -1,4 +1,4 @@
-use crate::ci::config::{CiConfig, CliOption};
+use crate::ci::config::{CliOption, Config};
 use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{SystemFacade, UserFacade};
@@ -8,7 +8,7 @@ use std::sync::mpsc::{channel, Receiver, TryRecvError};
 
 pub fn schedule(
     cli_option: CliOption,
-    ci_config: CiConfig,
+    ci_config: Config,
     system_facade: &mut dyn SystemFacade,
     user_facade: &mut dyn UserFacade,
     envtext: Option<String>,

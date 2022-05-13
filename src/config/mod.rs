@@ -3,7 +3,7 @@ pub mod migrate;
 mod versions;
 pub mod yaml_parser;
 
-use crate::ci::config::CiConfig;
+use crate::ci::config::Config as CiConfig;
 use crate::ci::display::CiDisplayConfig;
 use anyhow::{Error, Result};
 use regex::Regex;

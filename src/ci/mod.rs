@@ -1,7 +1,7 @@
 use crate::ci::config::CliOption;
-use crate::ci::display::full_final_display::FullFinalDisplay;
-use crate::ci::display::interactive_display::InteractiveDisplay;
-use crate::ci::display::silent_display::SilentDisplay;
+use crate::ci::display::exhaustive::FullFinalDisplay;
+use crate::ci::display::interactive::InteractiveDisplay;
+use crate::ci::display::silent::SilentDisplay;
 use crate::ci::display::summary_display::SummaryDisplay;
 use crate::ci::display::{FinalDisplayMode, RunningDisplay};
 use crate::ci::job::inspection::JobProgress;

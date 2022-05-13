@@ -1,8 +1,8 @@
 mod ansi_control_sequence;
-pub mod full_final_display;
-pub mod interactive_display;
-pub mod sequence_display;
-pub mod silent_display;
+pub mod exhaustive;
+pub mod interactive;
+pub mod sequence;
+pub mod silent;
 mod spinner;
 pub mod summary_display;
 mod term_wrapper;
