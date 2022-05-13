@@ -227,11 +227,12 @@ fn run_app<B: Backend>(
 /// q   (for quit)
 /// esc (for escape)
 fn should_exit(e: &KeyEvent) -> bool {
-    match e.modifiers {
-        KeyModifiers::CONTROL => matches!(e.code, KeyCode::Char('d') | KeyCode::Char('c')),
-        KeyModifiers::NONE => matches!(e.code, KeyCode::Char('q') | KeyCode::Esc),
-        _ => false,
-    }
+    matches!(
+        (e.modifiers, e.code),
+        (KeyModifiers::CONTROL, KeyCode::Char('d' | 'c'))
+            | (KeyModifiers::NONE, KeyCode::Char('q'))
+            | (_, KeyCode::Esc)
+    )
 }
 
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
