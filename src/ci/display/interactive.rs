@@ -43,41 +43,39 @@ impl Interactive {
 
 impl FinalCiDisplay for Interactive {
     fn finish(&mut self, tracker: &JobProgressTracker) {
-        match self.finish_error(tracker) {
+        match finish_error(tracker) {
             Ok(()) => {}
             Err(err) => eprintln!("{}", err),
         }
     }
 }
 
-impl Interactive {
-    fn finish_error(&mut self, tracker: &JobProgressTracker) -> Result<()> {
-        // setup terminal
-        enable_raw_mode()?;
-        let mut stdout = io::stdout();
-        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-        let backend = CrosstermBackend::new(stdout);
-        let mut terminal = Terminal::new(backend)?;
+fn finish_error(tracker: &JobProgressTracker) -> Result<()> {
+    // setup terminal
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
 
-        // create app and run it
-        let tick_rate = Duration::from_millis(250);
-        let res = run_app(&mut terminal, App::from(tracker), tick_rate);
+    // create app and run it
+    let tick_rate = Duration::from_millis(250);
+    let res = run_app(&mut terminal, App::from(tracker), tick_rate);
 
-        // restore terminal
-        disable_raw_mode()?;
-        execute!(
-            terminal.backend_mut(),
-            LeaveAlternateScreen,
-            DisableMouseCapture
-        )?;
-        terminal.show_cursor()?;
+    // restore terminal
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
 
-        if let Err(err) = res {
-            println!("{:?}", err);
-        }
-
-        Ok(())
+    if let Err(err) = res {
+        println!("{:?}", err);
     }
+
+    Ok(())
 }
 
 pub enum JobResult {
