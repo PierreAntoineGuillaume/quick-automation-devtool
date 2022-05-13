@@ -1,4 +1,4 @@
-use crate::ci::job::env_parser::EnvParser;
+use crate::ci::job::env_parser::parse_env_into_map;
 use crate::ci::job::ports::{SystemFacade, UserFacade};
 use crate::ci::job::Output;
 use crate::strvec;
@@ -60,8 +60,7 @@ impl<'a> ShellInterpreter<'a> {
             Output::ProcessError(stderr) => return Err(anyhow!(stderr)),
         };
 
-        let parser = EnvParser {};
-        let intermediate_map = parser.parse(envlist);
+        let intermediate_map = parse_env_into_map(envlist);
 
         for line in env_text.split('\n') {
             let mut keyval = line.split('=');

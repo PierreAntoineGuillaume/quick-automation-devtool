@@ -22,7 +22,7 @@ impl Migrate {
         Ok(Migration::Version1(Version1::from(payload)))
     }
 
-    pub fn yaml(&self, migration: Migration) -> String {
+    pub fn yaml(migration: Migration) -> String {
         match migration {
             Migration::Version1(version) => serde_yaml::to_string(&version).unwrap(),
         }

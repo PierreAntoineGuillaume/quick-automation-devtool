@@ -1,6 +1,5 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
-#![allow(clippy::unused_self)]
 
 mod ci;
 mod config;
@@ -43,7 +42,7 @@ fn main() {
     let config = Config::from(&envvar);
 
     match command {
-        Subcommands::Ci(arg) => match (Ci {}).run(&config, &CliOption { job: arg.nested }) {
+        Subcommands::Ci(arg) => match Ci::run(&config, &CliOption { job: arg.nested }) {
             Ok(true) => {}
             Ok(false) => {
                 std::process::exit(1);
@@ -53,7 +52,7 @@ fn main() {
                 std::process::exit(2)
             }
         },
-        Subcommands::List(_) => match (Ci {}).list(&config) {
+        Subcommands::List(_) => match Ci::list(&config) {
             Ok(()) => {}
             Err(str) => {
                 eprintln!("{PACKAGE_NAME}: {}", str);
@@ -82,8 +81,7 @@ fn main() {
                     let used_conf_file = config
                         .get_first_available_config_file()
                         .expect("Error passed before");
-                    let format = config
-                        .get_parser(&used_conf_file)
+                    let format = Config::get_parser(&used_conf_file)
                         .expect("Error passed before")
                         .format();
 
@@ -97,7 +95,7 @@ fn main() {
                     }
 
                     let serialization = match (format, migration.unwrap()) {
-                        (Format::Yaml, serializable) => migrate.yaml(serializable),
+                        (Format::Yaml, serializable) => Migrate::yaml(serializable),
                     };
                     println!("{}", serialization);
                 }
