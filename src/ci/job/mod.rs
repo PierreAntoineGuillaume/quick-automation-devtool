@@ -52,7 +52,7 @@ pub trait Introspector {
     );
 }
 
-pub type Shared = dyn JobTrait + Send + Sync;
+pub type Shared = dyn Job + Send + Sync;
 
 #[derive(Clone)]
 pub enum Type {
@@ -63,17 +63,13 @@ pub enum Type {
 impl Type {
     pub fn to_arc(&self) -> Arc<Shared> {
         match self {
-            Type::Simple(job) => {
-                Arc::from(Box::new(job.clone()) as Box<dyn JobTrait + Send + Sync>)
-            }
-            Type::Docker(job) => {
-                Arc::from(Box::new(job.clone()) as Box<dyn JobTrait + Send + Sync>)
-            }
+            Type::Simple(job) => Arc::from(Box::new(job.clone()) as Box<dyn Job + Send + Sync>),
+            Type::Docker(job) => Arc::from(Box::new(job.clone()) as Box<dyn Job + Send + Sync>),
         }
     }
 }
 
-impl JobTrait for Type {
+impl Job for Type {
     fn introspect(&self, introspector: &mut dyn Introspector) {
         match self {
             Type::Docker(job) => job.introspect(introspector),
@@ -110,7 +106,7 @@ impl JobTrait for Type {
     }
 }
 
-pub trait JobTrait {
+pub trait Job {
     fn introspect(&self, introspector: &mut dyn Introspector);
     fn name(&self) -> &str;
     fn forward_env(&mut self, env: &HashMap<String, Vec<String>>);

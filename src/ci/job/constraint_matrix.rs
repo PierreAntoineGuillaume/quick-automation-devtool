@@ -1,5 +1,5 @@
 use crate::ci::job::dag::{Constraint, Error};
-use crate::ci::job::{JobTrait, Type};
+use crate::ci::job::{Job, Type};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug)]

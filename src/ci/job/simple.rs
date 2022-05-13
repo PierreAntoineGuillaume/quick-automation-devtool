@@ -1,6 +1,6 @@
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::CommandRunner;
-use crate::ci::job::{Introspector, JobTrait, Progress, ProgressConsumer};
+use crate::ci::job::{Introspector, Job, Progress, ProgressConsumer};
 use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -11,7 +11,7 @@ pub struct Simple {
     skip_if: Option<String>,
 }
 
-impl JobTrait for Simple {
+impl Job for Simple {
     fn introspect(&self, introspector: &mut dyn Introspector) {
         introspector.basic_job(&self.name, &self.group, &self.instructions, &self.skip_if)
     }

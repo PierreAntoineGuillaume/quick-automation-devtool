@@ -1,5 +1,5 @@
 use crate::ci::job::constraint_matrix::ConstraintMatrix;
-use crate::ci::job::{JobTrait, Shared, Type};
+use crate::ci::job::{Job, Shared, Type};
 use indexmap::IndexMap;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
