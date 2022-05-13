@@ -9,7 +9,7 @@ use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{CommandRunner, FinalCiDisplay, SystemFacade, UserFacade};
 use crate::ci::job::schedule::schedule;
 use crate::ci::job::{Output, ProgressConsumer, Shared};
-use crate::config::{Config, ConfigPayload};
+use crate::config::{Config, Payload};
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::process::Command;
@@ -27,7 +27,7 @@ pub struct Ci {}
 
 impl Ci {
     pub fn run(&mut self, config: Config, cli_option: CliOption) -> Result<bool> {
-        let mut payload = ConfigPayload::default();
+        let mut payload = Payload::default();
         config.load_with_args_into(&mut payload)?;
         let ci_config = payload.ci;
 
@@ -70,7 +70,7 @@ impl Ci {
     }
 
     pub fn list(&mut self, config: Config) -> Result<()> {
-        let mut payload = ConfigPayload::default();
+        let mut payload = Payload::default();
         config.load_with_args_into(&mut payload)?;
         let ci_config = payload.ci;
 

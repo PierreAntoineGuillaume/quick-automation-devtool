@@ -1,5 +1,5 @@
 use crate::config::versions::version_1::Version1;
-use crate::{Config, ConfigPayload};
+use crate::{Config, Payload};
 use anyhow::Result;
 
 pub struct Migrate {
@@ -17,7 +17,7 @@ impl Migrate {
     }
 
     pub fn to0y(&self) -> Result<Migration> {
-        let mut payload = ConfigPayload::default();
+        let mut payload = Payload::default();
         self.config.load_into(&mut payload)?;
         Ok(Migration::Version1(Version1::from(payload)))
     }

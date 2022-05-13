@@ -1,6 +1,6 @@
 use crate::config::versions::version_0x::Version0x;
 use crate::config::versions::version_1::Version1;
-use crate::config::{ConfigLoader, FormatParser, Version};
+use crate::config::{FormatParser, Loader, Version};
 use crate::Format;
 use regex::Regex;
 
@@ -22,13 +22,13 @@ impl FormatParser for YamlParser {
         serde_yaml::from_str::<Version>(text).map_err(|why| why.to_string())
     }
 
-    fn version0x(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String> {
+    fn version0x(&self, text: &str) -> Result<Box<dyn Loader>, String> {
         Ok(Box::new(
             serde_yaml::from_str::<Version0x>(text).map_err(|error| error.to_string())?,
         ))
     }
 
-    fn version1(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String> {
+    fn version1(&self, text: &str) -> Result<Box<dyn Loader>, String> {
         Ok(Box::new(
             serde_yaml::from_str::<Version1>(text).map_err(|error| error.to_string())?,
         ))
@@ -38,7 +38,7 @@ impl FormatParser for YamlParser {
         &self,
         text: &str,
         requested_version: &str,
-    ) -> anyhow::Result<Box<dyn ConfigLoader>, String> {
+    ) -> anyhow::Result<Box<dyn Loader>, String> {
         const NAME: &str = crate::PACKAGE_NAME;
         eprintln!(
             "{NAME} config version {} is not available in {NAME} {} please check for new updates. Falling back to {NAME} config version {}",

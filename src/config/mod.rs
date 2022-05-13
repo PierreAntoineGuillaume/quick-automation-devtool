@@ -64,26 +64,26 @@ pub struct Config {
 }
 
 #[derive(Default)]
-pub struct ConfigPayload {
+pub struct Payload {
     pub ci: CiConfig,
     pub display: CiDisplayConfig,
     pub env: Option<String>,
 }
 
-pub trait ConfigLoader {
-    fn load(&self, payload: &mut ConfigPayload);
+pub trait Loader {
+    fn load(&self, payload: &mut Payload);
 }
 
 pub trait FormatParser {
     fn supports(&self, filename: &str) -> bool;
     fn version(&self, text: &str) -> Result<Version, String>;
-    fn version0x(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
-    fn version1(&self, text: &str) -> Result<Box<dyn ConfigLoader>, String>;
+    fn version0x(&self, text: &str) -> Result<Box<dyn Loader>, String>;
+    fn version1(&self, text: &str) -> Result<Box<dyn Loader>, String>;
     fn latest_with_warning(
         &self,
         text: &str,
         requested_version: &str,
-    ) -> Result<Box<dyn ConfigLoader>, String>;
+    ) -> Result<Box<dyn Loader>, String>;
     fn format(&self) -> Format;
 }
 
@@ -116,7 +116,7 @@ impl Config {
         Config { possible_files }
     }
 
-    pub fn load_into(&self, config: &mut ConfigPayload) -> Result<()> {
+    pub fn load_into(&self, config: &mut Payload) -> Result<()> {
         let filename = self.get_first_available_config_file()?;
 
         let content = fs::read_to_string(&filename)
@@ -129,7 +129,7 @@ impl Config {
         Ok(())
     }
 
-    pub fn load_with_args_into(&self, config: &mut ConfigPayload) -> Result<()> {
+    pub fn load_with_args_into(&self, config: &mut Payload) -> Result<()> {
         self.load_into(config)?;
         Ok(())
     }
@@ -145,7 +145,7 @@ impl Config {
         None
     }
 
-    pub fn parse(&self, filename: &str, content: &str) -> Result<Box<dyn ConfigLoader>, Error> {
+    pub fn parse(&self, filename: &str, content: &str) -> Result<Box<dyn Loader>, Error> {
         let parser = self
             .get_parser(filename)
             .expect("This could not be reached, else no content would be provided in parse");

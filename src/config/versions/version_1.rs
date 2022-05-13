@@ -2,7 +2,7 @@ use crate::ci::config::JobDesc;
 use crate::ci::display::FinalDisplayMode;
 use crate::ci::display::Running as RunningDisplay;
 use crate::ci::job::Introspector;
-use crate::config::{ConfigLoader, ConfigPayload};
+use crate::config::{Loader, Payload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -115,8 +115,8 @@ pub struct Version1 {
     env: Option<String>,
 }
 
-impl ConfigLoader for Version1 {
-    fn load(&self, payload: &mut ConfigPayload) {
+impl Loader for Version1 {
+    fn load(&self, payload: &mut Payload) {
         for (name, full_desc) in self.jobs.clone() {
             payload.ci.jobs.push(JobDesc {
                 name,
@@ -223,7 +223,7 @@ impl Introspector for VersionYJobConverter {
 }
 
 impl Version1 {
-    pub fn from(payload: ConfigPayload) -> Self {
+    pub fn from(payload: Payload) -> Self {
         let job_ref = payload.ci.jobs;
         let jobs = job_ref
             .iter()

@@ -1,5 +1,5 @@
 use crate::ci::config::JobDesc;
-use crate::config::{ConfigLoader, ConfigPayload};
+use crate::config::{Loader, Payload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -28,8 +28,8 @@ pub struct Version0x {
     ci_icons: Option<CiIcons>,
 }
 
-impl ConfigLoader for Version0x {
-    fn load(&self, payload: &mut ConfigPayload) {
+impl Loader for Version0x {
+    fn load(&self, payload: &mut Payload) {
         let ci_config = &mut payload.ci;
 
         for (name, instruction) in self.jobs.clone() {

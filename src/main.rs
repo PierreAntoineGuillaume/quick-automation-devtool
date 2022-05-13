@@ -15,7 +15,7 @@ use crate::ci::config::CliOption;
 use crate::ci::Ci;
 use crate::config::argh::{Args, ConfigSubcommands, MigrateToSubCommands, Subcommands};
 use crate::config::migrate::Migrate;
-use crate::config::{Config, ConfigPayload, Format};
+use crate::config::{Config, Format, Payload};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
@@ -73,7 +73,7 @@ fn main() {
         }
         Subcommands::Config(config_args) => match config_args.command {
             ConfigSubcommands::Migrate(version) => {
-                let mut payload = ConfigPayload::default();
+                let mut payload = Payload::default();
                 if let Err(err) = config.load_into(&mut payload) {
                     eprintln!("{PACKAGE_NAME}: could not read config: {}", err);
                     std::process::exit(1);
