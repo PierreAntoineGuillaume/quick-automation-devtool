@@ -8,7 +8,7 @@ use crate::ci::display::{FinalDisplayMode, Running};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{CommandRunner, FinalCiDisplay, SystemFacade, UserFacade};
 use crate::ci::job::schedule::schedule;
-use crate::ci::job::{JobOutput, JobProgressConsumer, SharedJob};
+use crate::ci::job::{JobProgressConsumer, Output, SharedJob};
 use crate::config::{Config, ConfigPayload};
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
@@ -116,7 +116,7 @@ impl JobProgressConsumer for Sender<JobProgress> {
 }
 
 impl CommandRunner for ParrallelJobStarter {
-    fn run(&self, args: &str) -> JobOutput {
+    fn run(&self, args: &str) -> Output {
         CommandJobRunner {}.run(args)
     }
 }
@@ -162,19 +162,19 @@ impl SystemFacade for ParrallelJobStarter {
 pub struct CommandJobRunner;
 
 impl CommandRunner for CommandJobRunner {
-    fn run(&self, args: &str) -> JobOutput {
+    fn run(&self, args: &str) -> Output {
         let default_shell = std::env::var("SHELL").unwrap_or_else(|_| String::from("/bin/bash"));
         match Command::new(&default_shell).args(["-c", args]).output() {
             Ok(output) => {
                 let stdout = String::from(std::str::from_utf8(&output.stdout).unwrap());
                 let stderr = String::from(std::str::from_utf8(&output.stderr).unwrap());
                 if output.status.success() {
-                    JobOutput::Success(stdout, stderr)
+                    Output::Success(stdout, stderr)
                 } else {
-                    JobOutput::JobError(stdout, stderr)
+                    Output::JobError(stdout, stderr)
                 }
             }
-            Err(e) => JobOutput::ProcessError(e.to_string()),
+            Err(e) => Output::ProcessError(e.to_string()),
         }
     }
 }

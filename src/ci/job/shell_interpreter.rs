@@ -1,6 +1,6 @@
 use crate::ci::job::env_parser::EnvParser;
 use crate::ci::job::ports::{SystemFacade, UserFacade};
-use crate::ci::job::JobOutput;
+use crate::ci::job::Output;
 use crate::strvec;
 use anyhow::{anyhow, Result};
 use regex::Regex;
@@ -50,14 +50,14 @@ impl<'a> ShellInterpreter<'a> {
         let out = self.system_facade.run(&script);
 
         let envlist = match out {
-            JobOutput::Success(stdout, stderr) => {
+            Output::Success(stdout, stderr) => {
                 if !stderr.is_empty() {
                     self.user_facade.display_error(stderr);
                 }
                 stdout.trim().to_string()
             }
-            JobOutput::JobError(_, stderr) => return Err(anyhow!(stderr)),
-            JobOutput::ProcessError(stderr) => return Err(anyhow!(stderr)),
+            Output::JobError(_, stderr) => return Err(anyhow!(stderr)),
+            Output::ProcessError(stderr) => return Err(anyhow!(stderr)),
         };
 
         let parser = EnvParser {};

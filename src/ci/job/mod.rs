@@ -18,15 +18,15 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum JobOutput {
+pub enum Output {
     Success(String, String),
     JobError(String, String),
     ProcessError(String),
 }
 
-impl JobOutput {
+impl Output {
     pub fn succeeded(&self) -> bool {
-        matches!(self, JobOutput::Success(_, _))
+        matches!(self, Output::Success(_, _))
     }
 }
 
@@ -124,7 +124,7 @@ pub enum Progress {
     Blocked(Vec<String>),
     Cancelled,
     Started(String),
-    Partial(String, JobOutput),
+    Partial(String, Output),
     Skipped,
     Terminated(bool),
 }
@@ -133,7 +133,7 @@ impl Progress {
     pub fn failed(&self) -> bool {
         matches!(
             self,
-            Progress::Partial(_, JobOutput::JobError(_, _) | JobOutput::ProcessError(_))
+            Progress::Partial(_, Output::JobError(_, _) | Output::ProcessError(_))
                 | Progress::Terminated(false)
         )
     }

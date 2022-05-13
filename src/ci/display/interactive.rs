@@ -17,7 +17,7 @@ use std::{
 
 use crate::ci::display::tui::stateful_list::StatefulList;
 use crate::ci::display::tui::stateful_text::StatefulText;
-use crate::ci::job::{JobOutput, Progress};
+use crate::ci::job::{Output, Progress};
 use tui::style::Color;
 use tui::widgets::{Paragraph, Wrap};
 use tui::{
@@ -148,13 +148,13 @@ impl<'a> App<'a> {
             .progresses
             .iter()
             .flat_map(|progres| match progres {
-                Progress::Partial(_, JobOutput::Success(out, err)) => {
+                Progress::Partial(_, Output::Success(out, err)) => {
                     Some(format!("{}\n{}", out, err))
                 }
-                Progress::Partial(_, JobOutput::JobError(out, err)) => {
+                Progress::Partial(_, Output::JobError(out, err)) => {
                     Some(format!("{}\n{}", out, err))
                 }
-                Progress::Partial(_, JobOutput::ProcessError(err)) => Some(err.to_string()),
+                Progress::Partial(_, Output::ProcessError(err)) => Some(err.to_string()),
                 Progress::Skipped => Some("skipped".to_string()),
                 Progress::Cancelled => Some("cancelled".to_string()),
                 Progress::Terminated(true) => Some("success".to_string()),

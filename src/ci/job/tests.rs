@@ -34,11 +34,11 @@ impl Display for JobTester {
 }
 
 impl CommandRunner for JobTester {
-    fn run(&self, args: &str) -> JobOutput {
+    fn run(&self, args: &str) -> Output {
         self.inputs.borrow_mut().push(JobInput {
             args: Some(args.to_string()),
         });
-        JobOutput::ProcessError(String::default())
+        Output::ProcessError(String::default())
     }
 }
 

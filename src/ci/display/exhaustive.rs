@@ -2,7 +2,7 @@ use crate::ci::display::ansi_control_sequence::{ResetChar, UnderlineChar};
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::ports::FinalCiDisplay;
-use crate::ci::job::{JobOutput, Progress};
+use crate::ci::job::{Output, Progress};
 use regex::Regex;
 use std::fmt::Write;
 use std::time::SystemTime;
@@ -43,8 +43,7 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                     }
                     Progress::Skipped => string.push_str("  job was skipped\n"),
                     Progress::Partial(instruction, job_output) => match job_output {
-                        JobOutput::Success(stdout, stderr)
-                        | JobOutput::JobError(stdout, stderr) => {
+                        Output::Success(stdout, stderr) | Output::JobError(stdout, stderr) => {
                             let symbol = if job_output.succeeded() {
                                 &self.config.ok
                             } else {
@@ -57,7 +56,7 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                                 try_cleanup(&stderr.replace('\n', "\n    "))
                             )));
                         }
-                        JobOutput::ProcessError(stderr) => write!(
+                        Output::ProcessError(stderr) => write!(
                             string,
                             "  {} {instruction}: {}",
                             self.config.ko,

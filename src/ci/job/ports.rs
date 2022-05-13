@@ -1,11 +1,11 @@
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
-use crate::ci::job::{JobOutput, SharedJob};
+use crate::ci::job::{Output, SharedJob};
 use std::collections::HashMap;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 
 pub trait CommandRunner {
-    fn run(&self, args: &str) -> JobOutput;
+    fn run(&self, args: &str) -> Output;
 }
 
 pub trait SystemFacade: CommandRunner {

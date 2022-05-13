@@ -140,7 +140,7 @@ pub fn read(rx: &Receiver<JobProgress>) -> Option<JobProgress> {
 mod tests {
     use super::*;
     use crate::ci::job::ports::CommandRunner;
-    use crate::ci::job::{JobOutput, SharedJob};
+    use crate::ci::job::{Output, SharedJob};
     use std::collections::HashMap;
     use std::sync::mpsc::Sender;
     use std::sync::Arc;
@@ -148,8 +148,8 @@ mod tests {
     pub struct TestJobStarter {}
 
     impl CommandRunner for TestJobStarter {
-        fn run(&self, _: &str) -> JobOutput {
-            JobOutput::Success("".to_string(), "".to_string())
+        fn run(&self, _: &str) -> Output {
+            Output::Success("".to_string(), "".to_string())
         }
     }
 
@@ -172,13 +172,13 @@ mod tests {
     pub struct TestJobRunner {}
 
     impl CommandRunner for TestJobRunner {
-        fn run(&self, job: &str) -> JobOutput {
+        fn run(&self, job: &str) -> Output {
             if let Some(stripped) = job.strip_prefix("ok:") {
-                JobOutput::Success(stripped.into(), "".into())
+                Output::Success(stripped.into(), "".into())
             } else if let Some(stripped) = job.strip_prefix("ko:") {
-                JobOutput::JobError(stripped.into(), "".into())
+                Output::JobError(stripped.into(), "".into())
             } else if let Some(stripped) = job.strip_prefix("crash:") {
-                JobOutput::ProcessError(stripped.into())
+                Output::ProcessError(stripped.into())
             } else {
                 unreachable!(
                     "Job should begin with ok:, ko, or crash: (actual: '{}')",
