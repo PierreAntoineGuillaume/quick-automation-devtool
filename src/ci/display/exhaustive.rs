@@ -102,7 +102,7 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
             "\n{} ci {} in {:.2} seconds",
             status.0,
             status.1,
-            Self::elapsed(tracker).unwrap_or(0 as f64) / 1000f64
+            Self::elapsed(tracker).unwrap_or(0f64) / 1000f64
         );
     }
 }
