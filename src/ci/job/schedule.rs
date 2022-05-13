@@ -1,4 +1,4 @@
-use crate::ci::ci_config::{CiConfig, CliOption};
+use crate::ci::config::{CiConfig, CliOption};
 use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{SystemFacade, UserFacade};

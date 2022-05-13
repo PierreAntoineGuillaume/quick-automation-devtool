@@ -1,4 +1,4 @@
-use crate::ci::ci_config::CliOption;
+use crate::ci::config::CliOption;
 use crate::ci::display::full_final_display::FullFinalDisplay;
 use crate::ci::display::interactive_display::InteractiveDisplay;
 use crate::ci::display::silent_display::SilentDisplay;
@@ -19,7 +19,7 @@ use std::thread;
 use std::thread::{sleep, JoinHandle};
 use std::time::{Duration, SystemTime};
 
-pub mod ci_config;
+pub mod config;
 pub mod display;
 pub mod job;
 

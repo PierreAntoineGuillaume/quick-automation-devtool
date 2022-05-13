@@ -1,4 +1,4 @@
-use crate::ci::ci_config::JobDesc;
+use crate::ci::config::JobDesc;
 use crate::ci::display::{FinalDisplayMode, RunningDisplay};
 use crate::ci::job::JobIntrospector;
 use crate::config::{ConfigLoader, ConfigPayload};
@@ -194,9 +194,9 @@ impl JobIntrospector for VersionYJobConverter {
             name.to_string(),
             FullJobDesc {
                 image: None,
-                group: group.clone(),
+                group: (*group).clone(),
                 script: instructions.to_vec(),
-                skip_if: skip_if.clone(),
+                skip_if: (*skip_if).clone(),
             },
         ))
     }
@@ -213,9 +213,9 @@ impl JobIntrospector for VersionYJobConverter {
             name.to_string(),
             FullJobDesc {
                 image: Some(image.to_string()),
-                group: group.clone(),
+                group: (*group).clone(),
                 script: instructions.to_vec(),
-                skip_if: skip_if.clone(),
+                skip_if: (*skip_if).clone(),
             },
         ))
     }

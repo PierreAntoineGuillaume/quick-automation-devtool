@@ -1,4 +1,4 @@
-use crate::ci::ci_config::JobDesc;
+use crate::ci::config::JobDesc;
 use crate::config::{ConfigLoader, ConfigPayload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
