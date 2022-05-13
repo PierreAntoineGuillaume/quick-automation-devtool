@@ -30,7 +30,7 @@ impl Output {
     }
 }
 
-pub trait JobProgressConsumer {
+pub trait ProgressConsumer {
     fn consume(&self, job_progress: JobProgress);
 }
 
@@ -102,7 +102,7 @@ impl JobTrait for JobType {
         }
     }
 
-    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer) {
+    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn ProgressConsumer) {
         match self {
             JobType::Simple(job) => job.start(runner, consumer),
             JobType::Docker(job) => job.start(runner, consumer),
@@ -115,7 +115,7 @@ pub trait JobTrait {
     fn name(&self) -> &str;
     fn forward_env(&mut self, env: &HashMap<String, Vec<String>>);
     fn group(&self) -> Option<&str>;
-    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer);
+    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn ProgressConsumer);
 }
 
 #[derive(Debug, PartialEq)]

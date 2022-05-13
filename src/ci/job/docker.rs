@@ -1,6 +1,6 @@
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::CommandRunner;
-use crate::ci::job::{JobIntrospector, JobProgressConsumer, JobTrait, Progress};
+use crate::ci::job::{JobIntrospector, JobTrait, Progress, ProgressConsumer};
 use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -44,7 +44,7 @@ impl JobTrait for Docker {
         }
     }
 
-    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn JobProgressConsumer) {
+    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn ProgressConsumer) {
         if let Some(condition) = &self.skip_if {
             if runner.run(condition).succeeded() {
                 consumer.consume(JobProgress::new(&self.name, Progress::Skipped));

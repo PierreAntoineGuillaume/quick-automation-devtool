@@ -8,7 +8,7 @@ use crate::ci::display::{FinalDisplayMode, Running};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{CommandRunner, FinalCiDisplay, SystemFacade, UserFacade};
 use crate::ci::job::schedule::schedule;
-use crate::ci::job::{JobProgressConsumer, Output, SharedJob};
+use crate::ci::job::{Output, ProgressConsumer, SharedJob};
 use crate::config::{Config, ConfigPayload};
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
@@ -109,7 +109,7 @@ impl ParrallelJobStarter {
     }
 }
 
-impl JobProgressConsumer for Sender<JobProgress> {
+impl ProgressConsumer for Sender<JobProgress> {
     fn consume(&self, job_progress: JobProgress) {
         self.send(job_progress).unwrap()
     }
