@@ -30,7 +30,7 @@ impl EnvParser {
                             env_string[last_symbol_start..last_new_line]
                                 .to_string()
                                 .split('\n')
-                                .map(|str| str.to_string())
+                                .map(std::string::ToString::to_string)
                                 .collect(),
                         );
                     } else {
@@ -50,7 +50,7 @@ impl EnvParser {
                 env_string[last_symbol_start..pos]
                     .to_string()
                     .split('\n')
-                    .map(|str| str.to_string())
+                    .map(std::string::ToString::to_string)
                     .collect(),
             );
         }

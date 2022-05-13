@@ -143,11 +143,8 @@ impl<'a> App<'a> {
         let progress_items = collector
             .progresses
             .iter()
-            .flat_map(|progres| match progres {
-                Progress::Partial(_, Output::Success(out, err)) => {
-                    Some(format!("{}\n{}", out, err))
-                }
-                Progress::Partial(_, Output::JobError(out, err)) => {
+            .filter_map(|progres| match progres {
+                Progress::Partial(_, Output::Success(out, err) | Output::JobError(out, err)) => {
                     Some(format!("{}\n{}", out, err))
                 }
                 Progress::Partial(_, Output::ProcessError(err)) => Some(err.to_string()),

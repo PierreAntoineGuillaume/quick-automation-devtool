@@ -9,7 +9,11 @@ pub struct StatefulText {
 
 impl StatefulText {
     pub fn with_text(text: String) -> Self {
-        let lc = text.lines().count() as u16;
+        let lc: u16 = text
+            .lines()
+            .count()
+            .try_into()
+            .expect("lines should be small");
         Self {
             scroll: 0,
             text,

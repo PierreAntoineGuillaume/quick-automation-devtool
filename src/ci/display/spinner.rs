@@ -58,10 +58,12 @@ mod tests {
 
     #[test]
     pub fn spin() {
-        let strings = vec!["titi", "tutu", "toto", "tata"]
-            .iter()
-            .map(|str| str.to_string())
-            .collect();
+        let strings: Vec<String> = vec![
+            "titi".to_string(),
+            "tutu".to_string(),
+            "toto".to_string(),
+            "tata".to_string(),
+        ];
         let mut spinner = Spinner::new(&strings, 1);
 
         assert_eq!("titi", format!("{spinner}"));

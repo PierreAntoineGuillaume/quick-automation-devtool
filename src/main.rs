@@ -1,7 +1,6 @@
 #![deny(clippy::all)]
-#![deny(clippy::cast_precision_loss)]
-#![deny(clippy::module_name_repetitions)]
-#![deny(clippy::semicolon_if_nothing_returned)]
+#![deny(clippy::pedantic)]
+#![allow(clippy::unused_self)]
 
 mod ci;
 mod config;
@@ -44,7 +43,7 @@ fn main() {
     let config = Config::from(&envvar);
 
     match command {
-        Subcommands::Ci(arg) => match (Ci {}).run(config, CliOption { job: arg.nested }) {
+        Subcommands::Ci(arg) => match (Ci {}).run(&config, &CliOption { job: arg.nested }) {
             Ok(true) => {}
             Ok(false) => {
                 std::process::exit(1);
@@ -54,7 +53,7 @@ fn main() {
                 std::process::exit(2)
             }
         },
-        Subcommands::List(_) => match (Ci {}).list(config) {
+        Subcommands::List(_) => match (Ci {}).list(&config) {
             Ok(()) => {}
             Err(str) => {
                 eprintln!("{PACKAGE_NAME}: {}", str);

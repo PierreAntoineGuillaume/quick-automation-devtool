@@ -110,6 +110,7 @@ impl Iterator for ConstraintIterator {
 mod tests {
     use super::*;
     use crate::ci::job::dag::JobList;
+    #[allow(clippy::wildcard_imports)]
     use crate::ci::job::tests::*;
 
     pub fn complex_matrix() -> Result<ConstraintMatrix, Error> {
@@ -140,16 +141,16 @@ mod tests {
     #[test]
     pub fn list_all_blocking() {
         let pipeline = complex_matrix().unwrap();
-        let mut vec: Vec<String> = pipeline.blocking("deploy").collect();
+        let mut vec: Vec<String> = pipeline.blocking("deploy").collect::<Vec<String>>();
         vec.sort();
-        let list = JobList::from(vec);
+        let list = JobList::from(&vec);
         assert_eq!("[build1, build2, test1, test2]", format!("{}", list));
     }
 
     #[test]
     pub fn list_all_blocks() {
         let pipeline = complex_matrix().unwrap();
-        let list = JobList::from(pipeline.blocked_by("test1").collect());
+        let list = JobList::from(&pipeline.blocked_by("test1").collect::<Vec<String>>());
         assert_eq!("[deploy]", format!("{}", list));
     }
 }

@@ -62,7 +62,10 @@ impl<'a> TermWrapper<'a> {
             print!("{}", sub);
             self.written_chars += sub.len();
             if self.written_chars > termsize {
-                self.written_lines += (self.written_chars / termsize) as u16;
+                let size: u16 = (self.written_chars / termsize)
+                    .try_into()
+                    .expect("expected orders not in range");
+                self.written_lines += size;
                 self.written_chars %= termsize;
             }
             redo = true;

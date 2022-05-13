@@ -7,7 +7,7 @@ use crate::ci::job::{JobProgressTracker, Progress, Type};
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 
 pub fn schedule(
-    cli_option: CliOption,
+    cli_option: &CliOption,
     ci_config: Config,
     system_facade: &mut dyn SystemFacade,
     user_facade: &mut dyn UserFacade,
@@ -23,7 +23,7 @@ pub fn schedule(
             .jobs
             .iter()
             .cloned()
-            .map(|job| job.into())
+            .map(std::convert::Into::into)
             .collect::<Vec<Type>>()
     } else {
         let filter = cli_option.job.as_ref().unwrap();
@@ -33,7 +33,7 @@ pub fn schedule(
                 .iter()
                 .cloned()
                 .filter(|job| job.group.is_some() && group == job.group.as_ref().unwrap())
-                .map(|job| job.into())
+                .map(std::convert::Into::into)
                 .collect::<Vec<Type>>()
         } else {
             ci_config
@@ -41,7 +41,7 @@ pub fn schedule(
                 .iter()
                 .cloned()
                 .filter(|job| filter == &job.name)
-                .map(|job| job.into())
+                .map(std::convert::Into::into)
                 .collect::<Vec<Type>>()
         }
     };

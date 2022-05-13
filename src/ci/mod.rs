@@ -26,7 +26,7 @@ pub mod job;
 pub struct Ci {}
 
 impl Ci {
-    pub fn run(&mut self, config: Config, cli_option: CliOption) -> Result<bool> {
+    pub fn run(&mut self, config: &Config, cli_option: &CliOption) -> Result<bool> {
         let mut payload = Payload::default();
         config.load_with_args_into(&mut payload)?;
         let ci_config = payload.ci;
@@ -69,7 +69,7 @@ impl Ci {
         Ok(!tracker.has_failed)
     }
 
-    pub fn list(&mut self, config: Config) -> Result<()> {
+    pub fn list(&mut self, config: &Config) -> Result<()> {
         let mut payload = Payload::default();
         config.load_with_args_into(&mut payload)?;
         let ci_config = payload.ci;
@@ -83,7 +83,9 @@ impl Ci {
 
         jobs.sort();
 
-        jobs.iter().for_each(|name| println!("{}", name));
+        for name in jobs {
+            println!("{}", name);
+        }
         ci_config
             .groups
             .iter()

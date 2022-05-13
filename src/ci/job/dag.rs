@@ -115,7 +115,7 @@ pub struct JobList {
 }
 
 impl JobList {
-    pub fn from(vec: Vec<String>) -> Self {
+    pub fn from(vec: &[String]) -> Self {
         JobList {
             vec: vec.iter().rev().cloned().collect(),
         }
@@ -238,7 +238,7 @@ impl Dag {
                     job.to_arc(),
                     state,
                     blocking.collect(),
-                    JobList::from(blocked_by_jobs),
+                    JobList::from(&blocked_by_jobs),
                 ),
             );
         }
@@ -320,7 +320,7 @@ impl Dag {
     /// After being issued a job by `poll`
     /// inform the Dag of the result of the job `job`
     /// with `result` either:
-    /// JobResult::Failure or JobResult::Success
+    /// `JobResult::Failure` or `JobResult::Success`
     pub fn record_event(&mut self, job: &str, result: JobResult) {
         let job_went_wrong = matches!(result, JobResult::Failure);
 
@@ -377,11 +377,12 @@ impl Dag {
 
     fn actualize_job_list(&mut self) {
         self.available_jobs = JobList::from(
-            self.all_jobs
+            &self
+                .all_jobs
                 .values()
                 .filter(|job_watcher| matches!(job_watcher.state, JobState::Pending))
                 .map(|job_watcher| job_watcher.job.name().to_string())
-                .collect(),
+                .collect::<Vec<String>>(),
         );
     }
 

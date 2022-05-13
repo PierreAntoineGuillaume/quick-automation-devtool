@@ -68,8 +68,8 @@ impl Simple {
     ) -> Self {
         Self {
             name,
-            instructions,
             group,
+            instructions,
             skip_if,
         }
     }
