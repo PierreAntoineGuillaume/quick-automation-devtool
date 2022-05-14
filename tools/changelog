@@ -17,8 +17,10 @@ done
 
 mapfile -t commits < <(git log "$latest_tag..HEAD" --format="%s" --no-merges)
 
+{
 if [ "$format" == "web" ]; then
   printf -- "%s<br>" "${commits[@]}"
 else
   printf -- "%s\n" "${commits[@]}"
 fi
+} | grep -E '^(feat|fix|docs|perf|prune|ci)'
