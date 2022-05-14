@@ -68,11 +68,16 @@ impl Job for Docker {
                 Progress::Started(instruction.clone()),
             ));
 
-            let output = runner.run(&format!(
-                r#"{} {} {} {}"#,
-                DOCKER_RUN, env, self.image, instruction
-            ));
+            let mut docker_args = self.image.split(' ');
+            let image = docker_args.next().expect("there is at least an image");
+            let args = docker_args.collect::<Vec<&str>>().join(" ").to_string();
 
+            let command = format!(
+                r#"{} {} {} {} {}"#,
+                DOCKER_RUN, env, args, image, instruction
+            );
+
+            let output = runner.run(&command);
             success = output.succeeded();
             let partial = Progress::Partial(instruction.clone(), output);
             consumer.consume(JobProgress::new(&self.name, partial));
