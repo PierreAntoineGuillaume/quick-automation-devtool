@@ -27,7 +27,7 @@ pub fn parse_env_into_map<T: Into<String>>(env_string: T) -> HashMap<String, Vec
                         env_string[last_symbol_start..last_new_line]
                             .to_string()
                             .split('\n')
-                            .map(std::string::ToString::to_string)
+                            .map(ToString::to_string)
                             .collect(),
                     );
                 } else {
@@ -47,7 +47,7 @@ pub fn parse_env_into_map<T: Into<String>>(env_string: T) -> HashMap<String, Vec
             env_string[last_symbol_start..pos]
                 .to_string()
                 .split('\n')
-                .map(std::string::ToString::to_string)
+                .map(ToString::to_string)
                 .collect(),
         );
     }

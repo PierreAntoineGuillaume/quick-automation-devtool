@@ -23,7 +23,7 @@ pub fn schedule(
             .jobs
             .iter()
             .cloned()
-            .map(std::convert::Into::into)
+            .map(Into::into)
             .collect::<Vec<Type>>()
     } else {
         let filter = cli_option.job.as_ref().unwrap();
@@ -33,7 +33,7 @@ pub fn schedule(
                 .iter()
                 .cloned()
                 .filter(|job| job.group.is_some() && group == job.group.as_ref().unwrap())
-                .map(std::convert::Into::into)
+                .map(Into::into)
                 .collect::<Vec<Type>>()
         } else {
             ci_config
@@ -41,7 +41,7 @@ pub fn schedule(
                 .iter()
                 .cloned()
                 .filter(|job| filter == &job.name)
-                .map(std::convert::Into::into)
+                .map(Into::into)
                 .collect::<Vec<Type>>()
         }
     };
