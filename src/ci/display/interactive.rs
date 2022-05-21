@@ -81,14 +81,15 @@ fn finish_error(tracker: &JobProgressTracker) -> Result<()> {
 pub enum JobResult {
     Success,
     Failure,
+    Unknown,
 }
 
 impl From<&Progress> for JobResult {
     fn from(progress: &Progress) -> Self {
         match progress {
             Progress::Skipped | Progress::Terminated(true) => Self::Success,
-            Progress::Terminated(false) => Self::Failure,
-            _ => unreachable!("workflow of the program"),
+            Progress::Cancelled | Progress::Terminated(false) => Self::Failure,
+            _ => Self::Unknown,
         }
     }
 }
@@ -242,7 +243,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .map(|(result, item)| {
             ListItem::new(Span::from(item.to_string())).style(Style::default().fg(match result {
                 JobResult::Success => Color::Green,
-                JobResult::Failure => Color::Red,
+                JobResult::Failure | JobResult::Unknown => Color::Red,
             }))
         })
         .collect();
