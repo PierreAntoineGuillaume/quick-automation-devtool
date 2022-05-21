@@ -1,7 +1,7 @@
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::ports::FinalCiDisplay;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -51,6 +51,10 @@ impl FinalCiDisplay for Interactive {
 }
 
 fn finish_error(tracker: &JobProgressTracker) -> Result<()> {
+    if tracker.states.is_empty() {
+        return Err(anyhow!("No jobs to display"));
+    }
+
     // setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -60,6 +64,7 @@ fn finish_error(tracker: &JobProgressTracker) -> Result<()> {
 
     // create app and run it
     let tick_rate = Duration::from_millis(250);
+
     let res = run_app(&mut terminal, App::from(tracker), tick_rate);
 
     // restore terminal
