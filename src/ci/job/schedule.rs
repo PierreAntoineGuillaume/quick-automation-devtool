@@ -170,17 +170,16 @@ mod tests {
     }
 
     pub struct TestJobRunner {}
-
     impl CommandRunner for TestJobRunner {
         fn run(&self, job: &str) -> Output {
             // clippy::option_if_let_else makes a bad suggestion
             // https://github.com/rust-lang/rust-clippy/issues/8829
             if let Some(stripped) = job.strip_prefix("ok:") {
-                Output::Success(stripped.into(), "".into())
+                Output::Success(stripped.to_string(), String::new())
             } else if let Some(stripped) = job.strip_prefix("ko:") {
-                Output::JobError(stripped.into(), "".into())
+                Output::JobError(stripped.to_string(), String::new())
             } else if let Some(stripped) = job.strip_prefix("crash:") {
-                Output::ProcessError(stripped.into())
+                Output::ProcessError(stripped.to_string())
             } else {
                 panic!(
                     "Job should begin with ok:, ko, or crash: (actual: '{}')",
