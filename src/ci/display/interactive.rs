@@ -136,15 +136,19 @@ impl<'a> App<'a> {
     }
 
     fn selected_text(&self) -> String {
-        let selected = self.items.state.selected().expect("selected by default");
+        let selected = self
+            .items
+            .state
+            .selected()
+            .or(Some(0))
+            .expect("has fallback");
 
-        let collector = self
-            .tracker
-            .states
-            .iter()
-            .nth(selected)
-            .expect("Only interested in nth job")
-            .1;
+        let collector = match self.tracker.states.iter().nth(selected) {
+            Some(item) => item.1,
+            None => {
+                return String::new();
+            }
+        };
 
         let progress_items = collector
             .progresses
