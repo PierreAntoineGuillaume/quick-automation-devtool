@@ -16,7 +16,7 @@ impl Migrate {
         Self { config }
     }
 
-    pub fn to0y(&self) -> Result<Migration> {
+    pub fn to1(&self) -> Result<Migration> {
         let mut payload = Payload::default();
         self.config.load_into(&mut payload)?;
         Ok(Migration::Version1(Version1::from(payload)))

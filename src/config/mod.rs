@@ -55,7 +55,7 @@ pub struct Version {
 }
 
 pub struct Config {
-    possible_files: Vec<String>,
+    candidates: Vec<String>,
 }
 
 #[derive(Default)]
@@ -70,7 +70,6 @@ pub trait Loader {
 }
 
 pub trait FormatParser {
-    fn supports(&self, filename: &str) -> bool;
     fn version(&self, text: &str) -> Result<Version, String>;
     fn version0x(&self, text: &str) -> Result<Box<dyn Loader>, String>;
     fn version1(&self, text: &str) -> Result<Box<dyn Loader>, String>;
@@ -86,7 +85,7 @@ pub const LATEST: &str = "1.0";
 impl Config {
     pub fn get_first_available_config_file(&self) -> Result<String> {
         let mut filename = None;
-        for file in &self.possible_files {
+        for file in &self.candidates {
             if Path::new(file).exists() {
                 filename = Some(file.clone());
                 break;
@@ -96,18 +95,24 @@ impl Config {
         filename.ok_or_else(|| {
             AnyError::msg(format!(
                 "no config file could be found (looked in files {:?})",
-                self.possible_files
+                self.candidates
             ))
         })
     }
 
     pub fn from(env: &str) -> Self {
-        let possible_files: Vec<String> = ["yaml", "yml", "yaml.dist", "yml.dist"]
+        let candidates: Vec<String> = ["yaml", "yml", "yaml.dist", "yml.dist"]
             .iter()
             .map(|str| format!("{}.{}", env, str))
             .collect();
 
-        Self { possible_files }
+        Self { candidates }
+    }
+
+    pub fn from_name(env: &str) -> Self {
+        Self {
+            candidates: vec![env.to_string()],
+        }
     }
 
     pub fn load_into(&self, config: &mut Payload) -> Result<()> {
@@ -116,8 +121,8 @@ impl Config {
         let content = fs::read_to_string(&filename)
             .map_err(|error| AnyError::msg(Error::Parse(error.to_string()).explain(&filename)))?;
 
-        let loader = Self::parse(&filename, &content)
-            .map_err(|error| AnyError::msg(error.explain(&filename)))?;
+        let loader =
+            Self::parse(&content).map_err(|error| AnyError::msg(error.explain(&filename)))?;
         loader.load(config);
         Ok(())
     }
@@ -127,20 +132,8 @@ impl Config {
         Ok(())
     }
 
-    pub fn get_parser(filename: &str) -> Option<Box<dyn FormatParser>> {
-        let parsers = [YamlParser::boxed()];
-        for parser in parsers {
-            if !parser.supports(filename) {
-                continue;
-            }
-            return Some(parser);
-        }
-        None
-    }
-
-    pub fn parse(filename: &str, content: &str) -> Result<Box<dyn Loader>, Error> {
-        let parser = Self::get_parser(filename)
-            .expect("This could not be reached, else no content would be provided in parse");
+    pub fn parse(content: &str) -> Result<Box<dyn Loader>, Error> {
+        let parser = YamlParser {};
         let version = parser
             .version(content)
             .map_err(|why| Error::NoVersion(LATEST, why))?;

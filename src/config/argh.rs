@@ -8,6 +8,13 @@ pub struct Args {
 
     #[argh(subcommand)]
     pub nested: Option<Subcommands>,
+
+    #[argh(
+        option,
+        short = 'f',
+        description = "specify an alternate qad config file"
+    )]
+    pub file: Option<String>,
 }
 
 #[derive(FromArgs, Eq, PartialEq, Debug)]

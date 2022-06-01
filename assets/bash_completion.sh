@@ -12,7 +12,7 @@ _qad() {
       mapfile -t COMPREPLY < <(compgen -W "ci" -- "${cur}")
       return 0
     fi
-    mapfile -t COMPREPLY < <(compgen -W "autocomplete ci config list --version --help" -- "${cur}")
+    mapfile -t COMPREPLY < <(compgen -W "autocomplete ci config list --version --help --file" -- "${cur}")
     return 0
   fi
   COMPREPLY=()
@@ -29,6 +29,10 @@ _qad() {
       fi
       mapfile -t COMPREPLY < <(compgen -W "--help ${jobs[*]}" -- "${cur}")
       return 0
+    fi
+    if [ "$prev" == -f ] || [ "$prev" == "--file" ]; then
+      # todo find how to
+      :
     fi
     return 0
   fi

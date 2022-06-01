@@ -42,7 +42,11 @@ fn main() {
         .or_else::<String, _>(|_| Ok(String::from(PACKAGE_NAME)))
         .unwrap();
 
-    let config = Config::from(&envvar);
+    let config = if let Some(name) = args.file {
+        Config::from_name(&name)
+    } else {
+        Config::from(&envvar)
+    };
 
     match command {
         Subcommands::Ci(arg) => match Ci::run(&config, &CliOption { job: arg.nested }) {
@@ -83,7 +87,7 @@ fn main() {
                 } else {
                     let migrate = Migrate::new(config);
                     let migration = match version.to {
-                        MigrateToSubCommands::V1(_) => migrate.to0y(),
+                        MigrateToSubCommands::V1(_) => migrate.to1(),
                     };
                     if migration.is_err() {
                         eprintln!("{PACKAGE_NAME}: {}", migration.unwrap_err());

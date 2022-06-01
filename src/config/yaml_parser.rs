@@ -1,22 +1,11 @@
 use crate::config::versions::version_0x::Version0x;
 use crate::config::versions::version_1::Version1;
 use crate::config::{FormatParser, Loader, Version};
-use regex::Regex;
 
 #[derive(Default)]
 pub struct YamlParser {}
 
-impl YamlParser {
-    pub fn boxed() -> Box<dyn FormatParser> {
-        Box::new(Self {})
-    }
-}
-
 impl FormatParser for YamlParser {
-    fn supports(&self, filename: &str) -> bool {
-        Regex::new(r"\.ya?ml(\.dist)?$").unwrap().is_match(filename)
-    }
-
     fn version(&self, text: &str) -> Result<Version, String> {
         serde_yaml::from_str::<Version>(text).map_err(|why| why.to_string())
     }
