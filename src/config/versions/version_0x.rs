@@ -37,7 +37,7 @@ impl Loader for Version0x {
                 name,
                 script: instruction,
                 image: None,
-                group: None,
+                group: vec![],
                 skip_if: None,
             });
         }

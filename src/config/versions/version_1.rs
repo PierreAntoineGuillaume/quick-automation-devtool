@@ -122,7 +122,7 @@ impl Loader for Version1 {
                 name,
                 script: full_desc.script,
                 image: full_desc.image,
-                group: full_desc.group,
+                group: full_desc.group.iter().cloned().collect::<Vec<String>>(),
                 skip_if: full_desc.skip_if,
             });
         }
@@ -229,12 +229,17 @@ impl Version1 {
             .iter()
             .cloned()
             .map(|job| {
+                let group = if job.group.is_empty() {
+                    None
+                } else {
+                    Some(job.group[0].to_string())
+                };
                 (
                     job.name,
                     FullJobDesc {
                         script: job.script,
                         image: job.image,
-                        group: job.group,
+                        group,
                         skip_if: job.skip_if,
                     },
                 )

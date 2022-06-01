@@ -32,7 +32,7 @@ pub fn schedule(
                 .jobs
                 .iter()
                 .cloned()
-                .filter(|job| job.group.is_some() && group == job.group.as_ref().unwrap())
+                .filter(|job| !job.group.is_empty() && group == job.group[0])
                 .map(Into::into)
                 .collect::<Vec<Type>>()
         } else {

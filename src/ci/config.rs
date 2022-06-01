@@ -7,7 +7,7 @@ pub struct JobDesc {
     pub name: String,
     pub script: Vec<String>,
     pub image: Option<String>,
-    pub group: Option<String>,
+    pub group: Vec<String>,
     pub skip_if: Option<String>,
 }
 
@@ -17,14 +17,14 @@ impl From<JobDesc> for Type {
             None => Self::Simple(Simple::long(
                 desc.name,
                 desc.script,
-                desc.group,
+                desc.group.get(0).cloned(),
                 desc.skip_if,
             )),
             Some(image) => Self::Docker(Docker::long(
                 desc.name,
                 desc.script,
                 image,
-                desc.group,
+                desc.group.get(0).cloned(),
                 desc.skip_if,
             )),
         }
