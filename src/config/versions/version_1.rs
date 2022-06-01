@@ -6,7 +6,7 @@ use crate::config::{Loader, Payload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct FullJobDesc {
     script: Vec<String>,
     image: Option<String>,
@@ -16,7 +16,7 @@ pub struct FullJobDesc {
 
 pub type JobSet = HashMap<String, FullJobDesc>;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Constraints {
     blocks: Option<HashMap<String, Vec<String>>>,
     needs: Option<HashMap<String, Vec<String>>>,
@@ -33,13 +33,13 @@ fn from_vec(constraints: &[(String, String)]) -> Constraints {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 struct Spinner {
     frames: Vec<String>,
     per_frames: usize,
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum DisplayMode {
     Silent,
@@ -67,7 +67,7 @@ impl From<RunningDisplay> for DisplayMode {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum FinalDisplay {
     Full,
@@ -94,7 +94,7 @@ impl From<FinalDisplay> for FinalDisplayMode {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 struct Display {
     mode: Option<DisplayMode>,
     #[serde(rename = "final")]
@@ -105,7 +105,7 @@ struct Display {
     spinner: Option<Spinner>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Version1 {
     version: String,
     jobs: JobSet,

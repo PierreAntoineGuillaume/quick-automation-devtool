@@ -1,6 +1,6 @@
 use argh::FromArgs;
 
-#[derive(FromArgs, PartialEq, Debug)]
+#[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(description = "A tool to help with testing, and dev-related tasks")]
 pub struct Args {
     #[argh(switch, description = "show the executable version")]
@@ -10,7 +10,7 @@ pub struct Args {
     pub nested: Option<Subcommands>,
 }
 
-#[derive(FromArgs, PartialEq, Debug)]
+#[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(subcommand)]
 pub enum Subcommands {
     Ci(CiArgs),
@@ -19,18 +19,18 @@ pub enum Subcommands {
     Config(ConfigArgs),
 }
 
-#[derive(FromArgs, PartialEq, Debug)]
+#[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(subcommand, name = "ci", description = "play the ci")]
 pub struct CiArgs {
     #[argh(positional, description = "an optionnal job or group to run")]
     pub nested: Option<String>,
 }
 
-#[derive(FromArgs, PartialEq, Debug)]
+#[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(subcommand, name = "list", description = "list jobs")]
 pub struct ListArgs {}
 
-#[derive(FromArgs, PartialEq, Debug)]
+#[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(
     subcommand,
     name = "autocomplete",
@@ -38,7 +38,7 @@ pub struct ListArgs {}
 )]
 pub struct AutocompleteArgs {}
 
-#[derive(FromArgs, PartialEq, Debug)]
+#[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(
     subcommand,
     name = "config",
@@ -49,13 +49,13 @@ pub struct ConfigArgs {
     pub command: ConfigSubcommands,
 }
 
-#[derive(FromArgs, PartialEq, Debug)]
+#[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(subcommand)]
 pub enum ConfigSubcommands {
     Migrate(MigrateArgs),
 }
 
-#[derive(FromArgs, PartialEq, Debug)]
+#[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(
     subcommand,
     name = "migrate",
@@ -66,12 +66,12 @@ pub struct MigrateArgs {
     pub to: MigrateToSubCommands,
 }
 
-#[derive(FromArgs, PartialEq, Debug)]
+#[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(subcommand)]
 pub enum MigrateToSubCommands {
     V1(V1Args),
 }
 
-#[derive(FromArgs, PartialEq, Debug)]
+#[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(subcommand, name = "1", description = "migrate config to version 1")]
 pub struct V1Args {}

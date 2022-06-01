@@ -6,20 +6,20 @@ use std::collections::HashMap;
 pub type JobSet = HashMap<String, Vec<String>>;
 pub type Constraints = HashMap<String, Vec<String>>;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 struct CiSpinner {
     frames: Vec<String>,
     per_frames: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 struct CiIcons {
     ok: Option<String>,
     ko: Option<String>,
     cancelled: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Version0x {
     version: String,
     jobs: JobSet,

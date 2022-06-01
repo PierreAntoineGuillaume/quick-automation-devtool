@@ -62,13 +62,13 @@ impl Display for Error {
 
 impl std::error::Error for Error {}
 
-#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialOrd, Ord, Eq, PartialEq)]
 pub enum JobResult {
     Success,
     Failure,
 }
 
-#[derive(Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Clone, PartialOrd, Ord, Eq, PartialEq)]
 pub enum JobState {
     Pending,
     Started,

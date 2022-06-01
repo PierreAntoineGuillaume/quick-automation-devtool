@@ -17,7 +17,7 @@ use crate::ci::job::simple::Simple;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Output {
     Success(String, String),
     JobError(String, String),
@@ -114,7 +114,7 @@ pub trait Job {
     fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn ProgressConsumer);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Progress {
     Available,
     Blocked(Vec<String>),

@@ -3,7 +3,7 @@ use crate::ci::job::ports::CommandRunner;
 use crate::ci::job::{Introspector, Job, Progress, ProgressConsumer};
 use std::collections::HashMap;
 
-#[derive(PartialEq, Eq, Hash, Debug, Clone)]
+#[derive(Eq, PartialEq, Hash, Debug, Clone)]
 pub struct Docker {
     name: String,
     group: Option<String>,

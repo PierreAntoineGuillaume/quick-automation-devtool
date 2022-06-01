@@ -49,7 +49,7 @@ impl Error {
     }
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct Version {
     pub version: String,
 }
