@@ -1,0 +1,28 @@
+version: "1.0"
+jobs:
+  list:
+    script: [ echo $CHANGED_FILES ]
+  lint:
+    script: [ cargo fmt -- $SRC_CHANGED_RS_FILES ]
+    skip_if: test -z "$SRC_CHANGED_RS_FILES"
+env: |
+  set -euo pipefail
+  CURRENT_BRANCH=$(git branch --show-current)
+  CI_MERGE_REQUEST_TARGET_BRANCH_NAME=$(case "$CURRENT_BRANCH" in hotfix/*|main) echo origin/main ;; *) echo origin/develop ;; esac)
+  LAST_COMMON_COMMIT=$(git merge-base "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" "$(git branch --show-current)")
+  CHANGED_FILES=$(awk '$1 ~ /^(R|A|M|\?\?)/ { print $NF }' <(git diff --name-status $LAST_COMMON_COMMIT) <(git status --short | grep '??'))
+  SRC_CHANGED_RS_FILES="$(awk '$1 ~ /.rs/ { print $1 }' <<<$CHANGED_FILES)"
+
+explanation: |
+  In this file, we use extended bash one-liners to get a lot of info from git :
+  First we get the current branch name into the CURRENT_BRANCH variable
+  Next, we check against what branch we would like to make the diff against : 
+  In this example, we suppose the remotes works with a branching strategy, and features from develop
+  and hotfixs from main.
+  And then, we check what branch we are in to compare with either origin/develop or origin/main into variable CI_MERGE_REQUEST_TARGET_BRANCH_NAME.
+  Then, we get the last common commit between current branch and $CI_MERGE_REQUEST_TARGET_BRANCH_NAME into LAST_COMMON_COMMIT.
+  And from the LAST_COMMON_COMMIT, we list files that have changed either in commits or in stage / unstaged ; and fill that into CHANGED_FILES.
+  Afterward, we list only the .rs files into SRC_CHANGED_RS_FILES.
+  The job «list» shows how to use a variable inside a script section ; though the value of the string is stripped of new-lines.
+  The job «lint» shows how to use conditionnals : if the expression evaluated runs correctly (exits 0) then the job is skipped.
+  
