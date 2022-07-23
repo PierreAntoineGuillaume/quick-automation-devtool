@@ -33,7 +33,7 @@ build:
     <<: *global_cache
     policy: pull-push
 
-build-deb:
+build-packages:
   stage: build
   image: rust:latest
   needs:
@@ -41,14 +41,16 @@ build-deb:
   rules:
     - if: $CI_COMMIT_TAG
   before_script:
-    - cargo install cargo-deb
+    - cargo install cargo-deb cargo-generate-rpm
     - rustup target add x86_64-unknown-linux-musl
   script:
     - bin/qad autocomplete > /tmp/qad.bash
     - cargo deb --target x86_64-unknown-linux-musl --output target/release/${PACKAGE_NAME}.deb
+    - cargo generate-rpm --output target/release/${PACKAGE_NAME}.rpm
   artifacts:
     paths:
       - target/release/${PACKAGE_NAME}.deb
+      - target/release/${PACKAGE_NAME}.rpm
 
 clippy:
   image: rustlang/rust:nightly
@@ -87,13 +89,14 @@ upload binary:
   stage: publish
   needs:
     - build
-    - build-deb
+    - build-packages
   image: curlimages/curl:latest
   rules:
     - if: $CI_COMMIT_TAG
   script:
     - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file bin/${PACKAGE_NAME} ${PACKAGE_REGISTRY_URL}'
     - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file target/release/${PACKAGE_NAME}.deb ${PACKAGE_REGISTRY_URL}.deb'
+    - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file target/release/${PACKAGE_NAME}.rpm ${PACKAGE_REGISTRY_URL}.rpm'
 
 changelog:
   stage: publish
@@ -130,4 +133,7 @@ release:
           link_type: other
         - name: '${PACKAGE_NAME}-${CI_COMMIT_TAG}.deb'
           url: "${PACKAGE_REGISTRY_URL}.deb"
+          link_type: package
+        - name: '${PACKAGE_NAME}-${CI_COMMIT_TAG}.rpm'
+          url: "${PACKAGE_REGISTRY_URL}.rpm"
           link_type: package

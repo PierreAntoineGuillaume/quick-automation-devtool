@@ -34,3 +34,10 @@ assets = [
   ["README.md", "usr/share/doc/qad/README", "644"],
   ["/tmp/qad.bash", "usr/share/bash-completion/completions/qad", "644"],
 ]
+[package.metadata.generate-rpm]
+assets = [
+  { source = "target/release/qad", dest = "/usr/bin/qad", mode = "755" },
+  { source = "LICENSE", dest = "/usr/share/doc/qad/LICENSE", mode = "644", doc = true },
+  { source = "README.md", dest = "/usr/share/doc/qad/README.md", mode = "644", doc = true },
+  { source = "/tmp/qad.bash", dest = "/usr/share/bash-completion/completions/qad", mode = "644" },
+]
