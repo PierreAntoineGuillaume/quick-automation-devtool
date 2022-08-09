@@ -17,14 +17,13 @@ repository = "https://gitlab.com/pag-station/quick-automation-devtool"
 anyhow = "1.0.56"
 argh = "0.1.4"
 atty = "0.2.11"
-crossterm = "0.23.2"
+crossterm = "0.24.0"
 indexmap = "1.8.0"
 regex = "1.5.4"
 serde = { version = "1", features = ["derive"] }
-serde_yaml = "0.8.23"
-terminal_size = "0.1.17"
+serde_yaml = "0.9.4"
+terminal_size = "0.2.1"
 tui = "0.18"
-yaml-rust = "0.4.5"
 
 [package.metadata.deb]
 section = "devel"
