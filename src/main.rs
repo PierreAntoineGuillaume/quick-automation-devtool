@@ -3,6 +3,7 @@
 #![deny(clippy::nursery)]
 #![allow(clippy::use_self)]
 #![allow(clippy::option_if_let_else)]
+#![allow(clippy::default_trait_access)]
 
 mod ci;
 mod config;
