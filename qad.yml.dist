@@ -2,12 +2,15 @@ version: "1.0"
 jobs:
   fmt:
     script: [ cargo fmt ]
+    docker: rustlang/rust:nightly
     group: fmt
   clippy:
     script: [ cargo clippy --tests --color always ]
+    docker: rustlang/rust:nightly
     group: test
   tests:
     script: [ cargo test --color always ]
+    docker: rustlang/rust:nightly
     group: test
 groups:
   - fmt
