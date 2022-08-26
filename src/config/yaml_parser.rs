@@ -1,4 +1,3 @@
-use crate::config::versions::version_0x::Version0x;
 use crate::config::versions::version_1::Version1;
 use crate::config::{FormatParser, Loader, Version};
 
@@ -8,12 +7,6 @@ pub struct YamlParser {}
 impl FormatParser for YamlParser {
     fn version(&self, text: &str) -> Result<Version, String> {
         serde_yaml::from_str::<Version>(text).map_err(|why| why.to_string())
-    }
-
-    fn version0x(&self, text: &str) -> Result<Box<dyn Loader>, String> {
-        Ok(Box::new(
-            serde_yaml::from_str::<Version0x>(text).map_err(|error| error.to_string())?,
-        ))
     }
 
     fn version1(&self, text: &str) -> Result<Box<dyn Loader>, String> {

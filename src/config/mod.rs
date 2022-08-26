@@ -71,7 +71,6 @@ pub trait Loader {
 
 pub trait FormatParser {
     fn version(&self, text: &str) -> Result<Version, String>;
-    fn version0x(&self, text: &str) -> Result<Box<dyn Loader>, String>;
     fn version1(&self, text: &str) -> Result<Box<dyn Loader>, String>;
     fn latest_with_warning(
         &self,
@@ -154,7 +153,6 @@ impl Config {
                 .as_str(),
             version_numbers.get(2).map(|item| item.as_str()),
         ) {
-            ("0", _) => parser.version0x(content),
             ("1", None | Some("0")) => parser.version1(content),
             ("1", Some(_)) => parser.latest_with_warning(content, version.version.as_str()),
             _ => return Err(Error::BadVersion(version.version, LATEST)),
