@@ -63,7 +63,7 @@ lint-commits:
   rules:
     - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
   script:
-    - npm install -g commitlint
+    - npm install -g @commitlint/config-conventional @commitlint/cli
     - commitlint --from=$CI_MERGE_REQUEST_DIFF_BASE_SHA --to=$CI_COMMIT_SHORT_SHA
 
 fmt:
