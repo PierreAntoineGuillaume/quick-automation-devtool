@@ -12,7 +12,7 @@ _qad() {
       mapfile -t COMPREPLY < <(compgen -W "ci" -- "${cur}")
       return 0
     fi
-    mapfile -t COMPREPLY < <(compgen -W "autocomplete ci config list --version --help --file" -- "${cur}")
+    mapfile -t COMPREPLY < <(compgen -W "autocomplete ci config list has-ci --version --help --file" -- "${cur}")
     return 0
   fi
   COMPREPLY=()

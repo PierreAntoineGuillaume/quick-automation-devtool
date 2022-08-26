@@ -92,7 +92,7 @@ fn main() {
                     };
                     if migration.is_err() {
                         eprintln!("{PACKAGE_NAME}: {}", migration.unwrap_err());
-                        std::process::exit(1)
+                        std::process::exit(1);
                     }
 
                     let serialization = Migrate::yaml(migration.unwrap());
@@ -100,6 +100,11 @@ fn main() {
                 }
             }
         },
+        Subcommands::HasCi(_) => {
+            if config.get_first_available_config_file().is_err() {
+                std::process::exit(1);
+            }
+        }
     }
 }
 

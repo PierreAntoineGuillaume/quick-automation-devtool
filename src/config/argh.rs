@@ -24,6 +24,7 @@ pub enum Subcommands {
     List(ListArgs),
     Autocomplete(AutocompleteArgs),
     Config(ConfigArgs),
+    HasCi(HasCiArgs),
 }
 
 #[derive(FromArgs, Eq, PartialEq, Debug)]
@@ -82,3 +83,11 @@ pub enum MigrateToSubCommands {
 #[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(subcommand, name = "1", description = "migrate config to version 1")]
 pub struct V1Args {}
+
+#[derive(FromArgs, Eq, PartialEq, Debug)]
+#[argh(
+    subcommand,
+    name = "has-ci",
+    description = "checks whether current folder has qad file- or fails"
+)]
+pub struct HasCiArgs {}
