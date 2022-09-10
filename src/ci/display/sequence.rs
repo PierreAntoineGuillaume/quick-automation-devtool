@@ -50,11 +50,15 @@ impl<'a> Display<'a> {
             Progress::Available => {
                 self.term.write("not started yet");
             }
-            Progress::Terminated(true) => {
-                self.term.write(&format!(" {}", self.config.ok));
-            }
-            Progress::Terminated(false) => {
-                self.term.write(&format!(" {}", self.config.ko));
+            Progress::Terminated(state) => {
+                self.term.write(&format!(
+                    " {}",
+                    if *state {
+                        &self.config.ok
+                    } else {
+                        &self.config.ko
+                    }
+                ));
             }
             Progress::Partial(_, _) => {
                 self.term.write(&format!(" {}", self.spin));
