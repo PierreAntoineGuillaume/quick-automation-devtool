@@ -1,6 +1,6 @@
 [package]
 name = "qad"
-version = "1.4.2"
+version = "1.4.3"
 edition = "2021"
 description = """
 Quick Automation Devtool (qad) is your companion for doing more, quicker,
@@ -12,18 +12,6 @@ license = "MIT"
 documentation = "https://gitlab.com/pag-station/quick-automation-devtool"
 homepage = "https://gitlab.com/pag-station/quick-automation-devtool"
 repository = "https://gitlab.com/pag-station/quick-automation-devtool"
-
-[dependencies]
-anyhow = "1.0.56"
-argh = "0.1.4"
-atty = "0.2.11"
-crossterm = "0.25"
-indexmap = "1.8.0"
-regex = "1.5.4"
-serde = { version = "1", features = ["derive"] }
-serde_yaml = "0.9.4"
-terminal_size = "0.2.1"
-tui = "0.19"
 
 [package.metadata.deb]
 section = "devel"
@@ -40,3 +28,15 @@ assets = [
   { source = "README.md", dest = "/usr/share/doc/qad/README.md", mode = "644", doc = true },
   { source = "/tmp/qad.bash", dest = "/usr/share/bash-completion/completions/qad", mode = "644" },
 ]
+
+[dependencies]
+anyhow = "1.0.56"
+argh = "0.1.4"
+atty = "0.2.11"
+crossterm = "0.25"
+indexmap = "1.8.0"
+regex = "1.5.4"
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9.4"
+terminal_size = "0.2.1"
+tui = "0.19"
