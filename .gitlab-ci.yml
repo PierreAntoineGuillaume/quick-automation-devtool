@@ -54,6 +54,9 @@ build-packages:
 
 clippy:
   image: rustlang/rust:nightly
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
   script:
     - cargo clippy --tests --color=always
 
@@ -68,20 +71,32 @@ lint-commits:
 
 fmt:
   image: rustlang/rust:nightly
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
   script:
     - cargo fmt --check
 
 rust-nightly:
   image: rustlang/rust:nightly
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
   script:
     - cargo test -- --color=always
 
 shellcheck:
   image: koalaman/shellcheck-alpine:stable
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
   script: find -name '*.sh' -not -path '*/.*' -not -path '*/target/*' -type f -exec shellcheck {} '+'
 
 test-autocomplete:
   image: bash
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
   script:
     - tools/bash-unit-tests.sh
 
