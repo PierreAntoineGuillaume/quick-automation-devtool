@@ -149,7 +149,7 @@ mod tests {
 
     impl CommandRunner for TestJobStarter {
         fn run(&self, _: &str) -> Output {
-            Output::Success("".to_string(), "".to_string())
+            Output::Success(String::new(), String::new())
         }
     }
 
@@ -165,7 +165,7 @@ mod tests {
         fn write_env(&self, _: HashMap<String, Vec<String>>) {}
 
         fn read_env(&self, _: &str, _: Option<&str>) -> anyhow::Result<String> {
-            Ok("".to_string())
+            Ok(String::new())
         }
     }
 

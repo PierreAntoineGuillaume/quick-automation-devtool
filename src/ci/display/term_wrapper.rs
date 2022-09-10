@@ -26,7 +26,7 @@ impl<'a> TermWrapper<'a> {
         let mut term_seq = vec![27, b'['];
 
         term_seq.extend(self.written_lines.to_string().into_bytes());
-        term_seq.extend(&[b'A']);
+        term_seq.extend([b'A']);
 
         self.write.write_all(&term_seq).unwrap();
         self.written_lines = 0;
