@@ -7,7 +7,6 @@ build-packages:
   rules:
     - if: $CI_COMMIT_TAG
   before_script:
-    - cargo install cargo-deb cargo-generate-rpm
     - rustup target add x86_64-unknown-linux-musl
   script:
     - bin/qad autocomplete > /tmp/qad.bash

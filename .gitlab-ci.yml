@@ -22,6 +22,7 @@ build:
   image: rust:latest
   stage: release
   script:
+    - cargo install cargo-deb cargo-generate-rpm cargo-bump
     - cargo build --release
     - test "$CI_COMMIT_TAG" == "$(target/release/${PACKAGE_NAME} --version)"
     - mkdir bin
