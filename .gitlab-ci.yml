@@ -3,10 +3,12 @@ variables:
   CARGO_HOME: "$CI_PROJECT_DIR/.cargo"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_NAME}/${CI_COMMIT_TAG}/${PACKAGE_NAME}"
 
+include:
+  - local: '/cicd/test.gitlab-ci.yml'
+  - local: '/cicd/release.gitlab-ci.yml'
+
 stages:
-  - build
   - test
-  - publish
   - release
 
 cache: &global_cache
@@ -18,7 +20,7 @@ cache: &global_cache
 
 build:
   image: rust:latest
-  stage: build
+  stage: release
   script:
     - cargo build --release
     - test "$CI_COMMIT_TAG" == "$(target/release/${PACKAGE_NAME} --version)"
@@ -32,123 +34,3 @@ build:
   cache:
     <<: *global_cache
     policy: pull-push
-
-build-packages:
-  stage: build
-  image: rust:latest
-  needs:
-    - build
-  rules:
-    - if: $CI_COMMIT_TAG
-  before_script:
-    - cargo install cargo-deb cargo-generate-rpm
-    - rustup target add x86_64-unknown-linux-musl
-  script:
-    - bin/qad autocomplete > /tmp/qad.bash
-    - cargo deb --target x86_64-unknown-linux-musl --output target/release/${PACKAGE_NAME}.deb
-    - cargo generate-rpm --output target/release/${PACKAGE_NAME}.rpm
-  artifacts:
-    paths:
-      - target/release/${PACKAGE_NAME}.deb
-      - target/release/${PACKAGE_NAME}.rpm
-
-clippy:
-  image: rustlang/rust:nightly
-  rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
-  script:
-    - cargo clippy --tests --color=always
-
-lint-commits:
-  image: node
-  cache: []
-  rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
-  script:
-    - npm install -g @commitlint/config-conventional @commitlint/cli
-    - commitlint --from=$CI_MERGE_REQUEST_DIFF_BASE_SHA --to=$CI_COMMIT_SHORT_SHA
-
-fmt:
-  image: rustlang/rust:nightly
-  rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
-  script:
-    - cargo fmt --check
-
-rust-nightly:
-  image: rustlang/rust:nightly
-  rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
-  script:
-    - cargo test -- --color=always
-
-shellcheck:
-  image: koalaman/shellcheck-alpine:stable
-  rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
-  script: find -name '*.sh' -not -path '*/.*' -not -path '*/target/*' -type f -exec shellcheck {} '+'
-
-test-autocomplete:
-  image: bash
-  rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
-  script:
-    - tools/bash-unit-tests.sh
-
-upload binary:
-  stage: publish
-  needs:
-    - build
-    - build-packages
-  image: curlimages/curl:latest
-  rules:
-    - if: $CI_COMMIT_TAG
-  script:
-    - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file bin/${PACKAGE_NAME} ${PACKAGE_REGISTRY_URL}'
-    - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file target/release/${PACKAGE_NAME}.deb ${PACKAGE_REGISTRY_URL}.deb'
-    - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file target/release/${PACKAGE_NAME}.rpm ${PACKAGE_REGISTRY_URL}.rpm'
-
-changelog:
-  stage: publish
-  image: alpine
-  rules:
-    - if: $CI_COMMIT_TAG
-  script:
-    - apk add bash git
-    - printf 'CHANGELOG=%s\n' "$(./tools/changelog --format web)" > description.env
-  artifacts:
-    reports:
-      dotenv: description.env
-
-release:
-  stage: release
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
-  needs:
-    - upload binary
-    - changelog
-  rules:
-    - if: $CI_COMMIT_TAG
-  script:
-    - echo "releasing ${PACKAGE_NAME}..."
-    - echo $CHANGELOG
-  release:
-    name: 'Release $CI_COMMIT_TAG'
-    description: '$CHANGELOG'
-    tag_name: '$CI_COMMIT_TAG'
-    ref: '$CI_COMMIT_TAG'
-    assets:
-      links:
-        - name: '${PACKAGE_NAME}-${CI_COMMIT_TAG}'
-          url: "${PACKAGE_REGISTRY_URL}"
-          link_type: other
-        - name: '${PACKAGE_NAME}-${CI_COMMIT_TAG}.deb'
-          url: "${PACKAGE_REGISTRY_URL}.deb"
-          link_type: package
-        - name: '${PACKAGE_NAME}-${CI_COMMIT_TAG}.rpm'
-          url: "${PACKAGE_REGISTRY_URL}.rpm"
-          link_type: package
