@@ -12,7 +12,8 @@ use crate::ci::job::{Output, ProgressConsumer, Shared};
 use crate::config::{Config, Payload};
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
-use std::process::Command;
+use std::io::{BufRead, BufReader};
+use std::process::{Command, ExitStatus, Stdio};
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::thread;
@@ -165,18 +166,60 @@ pub struct CommandJobRunner;
 
 impl CommandRunner for CommandJobRunner {
     fn run(&self, args: &str) -> Output {
+        use std::str::from_utf8;
         let default_shell = std::env::var("SHELL").unwrap_or_else(|_| String::from("/bin/bash"));
-        match Command::new(&default_shell).args(["-c", args]).output() {
-            Ok(output) => {
-                let stdout = String::from(std::str::from_utf8(&output.stdout).unwrap());
-                let stderr = String::from(std::str::from_utf8(&output.stderr).unwrap());
-                if output.status.success() {
-                    Output::Success(stdout, stderr)
-                } else {
-                    Output::JobError(stdout, stderr)
+        let mut cmd = Command::new(&default_shell);
+
+        let mut child = match cmd
+            .args(["-c", args])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+        {
+            Ok(p) => p,
+            Err(e) => return Output::ProcessError(e.to_string()),
+        };
+
+        let mut out = String::new();
+        let mut err = String::new();
+
+        let mut res: Option<ExitStatus> = None;
+
+        {
+            let mut stdout = match child.stdout.take() {
+                Some(out) => BufReader::new(out),
+                None => return Output::ProcessError(String::from("no Child stdout")),
+            };
+            let mut stderr = match child.stderr.take() {
+                Some(err) => BufReader::new(err),
+                None => return Output::ProcessError(String::from("no Child output")),
+            };
+
+            while res.is_none() {
+                sleep(Duration::from_millis(10));
+                let (stdout_bytes, stderr_bytes) = match (stdout.fill_buf(), stderr.fill_buf()) {
+                    (Ok(stdout), Ok(stderr)) => {
+                        out.push_str(from_utf8(stdout).expect("error from UTF8"));
+                        err.push_str(from_utf8(stderr).expect("error from UTF8"));
+
+                        (stdout.len(), stderr.len())
+                    }
+                    e => return Output::ProcessError(format!("Error: {:#?}", e)),
+                };
+
+                if let Ok(proc) = child.try_wait() {
+                    res = proc;
                 }
+
+                stdout.consume(stdout_bytes);
+                stderr.consume(stderr_bytes);
             }
-            Err(e) => Output::ProcessError(e.to_string()),
+        }
+
+        if res.expect("already opened").success() {
+            Output::Success(out, err)
+        } else {
+            Output::JobError(out, err)
         }
     }
 }
