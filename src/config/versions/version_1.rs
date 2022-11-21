@@ -113,6 +113,7 @@ pub struct Version1 {
     constraints: Option<Constraints>,
     display: Option<Display>,
     env: Option<String>,
+    extra_files: Option<Vec<String>>,
 }
 
 impl Loader for Version1 {
@@ -172,6 +173,10 @@ impl Loader for Version1 {
             if let Some(final_display) = &display.final_display {
                 payload.display.final_display = FinalDisplayMode::from(*final_display);
             }
+        }
+
+        if let Some(files) = &self.extra_files {
+            payload.extra_files = files.clone();
         }
 
         payload.env = self.env.clone();
@@ -262,6 +267,7 @@ impl Version1 {
                 }),
             }),
             env: payload.env,
+            extra_files: Some(payload.extra_files.clone()),
         }
     }
 }

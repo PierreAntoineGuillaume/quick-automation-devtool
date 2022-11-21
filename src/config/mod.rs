@@ -62,6 +62,17 @@ pub struct Payload {
     pub ci: CiConfig,
     pub display: CiDisplayConfig,
     pub env: Option<String>,
+    pub extra_files: Vec<String>,
+}
+
+impl Payload {
+    pub fn absorb(&mut self, other: &mut Payload) {
+        for new_job in &other.ci.jobs {
+            if !self.ci.jobs.contains(new_job) {
+                self.ci.jobs.push(new_job.clone());
+            }
+        }
+    }
 }
 
 pub trait Loader {
@@ -116,12 +127,25 @@ impl Config {
     pub fn load_into(&self, config: &mut Payload) -> Result<()> {
         let filename = self.get_first_available_config_file()?;
 
-        let content = fs::read_to_string(&filename)
-            .map_err(|error| AnyError::msg(Error::Parse(error.to_string()).explain(&filename)))?;
+        Self::load_unknown_file(config, &filename)?;
+
+        for file in config.extra_files.clone() {
+            let mut other = Payload::default();
+            Self::load_unknown_file(&mut other, &file)?;
+            config.absorb(&mut other);
+        }
+
+        Ok(())
+    }
+
+    fn load_unknown_file(config: &mut Payload, filename: &str) -> Result<()> {
+        let content = fs::read_to_string(filename)
+            .map_err(|error| AnyError::msg(Error::Parse(error.to_string()).explain(filename)))?;
 
         let loader =
-            Self::parse(&content).map_err(|error| AnyError::msg(error.explain(&filename)))?;
+            Self::parse(&content).map_err(|error| AnyError::msg(error.explain(filename)))?;
         loader.load(config);
+
         Ok(())
     }
 

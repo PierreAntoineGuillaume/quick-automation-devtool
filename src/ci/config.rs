@@ -31,6 +31,12 @@ impl From<JobDesc> for Type {
     }
 }
 
+impl PartialEq<Self> for JobDesc {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
 #[derive(Default, Clone)]
 pub struct CliOption {
     pub job: Option<String>,
