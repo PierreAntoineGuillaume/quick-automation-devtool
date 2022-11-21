@@ -1,10 +1,24 @@
-use crate::ci::config::{CliOption, Config};
+use crate::ci::config::{CliOption, Config, JobDesc};
 use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{SystemFacade, UserFacade};
 use crate::ci::job::shell_interpreter::ShellInterpreter;
 use crate::ci::job::{JobProgressTracker, Progress, Type};
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
+
+fn job_group_filter(job: &JobDesc, groups: &Vec<String>) -> bool {
+    if groups.is_empty() {
+        return true;
+    }
+    for known_groups in groups {
+        for job_groups in &job.group {
+            if known_groups == job_groups {
+                return true;
+            }
+        }
+    }
+    false
+}
 
 pub fn schedule(
     cli_option: &CliOption,
@@ -23,6 +37,7 @@ pub fn schedule(
             .jobs
             .iter()
             .cloned()
+            .filter(|desc: &JobDesc| job_group_filter(desc, &ci_config.groups))
             .map(Into::into)
             .collect::<Vec<Type>>()
     } else {
