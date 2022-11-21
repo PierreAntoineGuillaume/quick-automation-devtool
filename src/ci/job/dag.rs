@@ -34,7 +34,6 @@ pub enum Error {
     JobCannotBlockItself(String),
     UnknownJobInConstraint(String),
     CycleExistsBecauseOf(String),
-    UnknownGroup(String, String),
 }
 
 impl Display for Error {
@@ -49,10 +48,6 @@ impl Display for Error {
             Error::CycleExistsBecauseOf(blocking_job) => {
                 write!(f, "a cycle exists in the job DAG because of {blocking_job}")
             }
-            Error::UnknownGroup(job, group) => write!(
-                f,
-                "group {group} associated with job {job} is not in group list"
-            ),
         }
     }
 }
@@ -206,7 +201,7 @@ impl Dag {
         let jobs: Vec<Type> = jobs.to_vec();
         let mut constraints: Vec<(String, String)> = constraints.to_vec();
 
-        constraints.extend(Self::compute_group_constraints(&jobs, groups)?);
+        constraints.extend(Self::compute_group_constraints(&jobs, groups));
 
         let matrix = ConstraintMatrix::new(&jobs, &constraints)?;
 
@@ -247,10 +242,7 @@ impl Dag {
         Ok(dag)
     }
 
-    fn compute_group_constraints(
-        jobs: &[Type],
-        groups: &[String],
-    ) -> Result<Vec<(String, String)>, Error> {
+    fn compute_group_constraints(jobs: &[Type], groups: &[String]) -> Vec<(String, String)> {
         let mut group_constraints = vec![];
         let mut blocking_jobs_by_groups = IndexMap::<String, Vec<String>>::new();
 
@@ -262,11 +254,6 @@ impl Dag {
             if let Some(group) = job.group() {
                 if let Some(collection) = blocking_jobs_by_groups.get_mut(group) {
                     collection.push(job.name().to_string());
-                } else {
-                    return Err(Error::UnknownGroup(
-                        job.name().to_string(),
-                        group.to_string(),
-                    ));
                 }
             }
         }
@@ -283,7 +270,7 @@ impl Dag {
                 }
             }
         }
-        Ok(group_constraints)
+        group_constraints
     }
 
     /// Poll will return a job if a job is available
