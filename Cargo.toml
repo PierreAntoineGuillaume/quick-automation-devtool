@@ -30,13 +30,13 @@ assets = [
 ]
 
 [dependencies]
-anyhow = "1.0.56"
-argh = "0.1.4"
-atty = "0.2.11"
+anyhow = "1.0"
+argh = "0.1"
+atty = "0.2"
 crossterm = "0.25"
-indexmap = "1.8.0"
-regex = "1.5.4"
+indexmap = "1.8"
+regex = "1.5"
 serde = { version = "1", features = ["derive"] }
-serde_yaml = "0.9.4"
-terminal_size = "0.2.1"
+serde_yaml = "0.9"
+terminal_size = "0.2"
 tui = "0.19"
