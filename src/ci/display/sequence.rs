@@ -36,7 +36,7 @@ impl<'a> UserFacade for Display<'a> {
     }
 
     fn display_error(&self, error: String) {
-        eprintln!("{}", error);
+        eprintln!("{error}");
     }
 }
 
@@ -82,7 +82,7 @@ impl<'a> Display<'a> {
                 self.term.write(&format!(" {}", self.config.cancelled));
             }
             Progress::Started(command) => {
-                self.term.write(&format!(" {} {}", command, self.spin));
+                self.term.write(&format!(" {command} {}", self.spin));
             }
         }
         self.term.newline();

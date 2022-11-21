@@ -31,7 +31,7 @@ impl<'a> ShellInterpreter<'a> {
         let mut env_text = strvec!("USER_ID=$(id -u)", "GROUP_ID=$(id -g)").join("\n");
 
         if let Some(additionnal) = additionnal_envtext {
-            env_text = format!("{}\n{}\n", env_text, additionnal);
+            env_text = format!("{env_text}\n{additionnal}\n");
         }
 
         let mut control = String::new();
@@ -42,7 +42,7 @@ impl<'a> ShellInterpreter<'a> {
                 None => {}
                 Some(captures) => {
                     let name = captures.get(1).unwrap().as_str().to_string();
-                    writeln!(control, "printf {}=; printf '%s\n' ${}", name, name).expect("write");
+                    writeln!(control, "printf {name}=; printf '%s\n' ${name}").expect("write");
                 }
             });
 

@@ -25,12 +25,11 @@ impl Error {
     fn explain(&self, filename: &str) -> String {
         match self {
             Error::Parse(error) => {
-                format!("{} could not be parsed: {}", filename, error,)
+                format!("{filename} could not be parsed: {error}")
             }
             Error::NoVersion(latest, previous) => {
                 format!(
-                    "{} could not parse version id (latest is {})\nbecause: {}",
-                    filename, latest, previous,
+                    "{filename} could not parse version id (latest is {latest})\nbecause: {previous}"
                 )
             }
             Error::BadVersion(version, latest) => {
@@ -102,7 +101,7 @@ impl Config {
     pub fn from(env: &str) -> Self {
         let candidates: Vec<String> = ["yaml", "yml", "yaml.dist", "yml.dist"]
             .iter()
-            .map(|str| format!("{}.{}", env, str))
+            .map(|str| format!("{env}.{str}"))
             .collect();
 
         Self { candidates }

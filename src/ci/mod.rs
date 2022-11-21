@@ -84,12 +84,12 @@ impl Ci {
         jobs.sort();
 
         for name in jobs {
-            println!("{}", name);
+            println!("{name}");
         }
         ci_config
             .groups
             .iter()
-            .for_each(|name| println!("group:{}", name));
+            .for_each(|name| println!("group:{name}"));
 
         Ok(())
     }
@@ -166,7 +166,7 @@ pub struct CommandJobRunner;
 impl CommandRunner for CommandJobRunner {
     fn run(&self, args: &str) -> Output {
         let default_shell = std::env::var("SHELL").unwrap_or_else(|_| String::from("/bin/bash"));
-        match Command::new(&default_shell).args(["-c", args]).output() {
+        match Command::new(default_shell).args(["-c", args]).output() {
             Ok(output) => {
                 let stdout = String::from(std::str::from_utf8(&output.stdout).unwrap());
                 let stderr = String::from(std::str::from_utf8(&output.stderr).unwrap());

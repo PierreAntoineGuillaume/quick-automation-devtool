@@ -28,7 +28,7 @@ fn main() {
     let args: Args = argh::from_env();
 
     if args.version {
-        println!("v{}", VERSION);
+        println!("v{VERSION}");
         std::process::exit(0);
     }
 
@@ -56,14 +56,14 @@ fn main() {
                 std::process::exit(1);
             }
             Err(str) => {
-                eprintln!("{PACKAGE_NAME}: {}", str);
+                eprintln!("{PACKAGE_NAME}: {str}");
                 std::process::exit(2)
             }
         },
         Subcommands::List(_) => match Ci::list(&config) {
             Ok(()) => {}
             Err(str) => {
-                eprintln!("{PACKAGE_NAME}: {}", str);
+                eprintln!("{PACKAGE_NAME}: {str}");
                 std::process::exit(2)
             }
         },
@@ -73,7 +73,7 @@ fn main() {
                 eprintln!("# To register {PACKAGE_NAME}'s bash autocompletion script");
                 eprintln!("# put the following content including the shebang (#!/bin/bash) in");
                 eprintln!("# {DIR}/{PACKAGE_NAME}:");
-                eprintln!("# mkdir -p {}", DIR);
+                eprintln!("# mkdir -p {DIR}");
                 eprintln!("# {PACKAGE_NAME} autocomplete > {DIR}/{PACKAGE_NAME}",);
             }
             print!("{}", include_str!("../assets/bash_completion.sh"));
@@ -83,7 +83,7 @@ fn main() {
             ConfigSubcommands::Migrate(version) => {
                 let mut payload = Payload::default();
                 if let Err(err) = config.load_into(&mut payload) {
-                    eprintln!("{PACKAGE_NAME}: could not read config: {}", err);
+                    eprintln!("{PACKAGE_NAME}: could not read config: {err}");
                     std::process::exit(1);
                 } else {
                     let migrate = Migrate::new(config);
@@ -96,7 +96,7 @@ fn main() {
                     }
 
                     let serialization = Migrate::yaml(migration.unwrap());
-                    println!("{}", serialization);
+                    println!("{serialization}");
                 }
             }
         },

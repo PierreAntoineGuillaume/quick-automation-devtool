@@ -18,7 +18,7 @@ impl Display for JobInput {
         write!(f, "{}", self.args.clone().unwrap_or_default())?;
         write!(f, "(")?;
         if let Some(arg) = &self.args {
-            write!(f, "{}", arg)?;
+            write!(f, "{arg}")?;
         }
         write!(f, ")")
     }
@@ -27,7 +27,7 @@ impl Display for JobInput {
 impl Display for JobTester {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for job in self.inputs.borrow().iter() {
-            writeln!(f, "{}", job)?;
+            writeln!(f, "{job}")?;
         }
         Ok(())
     }

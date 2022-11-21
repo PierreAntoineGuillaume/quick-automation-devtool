@@ -10,7 +10,7 @@ pub struct Spinner<'a> {
 
 impl<'a> Spinner<'a> {
     pub fn current(&self) -> &'a str {
-        self.frames[self.ticks as usize].as_str()
+        self.frames[self.ticks].as_str()
     }
 
     pub fn new(frames: &'a Vec<String>, per_frame: usize) -> Self {

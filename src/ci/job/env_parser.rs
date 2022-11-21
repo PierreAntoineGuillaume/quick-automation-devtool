@@ -62,7 +62,7 @@ mod tests {
     fn extract_map(map: HashMap<String, Vec<String>>) -> String {
         let mut result = vec![];
         for (key, value) in map {
-            result.push(format!("{}: [{}]", key, value.join(", ")));
+            result.push(format!("{key}: [{}]", value.join(", ")));
         }
         result.sort();
         result.join("")

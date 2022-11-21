@@ -41,20 +41,17 @@ impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::JobCannotBlockItself(jobname) => {
-                write!(f, "job {} is blocking itself", jobname)
+                write!(f, "job {jobname} is blocking itself")
             }
             Error::UnknownJobInConstraint(jobname) => {
-                write!(f, "job {} in constraint list doesn't exist", jobname)
+                write!(f, "job {jobname} in constraint list doesn't exist")
             }
-            Error::CycleExistsBecauseOf(blocking_job) => write!(
-                f,
-                "a cycle exists in the job DAG because of {}",
-                blocking_job
-            ),
+            Error::CycleExistsBecauseOf(blocking_job) => {
+                write!(f, "a cycle exists in the job DAG because of {blocking_job}")
+            }
             Error::UnknownGroup(job, group) => write!(
                 f,
-                "group {} associated with job {} is not in group list",
-                group, job
+                "group {group} associated with job {job} is not in group list"
             ),
         }
     }
@@ -450,7 +447,7 @@ mod tests {
             write!(f, "[")?;
             let mut left = self.vec.len();
             for item in self.vec.iter().rev() {
-                write!(f, "{}", item)?;
+                write!(f, "{item}")?;
                 left -= 1;
                 if left > 0 {
                     write!(f, ", ")?;

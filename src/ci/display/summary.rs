@@ -37,7 +37,7 @@ impl<'a> UserFacade for Display<'a> {
     }
 
     fn display_error(&self, error: String) {
-        eprintln!("{}", error);
+        eprintln!("{error}");
     }
 }
 
@@ -70,8 +70,7 @@ impl<'a> Display<'a> {
                     ));
                 }
                 InstructionState::Running(instruction) => {
-                    self.term
-                        .write(&format!("{}    {}", self.spin, instruction));
+                    self.term.write(&format!("{}    {instruction}", self.spin));
                 }
             }
             self.term.clear_til_eol();

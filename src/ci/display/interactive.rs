@@ -45,7 +45,7 @@ impl FinalCiDisplay for Interactive {
     fn finish(&mut self, tracker: &JobProgressTracker) {
         match finish_error(tracker) {
             Ok(()) => {}
-            Err(err) => eprintln!("{}", err),
+            Err(err) => eprintln!("{err}"),
         }
     }
 }
@@ -77,7 +77,7 @@ fn finish_error(tracker: &JobProgressTracker) -> Result<()> {
     terminal.show_cursor()?;
 
     if let Err(err) = res {
-        println!("{:?}", err);
+        println!("{err:?}");
     }
 
     Ok(())
@@ -155,7 +155,7 @@ impl<'a> App<'a> {
             .iter()
             .filter_map(|progres| match progres {
                 Progress::Partial(_, Output::Success(out, err) | Output::JobError(out, err)) => {
-                    Some(format!("{}\n{}", out, err))
+                    Some(format!("{out}\n{err}"))
                 }
                 Progress::Partial(_, Output::ProcessError(err)) => Some(err.to_string()),
                 Progress::Skipped => Some("skipped".to_string()),

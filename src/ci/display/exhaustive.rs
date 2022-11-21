@@ -49,7 +49,7 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                             } else {
                                 &self.config.ko
                             };
-                            writeln!(string, "  {} {}", symbol, instruction).expect("write");
+                            writeln!(string, "  {symbol} {instruction}").expect("write");
                             string.push_str(&try_cleanup(&format!(
                                 "  {}\n  {}",
                                 try_cleanup(stdout).replace('\n', "\n    "),
@@ -87,7 +87,7 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
             }
             println!("{icon} tasks for job {job_name}:");
             if !string.is_empty() {
-                print!("{}", string);
+                print!("{string}");
             }
         }
 

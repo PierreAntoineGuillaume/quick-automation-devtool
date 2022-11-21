@@ -144,13 +144,13 @@ mod tests {
         let mut vec: Vec<String> = pipeline.blocking("deploy").collect::<Vec<String>>();
         vec.sort();
         let list = JobList::from(&vec);
-        assert_eq!("[build1, build2, test1, test2]", format!("{}", list));
+        assert_eq!("[build1, build2, test1, test2]", format!("{list}"));
     }
 
     #[test]
     pub fn list_all_blocks() {
         let pipeline = complex_matrix().unwrap();
         let list = JobList::from(&pipeline.blocked_by("test1").collect::<Vec<String>>());
-        assert_eq!("[deploy]", format!("{}", list));
+        assert_eq!("[deploy]", format!("{list}"));
     }
 }
