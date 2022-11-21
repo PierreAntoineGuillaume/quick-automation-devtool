@@ -1,6 +1,7 @@
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::ports::FinalCiDisplay;
+use ansi_to_tui::IntoText;
 use anyhow::{anyhow, Result};
 
 use crossterm::{
@@ -269,9 +270,15 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     // We can now render the item list
     f.render_stateful_widget(items, app_chunks[0], &mut app.items.state);
 
+    let text = &app.result.1.text;
+
+    let exp = match text.clone().into_text() {
+        Ok(res) => Paragraph::new(res),
+        _ => Paragraph::new(text.to_string()),
+    };
+
     f.render_widget(
-        Paragraph::new(app.result.1.text.to_string())
-            .wrap(Wrap { trim: false })
+        exp.wrap(Wrap { trim: false })
             .scroll((app.result.1.scroll, 0))
             .block(Block::default().borders(Borders::ALL).title("result")),
         app_chunks[1],
