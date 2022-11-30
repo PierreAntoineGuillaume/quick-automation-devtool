@@ -50,6 +50,14 @@ fn main() {
     };
 
     match command {
+        Subcommands::App(_) => {
+            eprintln!("{PACKAGE_NAME}: app is an experimental feature");
+            if cfg!(feature = "app") {
+                eprintln!("it may be removed or reworked in the future and is unstable");
+            } else {
+                eprintln!("try compiling {PACKAGE_NAME} with the `app` feature enabled");
+            }
+        }
         Subcommands::Ci(arg) => match Ci::run(&config, &CliOption { job: arg.nested }) {
             Ok(true) => {}
             Ok(false) => {

@@ -25,6 +25,7 @@ pub enum Subcommands {
     Autocomplete(AutocompleteArgs),
     Config(ConfigArgs),
     HasCi(HasCiArgs),
+    App(AppArgs),
 }
 
 #[derive(FromArgs, Eq, PartialEq, Debug)]
@@ -91,3 +92,7 @@ pub struct V1Args {}
     description = "checks whether current folder has qad file- or fails"
 )]
 pub struct HasCiArgs {}
+
+#[derive(FromArgs, Eq, PartialEq, Debug)]
+#[argh(subcommand, name = "app", description = "starts a ci app")]
+pub struct AppArgs {}

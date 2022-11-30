@@ -12,7 +12,14 @@ _qad() {
       mapfile -t COMPREPLY < <(compgen -W "ci" -- "${cur}")
       return 0
     fi
-    mapfile -t COMPREPLY < <(compgen -W "autocomplete ci config list has-ci --version --help --file" -- "${cur}")
+    if [ "$cur" == "a" ]; then
+      # We deliberately chose to complete ci for "c"
+      # At best, it won't block the input
+      # At worst, it will only be a backspace to correct
+      mapfile -t COMPREPLY < <(compgen -W "app" -- "${cur}")
+      return 0
+    fi
+    mapfile -t COMPREPLY < <(compgen -W "app autocomplete ci config list has-ci --version --help --file" -- "${cur}")
     return 0
   fi
   COMPREPLY=()

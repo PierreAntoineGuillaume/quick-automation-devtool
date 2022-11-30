@@ -5,11 +5,11 @@ jobs:
     docker: rustlang/rust:nightly
     group: fmt
   clippy:
-    script: [ cargo clippy --tests --color always ]
+    script: [ cargo clippy --tests --color always --all-features ]
     docker: rustlang/rust:nightly
     group: test
   tests:
-    script: [ cargo test --color always ]
+    script: [ cargo test --color always --all-features ]
     docker: rustlang/rust:nightly
     group: test
 groups:

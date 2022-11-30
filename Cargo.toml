@@ -41,3 +41,6 @@ serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 terminal_size = "0.2"
 tui = "0.19"
+
+[features]
+app = []
