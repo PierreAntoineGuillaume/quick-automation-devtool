@@ -1,47 +1,80 @@
-clippy:
-  image: rustlang/rust:nightly
-  rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
-  script:
-    - cargo clippy --tests --color=always
+.rule_no_draft: &rule_no_draft
+  if: $CI_COMMIT_TITLE =~ /-draft$/
+  when: never
+.rule_in_mr: &rule_in_mr
+  if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
+.rule_no_mr: &rule_no_mr
+  if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
+
+.has_rs: &has_rs
+  changes:
+    - src/**/*.rs
+.has_bash: &has_bash
+  changes:
+    - src/**/*.sh
+
+.rust_in_mr: &rust_in_mr
+  <<: *rule_in_mr
+  <<: *has_rs
+.rust_no_mr: &rust_no_mr
+  <<: *rule_no_mr
+  <<: *has_rs
+.bash_in_mr: &bash_in_mr
+  <<: *rule_in_mr
+  <<: *has_bash
+.bash_no_mr: &bash_no_mr
+  <<: *rule_no_mr
+  <<: *has_bash
 
 lint-commits:
   image: node
   cache: []
   rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
+    - *rule_in_mr
   script:
     - npm install -g @commitlint/config-conventional @commitlint/cli
     - commitlint --from=$CI_MERGE_REQUEST_DIFF_BASE_SHA --to=$CI_COMMIT_SHORT_SHA
 
+clippy:
+  image: rustlang/rust:nightly
+  rules:
+    - *rule_no_draft
+    - *rust_in_mr
+    - *rust_no_mr
+  script:
+    - cargo clippy --tests --color=always
+
 fmt:
   image: rustlang/rust:nightly
   rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
+    - *rule_no_draft
+    - *rust_in_mr
+    - *rust_no_mr
   script:
     - cargo fmt --check
 
 rust-nightly:
   image: rustlang/rust:nightly
   rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
+    - *rule_no_draft
+    - *rust_in_mr
+    - *rust_no_mr
   script:
     - cargo test -- --color=always
 
 shellcheck:
   image: koalaman/shellcheck-alpine:stable
   rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
+    - *rule_no_draft
+    - *bash_in_mr
+    - *bash_no_mr
   script: find -name '*.sh' -not -path '*/.*' -not -path '*/target/*' -type f -exec shellcheck {} '+'
 
 test-autocomplete:
   image: bash
   rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == ""'
+    - *rule_no_draft
+    - *bash_in_mr
+    - *bash_no_mr
   script:
     - tools/bash-unit-tests.sh
