@@ -17,9 +17,9 @@ unit() {
   fi
 }
 
-unit "qad " "autocomplete" "ci" "config" "list" "has-ci" "--version" "--help" "--file"
+unit "qad " "app" "autocomplete" "ci" "config" "list" "has-ci" "--version" "--help" "--file"
 unit "qad az" ""
-unit "qad a" "autocomplete"
+unit "qad a" "app"
 unit "qad auto" "autocomplete"
 unit "qad c" "ci"
 unit "qad co" "config"
