@@ -33,7 +33,7 @@ env: |
   set -euo pipefail
   CURRENT_BRANCH=$(git branch --show-current)
   LAST_COMMON_COMMIT=$(git merge-base "main" "$(git branch --show-current)")
-  CHANGED_FILES=$(awk '$1 ~ /^(R|A|M|\?\?)/ { print $NF }' <(git diff --name-status $LAST_COMMON_COMMIT) <(git status --short | grep '??'))
+  CHANGED_FILES=$(cat <(git diff --name-only --diff-filter=RAM $LAST_COMMON_COMMIT) <(git ls-files -o --exclude-standard))
   RUST_CHANGED_FILES="$(awk '$1 ~ /.rs/ { print $1 }' <<<$CHANGED_FILES)"
 ```
 
@@ -106,3 +106,7 @@ per_frame: 70
 # env
 
 env is a string parsed with `$SHELL`, and each `key=` will be forwarded to the jobs.
+
+# extra files
+
+extra_files is used to import **jobs** from another qad file. It expects a list of strings
