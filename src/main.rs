@@ -5,6 +5,7 @@
 #![allow(clippy::option_if_let_else)]
 #![allow(clippy::default_trait_access)]
 
+pub mod app;
 mod ci;
 mod config;
 
@@ -15,6 +16,9 @@ extern crate indexmap;
 extern crate terminal_size;
 extern crate tui;
 
+use std::sync::mpsc::channel;
+
+use crate::app::domain::{Event, State};
 use crate::ci::config::CliOption;
 use crate::ci::Ci;
 use crate::config::argh::{Args, ConfigSubcommands, MigrateToSubCommands, Subcommands};
@@ -54,6 +58,14 @@ fn main() {
             eprintln!("{PACKAGE_NAME}: app is an experimental feature");
             if cfg!(feature = "app") {
                 eprintln!("it may be removed or reworked in the future and is unstable");
+
+                let (tx, _rx) = channel();
+                let consumer = app::infra::Fake { stream: tx };
+                let state = State::default();
+
+                if let Err(e) = app::domain::run(&consumer, state, &Event::Awaiting) {
+                    eprintln!("{PACKAGE_NAME} error: {e}");
+                }
             } else {
                 eprintln!("try compiling {PACKAGE_NAME} with the `app` feature enabled");
             }
