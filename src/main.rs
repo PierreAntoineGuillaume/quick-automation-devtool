@@ -56,18 +56,13 @@ fn main() {
     match command {
         Subcommands::App(_) => {
             eprintln!("{PACKAGE_NAME}: app is an experimental feature");
-            if cfg!(feature = "app") {
-                eprintln!("it may be removed or reworked in the future and is unstable");
+            eprintln!("it may be removed or reworked in the future and is unstable");
+            let (tx, _rx) = channel();
+            let consumer = app::infra::Fake { stream: tx };
+            let state = State::default();
 
-                let (tx, _rx) = channel();
-                let consumer = app::infra::Fake { stream: tx };
-                let state = State::default();
-
-                if let Err(e) = app::domain::run(&consumer, state, &Event::Awaiting) {
-                    eprintln!("{PACKAGE_NAME} error: {e}");
-                }
-            } else {
-                eprintln!("try compiling {PACKAGE_NAME} with the `app` feature enabled");
+            if let Err(e) = app::domain::run(&consumer, state, &Event::Awaiting) {
+                eprintln!("{PACKAGE_NAME} error: {e}");
             }
         }
         Subcommands::Ci(arg) => match Ci::run(&config, &CliOption { job: arg.nested }) {
