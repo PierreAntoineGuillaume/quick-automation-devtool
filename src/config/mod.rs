@@ -33,16 +33,10 @@ impl Error {
                 )
             }
             Error::BadVersion(version, latest) => {
-                format!(
-                    "unknown version {} in {} (latest is {})",
-                    version, filename, latest
-                )
+                format!("unknown version {version} in {filename} (latest is {latest})",)
             }
             Error::ParseError(version, prev) => {
-                format!(
-                    "could not parse {} with version {} ({})",
-                    filename, version, prev
-                )
+                format!("could not parse {filename} with version {version} ({prev})",)
             }
         }
     }

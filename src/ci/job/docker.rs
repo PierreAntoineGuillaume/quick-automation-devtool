@@ -72,10 +72,7 @@ impl Job for Docker {
             let image = docker_args.next().expect("there is at least an image");
             let args = docker_args.collect::<Vec<&str>>().join(" ").to_string();
 
-            let command = format!(
-                r#"{} {} {} {} {}"#,
-                DOCKER_RUN, env, args, image, instruction
-            );
+            let command = format!(r#"{DOCKER_RUN} {env} {args} {image} {instruction}"#,);
 
             let output = runner.run(&command);
             success = output.succeeded();

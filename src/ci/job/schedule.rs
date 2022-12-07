@@ -196,10 +196,7 @@ mod tests {
             } else if let Some(stripped) = job.strip_prefix("crash:") {
                 Output::ProcessError(stripped.to_string())
             } else {
-                panic!(
-                    "Job should begin with ok:, ko, or crash: (actual: '{}')",
-                    job
-                )
+                panic!("Job should begin with ok:, ko, or crash: (actual: '{job}')",)
             }
         }
     }
