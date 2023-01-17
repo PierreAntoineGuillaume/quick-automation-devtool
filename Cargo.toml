@@ -1,6 +1,6 @@
 [package]
 name = "qad"
-version = "1.6.2"
+version = "1.6.3"
 edition = "2021"
 description = """
 Quick Automation Devtool (qad) is your companion for doing more, quicker,
@@ -35,6 +35,7 @@ anyhow = "1.0"
 argh = "0.1"
 atty = "0.2"
 crossterm = "0.25"
+const_format = "0"
 indexmap = "1.8"
 regex = "1.5"
 serde = { version = "1", features = ["derive"] }

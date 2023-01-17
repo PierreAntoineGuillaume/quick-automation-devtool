@@ -1,6 +1,6 @@
-use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::ports::FinalCiDisplay;
+use crate::ci::{clean::try_cleanup, display::CiDisplayConfig};
 use ansi_to_tui::IntoText;
 use anyhow::{anyhow, Result};
 
@@ -270,11 +270,11 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     // We can now render the item list
     f.render_stateful_widget(items, app_chunks[0], &mut app.items.state);
 
-    let text = &app.result.1.text;
+    let text = try_cleanup(&app.result.1.text);
 
-    let exp = match text.clone().into_text() {
+    let exp = match text.into_text() {
         Ok(res) => Paragraph::new(res),
-        _ => Paragraph::new(text.to_string()),
+        _ => Paragraph::new(text),
     };
 
     f.render_widget(

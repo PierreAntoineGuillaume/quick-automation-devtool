@@ -1,25 +1,11 @@
+use crate::ci::clean::try_cleanup;
 use crate::ci::display::ansi_control_sequence::{ResetChar, UnderlineChar};
 use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::JobProgressTracker;
 use crate::ci::job::ports::FinalCiDisplay;
 use crate::ci::job::{Output, Progress};
-use regex::Regex;
 use std::fmt::Write;
 use std::time::SystemTime;
-
-pub fn try_cleanup(input: &str) -> String {
-    let cleaned = input.trim_end().replace(27 as char, r"\E");
-    if cleaned.is_empty() {
-        String::new()
-    } else {
-        let regex = Regex::new(r"\\E\[.[KG]").unwrap();
-        format!(
-            "{}\n",
-            regex.replace_all(&cleaned, (27 as char).to_string())
-        )
-        .replace(r"\E", &(27 as char).to_string())
-    }
-}
 
 pub struct FullFinalDisplay<'a> {
     config: &'a CiDisplayConfig,

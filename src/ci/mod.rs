@@ -19,6 +19,7 @@ use std::thread;
 use std::thread::{sleep, JoinHandle};
 use std::time::{Duration, SystemTime};
 
+pub mod clean;
 pub mod config;
 pub mod display;
 pub mod job;
