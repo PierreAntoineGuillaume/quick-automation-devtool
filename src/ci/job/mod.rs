@@ -1,4 +1,5 @@
 pub mod constraint_matrix;
+pub mod container_configuration;
 pub mod dag;
 pub mod docker;
 mod env_parser;

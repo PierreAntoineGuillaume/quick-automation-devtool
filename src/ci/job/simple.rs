@@ -1,3 +1,4 @@
+use crate::ci::job::container_configuration::{Bag, ContainerConfiguration};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::CommandRunner;
 use crate::ci::job::{Introspector, Job, Progress, ProgressConsumer};
@@ -7,6 +8,7 @@ use std::collections::HashMap;
 pub struct Simple {
     name: String,
     group: Option<String>,
+    container: ContainerConfiguration,
     instructions: Vec<String>,
     skip_if: Option<String>,
 }
@@ -39,13 +41,16 @@ impl Job for Simple {
         }
 
         let mut success = true;
+        let mut bag = Bag::default();
         for instruction in &self.instructions {
             consumer.consume(JobProgress::new(
                 &self.name,
                 Progress::Started(instruction.clone()),
             ));
 
-            let output = runner.run(instruction);
+            let command = self.container.make(instruction, &mut bag);
+
+            let output = runner.run(&command);
 
             success = output.succeeded();
             let partial = Progress::Partial(instruction.clone(), output);
@@ -69,6 +74,7 @@ impl Simple {
         Self {
             name,
             group,
+            container: ContainerConfiguration::None,
             instructions,
             skip_if,
         }
