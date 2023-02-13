@@ -40,6 +40,7 @@ impl PartialEq<Self> for JobDesc {
 #[derive(Default, Clone)]
 pub struct CliOption {
     pub job: Option<String>,
+    pub no_tty: bool,
 }
 
 #[derive(Default, Clone)]

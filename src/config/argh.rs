@@ -6,6 +6,9 @@ pub struct Args {
     #[argh(switch, description = "show the executable version")]
     pub version: bool,
 
+    #[argh(switch, description = "override the config to allow tty-less ci")]
+    pub no_tty: bool,
+
     #[argh(subcommand)]
     pub nested: Option<Subcommands>,
 

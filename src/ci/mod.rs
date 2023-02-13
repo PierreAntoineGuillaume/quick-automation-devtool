@@ -33,7 +33,7 @@ impl Ci {
         let ci_config = payload.ci;
 
         let mut stdout = std::io::stdout();
-        let output_is_non_interactive = !atty::is(atty::Stream::Stdout);
+        let output_is_non_interactive = cli_option.no_tty || !atty::is(atty::Stream::Stdout);
 
         let mut display: Box<dyn UserFacade> = if output_is_non_interactive {
             Box::new(SilentDisplay {})

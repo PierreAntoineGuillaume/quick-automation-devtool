@@ -41,6 +41,8 @@ fn main() {
         std::process::exit(0);
     });
 
+    let no_tty = args.no_tty;
+
     if matches!(command, Subcommands::Autocomplete(_)) {}
 
     let envvar = std::env::var(format!("{}_CONFIG_FILE", PACKAGE_NAME.to_uppercase()))
@@ -65,7 +67,13 @@ fn main() {
                 eprintln!("{PACKAGE_NAME} error: {e}");
             }
         }
-        Subcommands::Ci(arg) => match Ci::run(&config, &CliOption { job: arg.nested }) {
+        Subcommands::Ci(arg) => match Ci::run(
+            &config,
+            &CliOption {
+                job: arg.nested,
+                no_tty,
+            },
+        ) {
             Ok(true) => {}
             Ok(false) => {
                 std::process::exit(1);
