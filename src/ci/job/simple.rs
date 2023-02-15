@@ -1,4 +1,4 @@
-use crate::ci::job::container_configuration::{Bag, ContainerConfiguration};
+use crate::ci::job::container_configuration::ContainerConfiguration;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::CommandRunner;
 use crate::ci::job::{Introspector, Job, Progress, ProgressConsumer};
@@ -41,14 +41,13 @@ impl Job for Simple {
         }
 
         let mut success = true;
-        let mut bag = Bag::default();
         for instruction in &self.instructions {
             consumer.consume(JobProgress::new(
                 &self.name,
                 Progress::Started(instruction.clone()),
             ));
 
-            let command = self.container.make(instruction, &mut bag);
+            let command = self.container.compile(instruction);
 
             let output = runner.run(&command);
 
