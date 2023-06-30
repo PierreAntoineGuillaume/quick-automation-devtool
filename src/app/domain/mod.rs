@@ -32,9 +32,7 @@ pub struct Job {}
 impl State {
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            ..Default::default()
-        }
+        Default::default()
     }
 
     #[must_use]

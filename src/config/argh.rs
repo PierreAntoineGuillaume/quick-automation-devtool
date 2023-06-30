@@ -29,6 +29,7 @@ pub enum Subcommands {
     Config(ConfigArgs),
     HasCi(HasCiArgs),
     App(AppArgs),
+    Debug(DebugArgs),
 }
 
 #[derive(FromArgs, Eq, PartialEq, Debug)]
@@ -99,3 +100,10 @@ pub struct HasCiArgs {}
 #[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(subcommand, name = "app", description = "starts a ci app")]
 pub struct AppArgs {}
+
+#[derive(FromArgs, Eq, PartialEq, Debug)]
+#[argh(subcommand, name = "debug", description = "debugs a ci job")]
+pub struct DebugArgs {
+    #[argh(positional, description = "job name")]
+    pub nested: String,
+}

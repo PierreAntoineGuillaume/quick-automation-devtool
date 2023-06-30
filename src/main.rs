@@ -21,7 +21,7 @@ use std::sync::mpsc::channel;
 use crate::app::domain::{Event, State};
 use crate::ci::config::CliOption;
 use crate::ci::Ci;
-use crate::config::argh::{Args, ConfigSubcommands, MigrateToSubCommands, Subcommands};
+use crate::config::argh::{Args, CiArgs, ConfigSubcommands, MigrateToSubCommands, Subcommands};
 use crate::config::migrate::Migrate;
 use crate::config::{Config, Payload};
 
@@ -56,24 +56,9 @@ fn main() {
     };
 
     match command {
-        Subcommands::App(_) => {
-            eprintln!("{PACKAGE_NAME}: app is an experimental feature");
-            eprintln!("it may be removed or reworked in the future and is unstable");
-            let (tx, _rx) = channel();
-            let consumer = app::infra::Fake { stream: tx };
-            let state = State::default();
-
-            if let Err(e) = app::domain::run(&consumer, state, &Event::Awaiting) {
-                eprintln!("{PACKAGE_NAME} error: {e}");
-            }
-        }
-        Subcommands::Ci(arg) => match Ci::run(
-            &config,
-            &CliOption {
-                job: arg.nested,
-                no_tty,
-            },
-        ) {
+        Subcommands::App(_) => app(),
+        Subcommands::Ci(arg) => ci_run(&config, arg, no_tty),
+        Subcommands::Debug(arg) => match Ci::debug(&config, arg.nested) {
             Ok(true) => {}
             Ok(false) => {
                 std::process::exit(1);
@@ -128,6 +113,37 @@ fn main() {
                 std::process::exit(1);
             }
         }
+    }
+}
+
+fn ci_run(config: &Config, arg: CiArgs, no_tty: bool) {
+    match Ci::run(
+        config,
+        &CliOption {
+            job: arg.nested,
+            no_tty,
+        },
+    ) {
+        Ok(true) => {}
+        Ok(false) => {
+            std::process::exit(1);
+        }
+        Err(str) => {
+            eprintln!("{PACKAGE_NAME}: {str}");
+            std::process::exit(2)
+        }
+    }
+}
+
+fn app() {
+    eprintln!("{PACKAGE_NAME}: app is an experimental feature");
+    eprintln!("it may be removed or reworked in the future and is unstable");
+    let (tx, _rx) = channel();
+    let consumer = app::infra::Fake { stream: tx };
+    let state = State::default();
+
+    if let Err(e) = app::domain::run(&consumer, state, &Event::Awaiting) {
+        eprintln!("{PACKAGE_NAME} error: {e}");
     }
 }
 

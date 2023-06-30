@@ -34,6 +34,9 @@ impl Display for JobTester {
 }
 
 impl CommandRunner for JobTester {
+    fn precondition(&self, args: &str) -> Output {
+        self.run(args)
+    }
     fn run(&self, args: &str) -> Output {
         self.inputs.borrow_mut().push(JobInput {
             args: Some(args.to_string()),

@@ -163,6 +163,9 @@ mod tests {
     pub struct TestJobStarter {}
 
     impl CommandRunner for TestJobStarter {
+        fn precondition(&self, args: &str) -> Output {
+            self.run(args)
+        }
         fn run(&self, _: &str) -> Output {
             Output::Success(String::new(), String::new())
         }
@@ -186,6 +189,10 @@ mod tests {
 
     pub struct TestJobRunner {}
     impl CommandRunner for TestJobRunner {
+        fn precondition(&self, args: &str) -> Output {
+            self.run(args)
+        }
+
         fn run(&self, job: &str) -> Output {
             // clippy::option_if_let_else makes a bad suggestion
             // https://github.com/rust-lang/rust-clippy/issues/8829

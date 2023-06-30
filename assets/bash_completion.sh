@@ -19,7 +19,7 @@ _qad() {
       mapfile -t COMPREPLY < <(compgen -W "app" -- "${cur}")
       return 0
     fi
-    mapfile -t COMPREPLY < <(compgen -W "app autocomplete ci config list has-ci --version --help --file --no-tty" -- "${cur}")
+    mapfile -t COMPREPLY < <(compgen -W "app autocomplete ci config debug list has-ci --version --help --file --no-tty" -- "${cur}")
     return 0
   fi
   COMPREPLY=()
@@ -28,7 +28,7 @@ _qad() {
       mapfile -t COMPREPLY < <(compgen -W "migrate --help" -- "${cur}")
       return 0
     fi
-    if [ "$prev" == "ci" ]; then
+    if [ "$prev" == "ci" ] || [ "$prev" == "debug" ]; then
       if compgen -G "qad.y*ml*" > /dev/null; then
         mapfile -t jobs < <(qad list 2>/dev/null)
       else

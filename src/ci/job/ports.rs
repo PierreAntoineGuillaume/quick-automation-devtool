@@ -5,6 +5,7 @@ use std::sync::mpsc::Sender;
 use std::sync::Arc;
 
 pub trait CommandRunner {
+    fn precondition(&self, args: &str) -> Output;
     fn run(&self, args: &str) -> Output;
 }
 
