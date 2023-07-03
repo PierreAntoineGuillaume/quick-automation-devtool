@@ -12,14 +12,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "ansi-to-tui"
-version = "2.0.2"
+name = "ansi-to-tui-forked"
+version = "3.0.0-ratatui"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "157b8ef4c7fba7b84d87853fae0de026f1856e69dbf8b8247fd6c526a4b78350"
+checksum = "f0b908b67a7faf8682254111ae9aecee03d4a3b613de03088f9a77953f85bab3"
 dependencies = [
  "nom",
+ "ratatui",
  "thiserror",
- "tui",
 ]
 
 [[package]]
@@ -119,9 +119,9 @@ dependencies = [
 
 [[package]]
 name = "crossterm"
-version = "0.25.0"
+version = "0.26.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e64e6c0fbe2c17357405f7c758c1ef960fce08bdfb2c03d88d2a18d7e09c4b67"
+checksum = "a84cda67535339806297f1b331d6dd6320470d2a0fe65381e79ee9e156dd3d13"
 dependencies = [
  "bitflags",
  "crossterm_winapi",
@@ -171,12 +171,6 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
-
-[[package]]
-name = "hashbrown"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c6201b9ff9fd90a5a3bac2e56a830d0caa509576f0e503818ee82c181b3437a"
@@ -198,22 +192,12 @@ checksum = "fed44880c466736ef9a5c5b5facefb5ed0785676d0c02d612db14e54f0d84286"
 
 [[package]]
 name = "indexmap"
-version = "1.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
-dependencies = [
- "autocfg",
- "hashbrown 0.12.3",
-]
-
-[[package]]
-name = "indexmap"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5477fe2230a79769d8dc68e0eabf5437907c0457a5614a9e8dddb67f65eb65d"
 dependencies = [
  "equivalent",
- "hashbrown 0.14.0",
+ "hashbrown",
 ]
 
 [[package]]
@@ -331,18 +315,18 @@ dependencies = [
 name = "qad"
 version = "1.6.5"
 dependencies = [
- "ansi-to-tui",
+ "ansi-to-tui-forked",
  "anyhow",
  "argh",
  "atty",
  "const_format",
  "crossterm",
- "indexmap 1.9.3",
+ "indexmap",
+ "ratatui",
  "regex",
  "serde",
  "serde_yaml",
  "terminal_size",
- "tui",
 ]
 
 [[package]]
@@ -352,6 +336,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "573015e8ab27661678357f27dc26460738fd2b6c86e46f386fde94cb5d913105"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "ratatui"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce841e0486e7c2412c3740168ede33adeba8e154a15107b879d8162d77c7174e"
+dependencies = [
+ "bitflags",
+ "cassowary",
+ "crossterm",
+ "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]
@@ -432,7 +429,7 @@ version = "0.9.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "452e67b9c20c37fa79df53201dc03839651086ed9bbe92b3ca585ca9fdaa7d85"
 dependencies = [
- "indexmap 2.0.0",
+ "indexmap",
  "itoa",
  "ryu",
  "serde",
@@ -525,19 +522,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.22",
-]
-
-[[package]]
-name = "tui"
-version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccdd26cbd674007e649a272da4475fb666d3aa0ad0531da7136db6fab0e5bad1"
-dependencies = [
- "bitflags",
- "cassowary",
- "crossterm",
- "unicode-segmentation",
- "unicode-width",
 ]
 
 [[package]]
