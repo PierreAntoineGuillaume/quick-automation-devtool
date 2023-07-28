@@ -2,7 +2,7 @@ use crate::ci::job::container_configuration::ContainerConfiguration;
 use crate::ci::job::container_configuration::ContainerConfiguration::_Docker;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::CommandRunner;
-use crate::ci::job::{Introspector, Job, Progress, ProgressConsumer};
+use crate::ci::job::{Job, Progress, ProgressConsumer};
 use std::collections::HashMap;
 
 #[derive(Eq, PartialEq, Hash, Debug, Clone)]
@@ -15,10 +15,6 @@ pub struct Simple {
 }
 
 impl Job for Simple {
-    fn introspect(&self, introspector: &mut dyn Introspector) {
-        introspector.basic_job(&self.name, &self.group, &self.instructions, &self.skip_if);
-    }
-
     fn name(&self) -> &str {
         &self.name
     }

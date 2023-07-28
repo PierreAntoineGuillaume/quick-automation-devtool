@@ -71,13 +71,6 @@ impl Type {
 }
 
 impl Job for Type {
-    fn introspect(&self, introspector: &mut dyn Introspector) {
-        match self {
-            Type::Docker(job) => job.introspect(introspector),
-            Type::Simple(job) => job.introspect(introspector),
-        }
-    }
-
     fn name(&self) -> &str {
         match self {
             Type::Docker(job) => job.name(),
@@ -108,7 +101,6 @@ impl Job for Type {
 }
 
 pub trait Job {
-    fn introspect(&self, introspector: &mut dyn Introspector);
     fn name(&self) -> &str;
     fn forward_env(&mut self, env: &HashMap<String, Vec<String>>);
     fn group(&self) -> Option<&str>;
