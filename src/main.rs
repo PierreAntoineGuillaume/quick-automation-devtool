@@ -43,8 +43,6 @@ fn main() {
 
     let no_tty = args.no_tty;
 
-    if matches!(command, Subcommands::Autocomplete(_)) {}
-
     let envvar = std::env::var(format!("{}_CONFIG_FILE", PACKAGE_NAME.to_uppercase()))
         .or_else::<String, _>(|_| Ok(String::from(PACKAGE_NAME)))
         .unwrap();
