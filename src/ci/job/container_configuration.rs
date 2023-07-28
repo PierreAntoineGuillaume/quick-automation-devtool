@@ -1,5 +1,5 @@
 #[derive(Eq, PartialEq, Hash, Debug, Clone)]
-pub struct _DockerContainer {
+pub struct DockerContainer {
     image: String,
     env: Vec<String>,
     volumes: Vec<String>,
@@ -7,7 +7,7 @@ pub struct _DockerContainer {
     workdir: String,
 }
 
-impl _DockerContainer {
+impl DockerContainer {
     fn env(&self) -> String {
         self.env
             .iter()
@@ -46,19 +46,34 @@ impl _DockerContainer {
     pub fn forward_env(&mut self, key: &impl ToString) {
         self.env.push(key.to_string());
     }
+
+    pub fn new(
+        image: &impl ToString,
+        user: &impl ToString,
+        workdir: &impl ToString,
+        volumes: &[impl ToString],
+    ) -> Self {
+        Self {
+            image: image.to_string(),
+            env: vec![],
+            workdir: workdir.to_string(),
+            user: user.to_string(),
+            volumes: volumes.iter().map(ToString::to_string).collect(),
+        }
+    }
 }
 
 #[derive(Eq, PartialEq, Hash, Debug, Clone)]
 pub enum ContainerConfiguration {
     None,
-    _Docker(_DockerContainer),
+    Container(DockerContainer),
 }
 
 impl ContainerConfiguration {
     pub fn compile(&self, instruction: &str) -> String {
         match self {
             ContainerConfiguration::None => instruction.to_string(),
-            ContainerConfiguration::_Docker(docker) => docker.compile(instruction),
+            ContainerConfiguration::Container(docker) => docker.compile(instruction),
         }
     }
 }
@@ -73,9 +88,9 @@ impl ContainerConfiguration {}
 
 #[cfg(test)]
 mod tests {
-    use super::_DockerContainer;
+    use super::DockerContainer;
 
-    impl _DockerContainer {
+    impl DockerContainer {
         fn test(image: &str, env: &[&str], volumes: &[&str], user: &str, workdir: &str) -> Self {
             Self {
                 image: image.to_string(),
@@ -89,7 +104,7 @@ mod tests {
 
     #[test]
     fn parse() {
-        let container = _DockerContainer::test(
+        let container = DockerContainer::test(
             "rust:latest",
             &["CHANGED_FILES", "HAS_RUST"],
             &["PWD:PWD:rw"],

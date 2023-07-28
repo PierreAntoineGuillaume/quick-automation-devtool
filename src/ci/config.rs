@@ -1,4 +1,4 @@
-use crate::ci::job::docker::Docker;
+use crate::ci::job::container_configuration::{ContainerConfiguration, DockerContainer};
 use crate::ci::job::simple::Simple;
 use crate::ci::job::Type;
 
@@ -20,10 +20,15 @@ impl From<JobDesc> for Type {
                 desc.group.get(0).cloned(),
                 desc.skip_if,
             )),
-            Some(image) => Self::Docker(Docker::long(
+            Some(image) => Self::Simple(Simple::new(
                 desc.name,
                 desc.script,
-                image,
+                ContainerConfiguration::Container(DockerContainer::new(
+                    &image,
+                    &"$USER_ID:$GROUP_ID",
+                    &"$PWD",
+                    &[&"$PWD:$PWD:rw"],
+                )),
                 desc.group.get(0).cloned(),
                 desc.skip_if,
             )),

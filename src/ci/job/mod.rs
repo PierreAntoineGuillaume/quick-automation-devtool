@@ -1,7 +1,6 @@
 pub mod constraint_matrix;
 pub mod container_configuration;
 pub mod dag;
-pub mod docker;
 mod env_parser;
 pub mod inspection;
 pub mod ports;
@@ -11,7 +10,6 @@ pub mod simple;
 #[cfg(test)]
 pub mod tests;
 
-use crate::ci::job::docker::Docker;
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
 use crate::ci::job::ports::CommandRunner;
 use crate::ci::job::simple::Simple;
@@ -58,14 +56,12 @@ pub type Shared = dyn Job + Send + Sync;
 #[derive(Clone)]
 pub enum Type {
     Simple(Simple),
-    Docker(Docker),
 }
 
 impl Type {
     pub fn to_arc(&self) -> Arc<Shared> {
         match self {
             Type::Simple(job) => Arc::from(Box::new(job.clone()) as Box<dyn Job + Send + Sync>),
-            Type::Docker(job) => Arc::from(Box::new(job.clone()) as Box<dyn Job + Send + Sync>),
         }
     }
 }
@@ -73,7 +69,6 @@ impl Type {
 impl Job for Type {
     fn name(&self) -> &str {
         match self {
-            Type::Docker(job) => job.name(),
             Type::Simple(job) => job.name(),
         }
     }
@@ -81,13 +76,11 @@ impl Job for Type {
     fn forward_env(&mut self, env: &HashMap<String, Vec<String>>) {
         match self {
             Type::Simple(job) => job.forward_env(env),
-            Type::Docker(job) => job.forward_env(env),
         }
     }
 
     fn group(&self) -> Option<&str> {
         match self {
-            Type::Docker(job) => job.group(),
             Type::Simple(job) => job.group(),
         }
     }
@@ -95,7 +88,6 @@ impl Job for Type {
     fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn ProgressConsumer) {
         match self {
             Type::Simple(job) => job.start(runner, consumer),
-            Type::Docker(job) => job.start(runner, consumer),
         }
     }
 }
