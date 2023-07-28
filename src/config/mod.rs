@@ -154,7 +154,7 @@ impl Config {
             .version(content)
             .map_err(|why| Error::NoVersion(LATEST, why))?;
 
-        let regex = Regex::new(r#"^(\d+)(?:\.(\S+))?$"#).unwrap();
+        let regex = Regex::new(r"^(\d+)(?:\.(\S+))?$").unwrap();
         let version_numbers = regex.captures(version.version.as_str());
 
         if version_numbers.is_none() {
