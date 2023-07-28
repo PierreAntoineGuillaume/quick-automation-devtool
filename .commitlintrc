@@ -1,3 +1,3 @@
 rules:
   scope-enum: [ 2, always, [ "main", "ci", "config", "cicd", "stack", "app"] ]
-  type-enum: [ 2, always, [ "fix", "feat", "docs", "ref", "perf", "test" ] ]
+  type-enum: [ 2, always, [ "chore", "fix", "feat", "docs", "ref", "perf", "test" ] ]
