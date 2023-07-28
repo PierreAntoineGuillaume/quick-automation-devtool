@@ -1,7 +1,6 @@
 use crate::ci::config::JobDesc;
 use crate::ci::display::FinalDisplayMode;
 use crate::ci::display::Running as RunningDisplay;
-use crate::ci::job::Introspector;
 use crate::config::{Loader, Payload};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -20,17 +19,6 @@ pub type JobSet = HashMap<String, FullJobDesc>;
 pub struct Constraints {
     blocks: Option<HashMap<String, Vec<String>>>,
     needs: Option<HashMap<String, Vec<String>>>,
-}
-
-fn from_vec(constraints: &[(String, String)]) -> Constraints {
-    let mut map = HashMap::new();
-    for (blocker, blocked) in constraints.iter().cloned() {
-        map.entry(blocker).or_insert_with(Vec::new).push(blocked);
-    }
-    Constraints {
-        blocks: Some(map),
-        needs: Some(HashMap::new()),
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
@@ -180,94 +168,5 @@ impl Loader for Version1 {
         }
 
         payload.env = self.env.clone();
-    }
-}
-
-#[derive(Default)]
-struct VersionYJobConverter {
-    data: Option<(String, FullJobDesc)>,
-}
-
-impl Introspector for VersionYJobConverter {
-    fn basic_job(
-        &mut self,
-        name: &str,
-        group: &Option<String>,
-        instructions: &[String],
-        skip_if: &Option<String>,
-    ) {
-        self.data = Some((
-            name.to_string(),
-            FullJobDesc {
-                image: None,
-                group: (*group).clone(),
-                script: instructions.to_vec(),
-                skip_if: (*skip_if).clone(),
-            },
-        ));
-    }
-
-    fn docker_job(
-        &mut self,
-        name: &str,
-        image: &str,
-        group: &Option<String>,
-        instructions: &[String],
-        skip_if: &Option<String>,
-    ) {
-        self.data = Some((
-            name.to_string(),
-            FullJobDesc {
-                image: Some(image.to_string()),
-                group: (*group).clone(),
-                script: instructions.to_vec(),
-                skip_if: (*skip_if).clone(),
-            },
-        ));
-    }
-}
-
-impl Version1 {
-    pub fn from(payload: Payload) -> Self {
-        let job_ref = payload.ci.jobs;
-        let jobs = job_ref
-            .iter()
-            .cloned()
-            .map(|job| {
-                let group = if job.group.is_empty() {
-                    None
-                } else {
-                    Some(job.group[0].to_string())
-                };
-                (
-                    job.name,
-                    FullJobDesc {
-                        script: job.script,
-                        image: job.image,
-                        group,
-                        skip_if: job.skip_if,
-                    },
-                )
-            })
-            .collect();
-        Self {
-            version: String::from("1"),
-            jobs,
-            constraints: Some(from_vec(&payload.ci.constraints)),
-            groups: Some(payload.ci.groups.clone()),
-            display: Some(Display {
-                mode: Some(payload.display.running_display.into()),
-                final_display: Some(payload.display.final_display.into()),
-                ok: Some(payload.display.ok.to_string()),
-                ko: Some(payload.display.ko.to_string()),
-                cancelled: Some(payload.display.cancelled.to_string()),
-                spinner: Some(Spinner {
-                    frames: payload.display.spinner.0.clone(),
-                    per_frames: payload.display.spinner.1,
-                }),
-            }),
-            env: payload.env,
-            extra_files: Some(payload.extra_files.clone()),
-        }
     }
 }

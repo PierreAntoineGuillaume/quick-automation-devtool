@@ -17,13 +17,10 @@ unit() {
   fi
 }
 
-unit "qad " "app" "autocomplete" "ci" "config" "debug" "list" "has-ci" "--version" "--help" "--file" "--no-tty"
+unit "qad " "app" "autocomplete" "ci" "debug" "list" "has-ci" "--version" "--help" "--file" "--no-tty"
 unit "qad az" ""
 unit "qad a" "app"
 unit "qad auto" "autocomplete"
 unit "qad c" "ci"
-unit "qad co" "config"
-unit "qad config " "migrate" "--help"
-unit "qad config m" "migrate"
 
 exit "$err_counter"

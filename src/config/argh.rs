@@ -26,7 +26,6 @@ pub enum Subcommands {
     Ci(CiArgs),
     List(ListArgs),
     Autocomplete(AutocompleteArgs),
-    Config(ConfigArgs),
     HasCi(HasCiArgs),
     App(AppArgs),
     Debug(DebugArgs),

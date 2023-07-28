@@ -1,5 +1,5 @@
-use crate::terminal_size::terminal_size;
 use std::io::Write;
+use terminal_size::terminal_size;
 
 pub struct TermWrapper<'a> {
     written_lines: u16,

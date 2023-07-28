@@ -9,21 +9,13 @@ pub mod app;
 mod ci;
 mod config;
 
-extern crate anyhow;
-extern crate atty;
-extern crate crossterm;
-extern crate indexmap;
-extern crate terminal_size;
-extern crate tui;
-
 use std::sync::mpsc::channel;
 
 use crate::app::domain::{Event, State};
 use crate::ci::config::CliOption;
 use crate::ci::Ci;
-use crate::config::argh::{Args, CiArgs, ConfigSubcommands, MigrateToSubCommands, Subcommands};
-use crate::config::migrate::Migrate;
-use crate::config::{Config, Payload};
+use crate::config::argh::{Args, CiArgs, Subcommands};
+use crate::config::Config;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
@@ -85,27 +77,6 @@ fn main() {
             print!("{}", include_str!("../assets/bash_completion.sh"));
             std::process::exit(0);
         }
-        Subcommands::Config(config_args) => match config_args.command {
-            ConfigSubcommands::Migrate(version) => {
-                let mut payload = Payload::default();
-                if let Err(err) = config.load_into(&mut payload) {
-                    eprintln!("{PACKAGE_NAME}: could not read config: {err}");
-                    std::process::exit(1);
-                } else {
-                    let migrate = Migrate::new(config);
-                    let migration = match version.to {
-                        MigrateToSubCommands::V1(_) => migrate.to1(),
-                    };
-                    if migration.is_err() {
-                        eprintln!("{PACKAGE_NAME}: {}", migration.unwrap_err());
-                        std::process::exit(1);
-                    }
-
-                    let serialization = Migrate::yaml(migration.unwrap());
-                    println!("{serialization}");
-                }
-            }
-        },
         Subcommands::HasCi(_) => {
             if config.get_first_available_config_file().is_err() {
                 std::process::exit(1);
