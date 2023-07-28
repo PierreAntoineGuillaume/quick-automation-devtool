@@ -1,4 +1,5 @@
 use crate::ci::job::container_configuration::ContainerConfiguration;
+use crate::ci::job::container_configuration::ContainerConfiguration::_Docker;
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::CommandRunner;
 use crate::ci::job::{Introspector, Job, Progress, ProgressConsumer};
@@ -22,7 +23,13 @@ impl Job for Simple {
         &self.name
     }
 
-    fn forward_env(&mut self, _: &HashMap<String, Vec<String>>) {}
+    fn forward_env(&mut self, env: &HashMap<String, Vec<String>>) {
+        if let _Docker(container) = &mut self.container {
+            for key in env.keys() {
+                container.forward_env(key);
+            }
+        }
+    }
 
     fn group(&self) -> Option<&str> {
         match &self.group {

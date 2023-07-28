@@ -42,6 +42,10 @@ impl _DockerContainer {
             self.image,
         )
     }
+
+    pub fn forward_env(&mut self, key: &impl ToString) {
+        self.env.push(key.to_string());
+    }
 }
 
 #[derive(Eq, PartialEq, Hash, Debug, Clone)]
