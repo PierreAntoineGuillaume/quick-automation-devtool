@@ -60,7 +60,7 @@ pub struct Payload {
 }
 
 impl Payload {
-    pub fn absorb(&mut self, other: &mut Payload) {
+    pub fn absorb(&mut self, other: &Payload) {
         for new_job in &other.ci.jobs {
             if !self.ci.jobs.contains(new_job) {
                 self.ci.jobs.push(new_job.clone());
@@ -126,7 +126,7 @@ impl Config {
         for file in config.extra_files.clone() {
             let mut other = Payload::default();
             Self::load_unknown_file(&mut other, &file)?;
-            config.absorb(&mut other);
+            config.absorb(&other);
         }
 
         Ok(())
