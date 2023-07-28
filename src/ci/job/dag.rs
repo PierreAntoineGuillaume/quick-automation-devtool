@@ -175,19 +175,19 @@ impl PartialEq<Self> for JobEnumeration {
 
 impl PartialOrd<Self> for JobEnumeration {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.name == other.name {
-            return Some(Ordering::Equal);
-        }
-        Some(match self.block.cmp(&other.block) {
-            Ordering::Equal => self.name.cmp(&other.name),
-            ord => ord,
-        })
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for JobEnumeration {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        if self.name == other.name {
+            return Ordering::Equal;
+        }
+        match self.block.cmp(&other.block) {
+            Ordering::Equal => self.name.cmp(&other.name),
+            ord => ord,
+        }
     }
 }
 
