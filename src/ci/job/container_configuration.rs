@@ -19,7 +19,7 @@ impl _DockerContainer {
     fn volumes(&self) -> String {
         self.volumes
             .iter()
-            .map(|name| format!(r#"--volume "${name}""#))
+            .map(|name| format!(r#"--volume "{name}""#))
             .collect::<Vec<String>>()
             .join(" ")
     }
@@ -98,7 +98,7 @@ mod tests {
         );
 
         assert_eq!(
-            r#"docker run --rm --user "$USER_ID:$GROUP_ID" --volume "$PWD:PWD:rw" --workdir "$PWD" --env "CHANGED_FILES" --env "HAS_RUST" rust:latest cargo fmt"#,
+            r#"docker run --rm --user "$USER_ID:$GROUP_ID" --volume "PWD:PWD:rw" --workdir "$PWD" --env "CHANGED_FILES" --env "HAS_RUST" rust:latest cargo fmt"#,
             &container.compile("cargo fmt")
         );
     }
