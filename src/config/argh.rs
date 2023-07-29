@@ -56,44 +56,6 @@ pub struct AutocompleteArgs {
 #[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(
     subcommand,
-    name = "config",
-    description = "interract with configuration"
-)]
-pub struct ConfigArgs {
-    #[argh(subcommand)]
-    pub command: ConfigSubcommands,
-}
-
-#[derive(FromArgs, Eq, PartialEq, Debug)]
-#[argh(subcommand)]
-pub enum ConfigSubcommands {
-    Migrate(MigrateArgs),
-}
-
-#[derive(FromArgs, Eq, PartialEq, Debug)]
-#[argh(
-    subcommand,
-    name = "migrate",
-    description = "migrate to and from config"
-)]
-pub struct MigrateArgs {
-    #[argh(subcommand)]
-    pub to: MigrateToSubCommands,
-}
-
-#[derive(FromArgs, Eq, PartialEq, Debug)]
-#[argh(subcommand)]
-pub enum MigrateToSubCommands {
-    V1(V1Args),
-}
-
-#[derive(FromArgs, Eq, PartialEq, Debug)]
-#[argh(subcommand, name = "1", description = "migrate config to version 1")]
-pub struct V1Args {}
-
-#[derive(FromArgs, Eq, PartialEq, Debug)]
-#[argh(
-    subcommand,
     name = "has-ci",
     description = "checks whether current folder has qad file- or fails"
 )]
