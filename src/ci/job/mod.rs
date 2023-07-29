@@ -6,15 +6,10 @@ pub mod inspection;
 pub mod ports;
 pub mod schedule;
 pub mod shell_interpreter;
-pub mod simple;
 #[cfg(test)]
 pub mod tests;
 
-use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
-use crate::ci::job::ports::CommandRunner;
-use crate::ci::job::simple::Simple;
-use std::collections::HashMap;
-use std::sync::Arc;
+use crate::ci::job::inspection::JobProgressTracker;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Output {
@@ -31,72 +26,6 @@ impl Output {
 
 pub trait ProgressConsumer {
     fn consume(&self, job_progress: JobProgress);
-}
-
-pub trait Introspector {
-    fn basic_job(
-        &mut self,
-        name: &str,
-        group: &Option<String>,
-        instructions: &[String],
-        skip_if: &Option<String>,
-    );
-    fn docker_job(
-        &mut self,
-        name: &str,
-        image: &str,
-        group: &Option<String>,
-        instructions: &[String],
-        skip_if: &Option<String>,
-    );
-}
-
-pub type Shared = dyn Job + Send + Sync;
-
-#[derive(Clone)]
-pub enum Type {
-    Simple(Simple),
-}
-
-impl Type {
-    pub fn to_arc(&self) -> Arc<Shared> {
-        match self {
-            Type::Simple(job) => Arc::from(Box::new(job.clone()) as Box<dyn Job + Send + Sync>),
-        }
-    }
-}
-
-impl Job for Type {
-    fn name(&self) -> &str {
-        match self {
-            Type::Simple(job) => job.name(),
-        }
-    }
-
-    fn forward_env(&mut self, env: &HashMap<String, Vec<String>>) {
-        match self {
-            Type::Simple(job) => job.forward_env(env),
-        }
-    }
-
-    fn group(&self) -> Option<&str> {
-        match self {
-            Type::Simple(job) => job.group(),
-        }
-    }
-
-    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn ProgressConsumer) {
-        match self {
-            Type::Simple(job) => job.start(runner, consumer),
-        }
-    }
-}
-
-pub trait Job {
-    fn name(&self) -> &str;
-    fn forward_env(&mut self, env: &HashMap<String, Vec<String>>);
-    fn group(&self) -> Option<&str>;
-    fn start(&self, runner: &mut dyn CommandRunner, consumer: &dyn ProgressConsumer);
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -117,5 +46,100 @@ impl Progress {
             Progress::Partial(_, Output::JobError(_, _) | Output::ProcessError(_))
                 | Progress::Terminated(false)
         )
+    }
+}
+
+use crate::ci::job::container_configuration::ContainerConfiguration;
+use crate::ci::job::container_configuration::ContainerConfiguration::Container;
+use crate::ci::job::inspection::JobProgress;
+use ports::CommandRunner;
+use std::collections::HashMap;
+
+#[derive(Eq, PartialEq, Hash, Debug, Clone)]
+pub struct Job {
+    name: String,
+    group: Option<String>,
+    container: ContainerConfiguration,
+    instructions: Vec<String>,
+    skip_if: Option<String>,
+}
+
+impl Job {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn forward_env(&mut self, env: &HashMap<String, Vec<String>>) {
+        if let Container(container) = &mut self.container {
+            for key in env.keys() {
+                container.forward_env(key);
+            }
+        }
+    }
+
+    pub fn group(&self) -> Option<&str> {
+        self.group.as_deref()
+    }
+
+    pub fn start(&self, runner: &impl CommandRunner, consumer: &dyn ProgressConsumer) {
+        if let Some(condition) = &self.skip_if {
+            if runner.run(condition).succeeded() {
+                consumer.consume(JobProgress::new(&self.name, Progress::Skipped));
+                consumer.consume(JobProgress::new(&self.name, Progress::Terminated(true)));
+                return;
+            }
+        }
+
+        let mut success = true;
+        for instruction in &self.instructions {
+            consumer.consume(JobProgress::new(
+                &self.name,
+                Progress::Started(instruction.clone()),
+            ));
+
+            let command = self.container.compile(instruction);
+
+            let output = runner.run(&command);
+
+            success = output.succeeded();
+            let partial = Progress::Partial(instruction.clone(), output);
+            consumer.consume(JobProgress::new(&self.name, partial));
+            if !success {
+                break;
+            }
+        }
+
+        consumer.consume(JobProgress::new(&self.name, Progress::Terminated(success)));
+    }
+
+    pub fn long(
+        name: String,
+        instructions: Vec<String>,
+        group: Option<String>,
+        skip_if: Option<String>,
+    ) -> Self {
+        Self {
+            name,
+            group,
+            container: ContainerConfiguration::None,
+            instructions,
+            skip_if,
+        }
+    }
+
+    pub fn new(
+        name: String,
+        instructions: Vec<String>,
+        container: ContainerConfiguration,
+        group: Option<String>,
+        skip_if: Option<String>,
+    ) -> Self {
+        Self {
+            name,
+            group,
+            container,
+            instructions,
+            skip_if,
+        }
     }
 }

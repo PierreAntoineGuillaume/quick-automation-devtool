@@ -1,5 +1,6 @@
 use super::*;
-use crate::ci::job::simple::Simple;
+use crate::ci::job::ports::CommandRunner;
+use crate::ci::job::Job;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 
@@ -45,7 +46,7 @@ impl CommandRunner for JobTester {
     }
 }
 
-pub type ScheduleType = (Vec<Type>, Vec<(String, String)>, Vec<String>);
+pub type ScheduleType = (Vec<Job>, Vec<(String, String)>, Vec<String>);
 
 pub fn simple_job_schedule() -> ScheduleType {
     let jobs = vec![job("deploy"), job("build"), job("test")];
@@ -94,17 +95,12 @@ pub fn group_job_schedule() -> ScheduleType {
     (jobs, vec![], config)
 }
 
-pub fn job(name: &str) -> Type {
-    Type::Simple(Simple::long(name.to_string(), vec![], None, None))
+pub fn job(name: &str) -> Job {
+    Job::long(name.to_string(), vec![], None, None)
 }
 
-fn job_group(name: &str, group: &str) -> Type {
-    Type::Simple(Simple::long(
-        name.to_string(),
-        vec![],
-        Some(group.to_string()),
-        None,
-    ))
+fn job_group(name: &str, group: &str) -> Job {
+    Job::long(name.to_string(), vec![], Some(group.to_string()), None)
 }
 
 pub fn cons(blocking: &str, blocked: &str) -> (String, String) {

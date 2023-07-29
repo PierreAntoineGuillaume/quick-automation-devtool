@@ -1,6 +1,5 @@
 use crate::ci::job::container_configuration::{ContainerConfiguration, DockerContainer};
-use crate::ci::job::simple::Simple;
-use crate::ci::job::Type;
+use crate::ci::job::Job;
 
 #[derive(Default, Clone)]
 pub struct JobDesc {
@@ -11,16 +10,16 @@ pub struct JobDesc {
     pub skip_if: Option<String>,
 }
 
-impl From<JobDesc> for Type {
+impl From<JobDesc> for Job {
     fn from(desc: JobDesc) -> Self {
         match desc.image {
-            None => Self::Simple(Simple::long(
+            None => Job::long(
                 desc.name,
                 desc.script,
                 desc.group.get(0).cloned(),
                 desc.skip_if,
-            )),
-            Some(image) => Self::Simple(Simple::new(
+            ),
+            Some(image) => Job::new(
                 desc.name,
                 desc.script,
                 ContainerConfiguration::Container(DockerContainer::new(
@@ -31,7 +30,7 @@ impl From<JobDesc> for Type {
                 )),
                 desc.group.get(0).cloned(),
                 desc.skip_if,
-            )),
+            ),
         }
     }
 }

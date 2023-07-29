@@ -3,7 +3,8 @@ use crate::ci::job::dag::{Dag, JobResult, JobState};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{SystemFacade, UserFacade};
 use crate::ci::job::shell_interpreter::ShellInterpreter;
-use crate::ci::job::{JobProgressTracker, Progress, Type};
+use crate::ci::job::Job;
+use crate::ci::job::{JobProgressTracker, Progress};
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 
 fn job_group_filter(job: &JobDesc, groups: &Vec<String>) -> bool {
@@ -39,7 +40,7 @@ pub fn schedule(
             .cloned()
             .filter(|desc: &JobDesc| job_group_filter(desc, &ci_config.groups))
             .map(Into::into)
-            .collect::<Vec<Type>>()
+            .collect::<Vec<Job>>()
     } else {
         let filter = cli_option.job.as_ref().unwrap();
         if let Some(group) = filter.strip_prefix("group:") {
@@ -49,7 +50,7 @@ pub fn schedule(
                 .cloned()
                 .filter(|job| !job.group.is_empty() && group == job.group[0])
                 .map(Into::into)
-                .collect::<Vec<Type>>()
+                .collect::<Vec<Job>>()
         } else {
             ci_config
                 .jobs
@@ -57,7 +58,7 @@ pub fn schedule(
                 .cloned()
                 .filter(|job| filter == &job.name)
                 .map(Into::into)
-                .collect::<Vec<Type>>()
+                .collect::<Vec<Job>>()
         }
     };
 
@@ -155,10 +156,9 @@ pub fn read(rx: &Receiver<JobProgress>) -> Option<JobProgress> {
 mod tests {
     use super::*;
     use crate::ci::job::ports::CommandRunner;
-    use crate::ci::job::{Output, Shared};
+    use crate::ci::job::Output;
     use std::collections::HashMap;
     use std::sync::mpsc::Sender;
-    use std::sync::Arc;
 
     pub struct TestJobStarter {}
 
@@ -172,8 +172,8 @@ mod tests {
     }
 
     impl SystemFacade for TestJobStarter {
-        fn consume_job(&mut self, job: Arc<Shared>, tx: Sender<JobProgress>) {
-            job.start(&mut TestJobRunner {}, &tx);
+        fn consume_job(&mut self, job: Job, tx: Sender<JobProgress>) {
+            job.start(&TestJobRunner {}, &tx);
         }
 
         fn delay(&mut self) -> usize {

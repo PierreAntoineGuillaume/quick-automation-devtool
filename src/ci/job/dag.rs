@@ -1,10 +1,9 @@
 use crate::ci::job::constraint_matrix::ConstraintMatrix;
-use crate::ci::job::{Job, Shared, Type};
+use crate::ci::job::Job;
 use indexmap::IndexMap;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::{Debug, Display, Formatter};
-use std::sync::Arc;
 
 #[derive(Debug)]
 pub enum Constraint {
@@ -128,7 +127,7 @@ impl JobList {
 }
 
 pub struct JobWatcher {
-    job: Arc<Shared>,
+    job: Job,
     state: JobState,
     blocks_job: Vec<String>,
     blocked_by_jobs: JobList,
@@ -136,7 +135,7 @@ pub struct JobWatcher {
 
 impl JobWatcher {
     pub fn new(
-        job: Arc<Shared>,
+        job: Job,
         state: JobState,
         blocks_job: Vec<String>,
         blocked_by_jobs: JobList,
@@ -193,12 +192,12 @@ impl Ord for JobEnumeration {
 
 impl Dag {
     pub fn new(
-        jobs: &[Type],
+        jobs: &[Job],
         constraints: &[(String, String)],
         groups: &[String],
         env: &HashMap<String, Vec<String>>,
     ) -> Result<Self, Error> {
-        let jobs: Vec<Type> = jobs.to_vec();
+        let jobs: Vec<Job> = jobs.to_vec();
         let mut constraints: Vec<(String, String)> = constraints.to_vec();
 
         constraints.extend(Self::compute_group_constraints(&jobs, groups));
@@ -224,7 +223,7 @@ impl Dag {
             all_jobs.insert(
                 job.name().to_string(),
                 JobWatcher::new(
-                    job.to_arc(),
+                    job,
                     state,
                     blocking.collect(),
                     JobList::from(&blocked_by_jobs),
@@ -242,7 +241,7 @@ impl Dag {
         Ok(dag)
     }
 
-    fn compute_group_constraints(jobs: &[Type], groups: &[String]) -> Vec<(String, String)> {
+    fn compute_group_constraints(jobs: &[Job], groups: &[String]) -> Vec<(String, String)> {
         let mut group_constraints = vec![];
         let mut blocking_jobs_by_groups = IndexMap::<String, Vec<String>>::new();
 
@@ -276,7 +275,7 @@ impl Dag {
     /// Poll will return a job if a job is available
     /// Available jobs are Pending
     /// When a job is polled, it is considered Started
-    pub fn poll(&mut self) -> Option<Arc<Shared>> {
+    pub fn poll(&mut self) -> Option<Job> {
         let jobname = self.available_jobs.shift()?;
         let job = self.all_jobs.get_mut(&jobname);
 

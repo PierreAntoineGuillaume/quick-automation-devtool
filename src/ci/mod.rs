@@ -8,13 +8,13 @@ use crate::ci::display::{FinalDisplayMode, Running};
 use crate::ci::job::inspection::JobProgress;
 use crate::ci::job::ports::{CommandRunner, FinalCiDisplay, SystemFacade, UserFacade};
 use crate::ci::job::schedule::schedule;
-use crate::ci::job::{Output, ProgressConsumer, Shared};
+use crate::ci::job::Job;
+use crate::ci::job::{Output, ProgressConsumer};
 use crate::config::{Config, Payload};
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
 use std::sync::mpsc::Sender;
-use std::sync::Arc;
 use std::thread;
 use std::thread::{sleep, JoinHandle};
 use std::time::{Duration, SystemTime};
@@ -162,7 +162,7 @@ impl CommandRunner for DebugJobStarter {
 }
 
 impl SystemFacade for DebugJobStarter {
-    fn consume_job(&mut self, job: Arc<Shared>, tx: Sender<JobProgress>) {
+    fn consume_job(&mut self, job: Job, tx: Sender<JobProgress>) {
         eprintln!("Consuming job: {}", job.name());
         job.start(self, &tx);
     }
@@ -221,9 +221,9 @@ impl CommandRunner for ParrallelJobStarter {
 }
 
 impl SystemFacade for ParrallelJobStarter {
-    fn consume_job(&mut self, job: Arc<Shared>, tx: Sender<JobProgress>) {
+    fn consume_job(&mut self, job: Job, tx: Sender<JobProgress>) {
         self.threads.push(thread::spawn(move || {
-            job.start(&mut CommandJobRunner, &tx);
+            job.start(&CommandJobRunner, &tx);
         }));
     }
 

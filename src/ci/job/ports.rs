@@ -1,8 +1,8 @@
 use crate::ci::job::inspection::{JobProgress, JobProgressTracker};
-use crate::ci::job::{Output, Shared};
+use crate::ci::job::Job;
+use crate::ci::job::Output;
 use std::collections::HashMap;
 use std::sync::mpsc::Sender;
-use std::sync::Arc;
 
 pub trait CommandRunner {
     fn precondition(&self, args: &str) -> Output;
@@ -10,7 +10,7 @@ pub trait CommandRunner {
 }
 
 pub trait SystemFacade: CommandRunner {
-    fn consume_job(&mut self, jobs: Arc<Shared>, tx: Sender<JobProgress>);
+    fn consume_job(&mut self, jobs: Job, tx: Sender<JobProgress>);
     fn delay(&mut self) -> usize;
     fn write_env(&self, env: HashMap<String, Vec<String>>);
     fn read_env(&self, key: &str, default: Option<&str>) -> anyhow::Result<String>;

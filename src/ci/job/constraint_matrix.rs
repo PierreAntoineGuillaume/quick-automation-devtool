@@ -1,5 +1,5 @@
 use crate::ci::job::dag::{Constraint, Error};
-use crate::ci::job::{Job, Type};
+use crate::ci::job::Job;
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug)]
@@ -9,7 +9,7 @@ pub struct ConstraintMatrix {
 }
 
 impl ConstraintMatrix {
-    pub fn new(jobs: &[Type], constraints: &[(String, String)]) -> Result<Self, Error> {
+    pub fn new(jobs: &[Job], constraints: &[(String, String)]) -> Result<Self, Error> {
         let mut matrix = BTreeMap::<(String, String), Constraint>::new();
         let mut blocks_jobs = BTreeMap::new();
         let mut blocked_by_jobs = BTreeMap::new();
