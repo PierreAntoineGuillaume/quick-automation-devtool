@@ -48,7 +48,10 @@ pub struct ListArgs {}
     name = "autocomplete",
     description = "generate bash completion script"
 )]
-pub struct AutocompleteArgs {}
+pub struct AutocompleteArgs {
+    #[argh(switch, description = "apply the modifications")]
+    pub apply: bool,
+}
 
 #[derive(FromArgs, Eq, PartialEq, Debug)]
 #[argh(

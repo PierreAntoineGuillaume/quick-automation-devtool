@@ -9,6 +9,7 @@ pub mod app;
 mod ci;
 mod config;
 
+use std::io::Write;
 use std::sync::mpsc::channel;
 
 use crate::app::domain::{Event, State};
@@ -46,6 +47,53 @@ fn main() {
     };
 
     match command {
+        Subcommands::Autocomplete(args) => {
+            const DIR: &str = "~/.local/share/bash-completion/completions";
+
+            if args.apply {
+                let home = std::env::var("HOME")
+                    .unwrap_or_else(|e| panic!("Failure reading env var HOME: {e}"));
+                let dir = format!("{home}/.local/share/bash-completion/completions");
+                let file = format!("{dir}/{PACKAGE_NAME}");
+                if !std::path::Path::new(&dir).is_dir() {
+                    println!("Creating folder {dir}");
+                    std::fs::create_dir_all(DIR)
+                        .unwrap_or_else(|e| panic!("Failure creating {dir}:\n{e}"));
+                }
+                println!("Writing file {file}");
+                let mut f = std::fs::OpenOptions::new()
+                    .write(true)
+                    .truncate(true)
+                    .create(true)
+                    .open(&file)
+                    .unwrap_or_else(|e| panic!("Failed opening `{file}`: {e}"));
+                f.write_all(include_str!("../assets/bash_completion.sh").as_ref())
+                    .unwrap_or_else(|e| panic!("Failed writing to `{file}`: {e}"));
+                f.flush()
+                    .unwrap_or_else(|e| panic!("Failed flushing `{file}`: {e}"));
+                return;
+            }
+            let file = format!("{DIR}/{PACKAGE_NAME}");
+
+            if atty::is(atty::Stream::Stdout) {
+                eprintln!(
+                    "# Some text is appended to the output to explain how to use this command."
+                );
+                eprintln!("# Skip to the end to get easy instructions.");
+                eprintln!("# If you wish to copy the content, just pipe the result of the command in cat:");
+                eprintln!("# {PACKAGE_NAME} autocomplete | cat");
+                eprintln!("# It will get rid of this extraneous output.");
+                eprintln!("# The autocompletion script starts here:\n");
+            }
+            println!("{}", include_str!("../assets/bash_completion.sh"));
+            if atty::is(atty::Stream::Stdout) {
+                eprintln!("# To register {PACKAGE_NAME}'s bash autocompletion script");
+                eprintln!("# {file}:");
+                eprintln!("# mkdir -p {DIR}");
+                eprintln!("# {PACKAGE_NAME} autocomplete > {file}",);
+            }
+            std::process::exit(0);
+        }
         Subcommands::App(_) => app(),
         Subcommands::Ci(arg) => ci_run(&config, arg, no_tty),
         Subcommands::Debug(arg) => match Ci::debug(&config, arg.nested) {
@@ -65,18 +113,6 @@ fn main() {
                 std::process::exit(2)
             }
         },
-        Subcommands::Autocomplete(_) => {
-            if atty::is(atty::Stream::Stdout) {
-                const DIR: &str = "~/.local/share/bash-completion/completions";
-                eprintln!("# To register {PACKAGE_NAME}'s bash autocompletion script");
-                eprintln!("# put the following content including the shebang (#!/bin/bash) in");
-                eprintln!("# {DIR}/{PACKAGE_NAME}:");
-                eprintln!("# mkdir -p {DIR}");
-                eprintln!("# {PACKAGE_NAME} autocomplete > {DIR}/{PACKAGE_NAME}",);
-            }
-            print!("{}", include_str!("../assets/bash_completion.sh"));
-            std::process::exit(0);
-        }
         Subcommands::HasCi(_) => {
             if config.get_first_available_config_file().is_err() {
                 std::process::exit(1);

@@ -17,6 +17,7 @@ _qad() {
   fi
   COMPREPLY=()
   if [ "$COMP_CWORD" == 2 ]; then
+
     if [ "$prev" == "ci" ] || [ "$prev" == "debug" ]; then
       if compgen -G "qad.y*ml*" > /dev/null; then
         mapfile -t jobs < <(qad list 2>/dev/null)
@@ -24,6 +25,10 @@ _qad() {
         jobs=()
       fi
       mapfile -t COMPREPLY < <(compgen -W "--help ${jobs[*]}" -- "${cur}")
+      return 0
+    fi
+    if [ "$prev" == "autocomplete" ]; then
+      mapfile -t COMPREPLY < <(compgen -W "--help --apply" -- "${cur}")
       return 0
     fi
     if [ "$prev" == -f ] || [ "$prev" == "--file" ]; then
