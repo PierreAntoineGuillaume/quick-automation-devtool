@@ -313,7 +313,7 @@ dependencies = [
 
 [[package]]
 name = "qad"
-version = "2.0.1"
+version = "2.1.0"
 dependencies = [
  "ansi-to-tui-forked",
  "anyhow",
