@@ -48,7 +48,7 @@ impl ConstraintMatrix {
             if let Some(cons) = matrix.get_mut(new_constraint) {
                 *cons = cons
                     .constrain()
-                    .map_err(|_| Error::CycleExistsBecauseOf(new_constraint.0.to_string()))?;
+                    .map_err(|()| Error::CycleExistsBecauseOf(new_constraint.0.to_string()))?;
             }
             if let Some(vec) = blocks_jobs.get_mut(&new_constraint.0) {
                 vec.insert(new_constraint.1.to_string());

@@ -15,16 +15,16 @@ use yaml_parser::YamlParser;
 
 #[derive(Debug)]
 pub enum Error {
-    Parse(String),
+    FileParse(String),
     NoVersion(&'static str, String),
     BadVersion(String, &'static str),
-    ParseError(String, String),
+    ContentParse(String, String),
 }
 
 impl Error {
     fn explain(&self, filename: &str) -> String {
         match self {
-            Error::Parse(error) => {
+            Error::FileParse(error) => {
                 format!("{filename} could not be parsed: {error}")
             }
             Error::NoVersion(latest, previous) => {
@@ -35,7 +35,7 @@ impl Error {
             Error::BadVersion(version, latest) => {
                 format!("unknown version {version} in {filename} (latest is {latest})",)
             }
-            Error::ParseError(version, prev) => {
+            Error::ContentParse(version, prev) => {
                 format!("could not parse {filename} with version {version} ({prev})",)
             }
         }
@@ -133,8 +133,9 @@ impl Config {
     }
 
     fn load_unknown_file(config: &mut Payload, filename: &str) -> Result<()> {
-        let content = fs::read_to_string(filename)
-            .map_err(|error| AnyError::msg(Error::Parse(error.to_string()).explain(filename)))?;
+        let content = fs::read_to_string(filename).map_err(|error| {
+            AnyError::msg(Error::FileParse(error.to_string()).explain(filename))
+        })?;
 
         let loader =
             Self::parse(&content).map_err(|error| AnyError::msg(error.explain(filename)))?;
@@ -174,7 +175,7 @@ impl Config {
             ("1", Some(_)) => parser.latest_with_warning(content, version.version.as_str()),
             _ => return Err(Error::BadVersion(version.version, LATEST)),
         }
-        .map_err(|parse_error| Error::ParseError(version.version.clone(), parse_error))?;
+        .map_err(|parse_error| Error::ContentParse(version.version.clone(), parse_error))?;
 
         Ok(ver)
     }

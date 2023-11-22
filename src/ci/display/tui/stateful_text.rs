@@ -30,7 +30,7 @@ impl StatefulText {
 
     pub fn previous(&mut self) {
         self.scroll = match self.scroll {
-            i if i == 0 => self.lc - 1,
+            0 => self.lc - 1,
             i => i - max(1, self.lc / 100),
         };
     }

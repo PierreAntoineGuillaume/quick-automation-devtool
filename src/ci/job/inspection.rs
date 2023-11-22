@@ -94,7 +94,7 @@ impl JobProgressTracker {
         self.has_failed |= job_progress.failed();
         self.states
             .entry(job_progress.0)
-            .or_insert_with(ProgressCollector::default)
+            .or_default()
             .push(job_progress.1);
     }
 

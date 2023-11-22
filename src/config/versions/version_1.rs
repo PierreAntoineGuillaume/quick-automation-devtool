@@ -86,7 +86,7 @@ impl From<FinalDisplay> for FinalDisplayMode {
 struct Display {
     mode: Option<DisplayMode>,
     #[serde(rename = "final")]
-    final_display: Option<FinalDisplay>,
+    final_item: Option<FinalDisplay>,
     ok: Option<String>,
     ko: Option<String>,
     cancelled: Option<String>,
@@ -158,7 +158,7 @@ impl Loader for Version1 {
             if let Some(mode) = &display.mode {
                 payload.display.running_display = RunningDisplay::from(*mode);
             }
-            if let Some(final_display) = &display.final_display {
+            if let Some(final_display) = &display.final_item {
                 payload.display.final_display = FinalDisplayMode::from(*final_display);
             }
         }

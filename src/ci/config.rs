@@ -16,7 +16,7 @@ impl From<JobDesc> for Job {
             None => Job::long(
                 desc.name,
                 desc.script,
-                desc.group.get(0).cloned(),
+                desc.group.first().cloned(),
                 desc.skip_if,
             ),
             Some(image) => Job::new(
@@ -28,7 +28,7 @@ impl From<JobDesc> for Job {
                     &"$PWD",
                     &[&"$PWD:$PWD:rw"],
                 )),
-                desc.group.get(0).cloned(),
+                desc.group.first().cloned(),
                 desc.skip_if,
             ),
         }

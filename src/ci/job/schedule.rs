@@ -37,8 +37,8 @@ pub fn schedule(
         ci_config
             .jobs
             .iter()
+            .filter(|desc: &&JobDesc| job_group_filter(desc, &ci_config.groups))
             .cloned()
-            .filter(|desc: &JobDesc| job_group_filter(desc, &ci_config.groups))
             .map(Into::into)
             .collect::<Vec<Job>>()
     } else {
@@ -47,16 +47,16 @@ pub fn schedule(
             ci_config
                 .jobs
                 .iter()
-                .cloned()
                 .filter(|job| !job.group.is_empty() && group == job.group[0])
+                .cloned()
                 .map(Into::into)
                 .collect::<Vec<Job>>()
         } else {
             ci_config
                 .jobs
                 .iter()
-                .cloned()
                 .filter(|job| filter == &job.name)
+                .cloned()
                 .map(Into::into)
                 .collect::<Vec<Job>>()
         }

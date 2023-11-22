@@ -39,7 +39,7 @@ impl State {
     pub fn reserve(&self, name: &str) -> State {
         let mut map = self.map.clone();
         map.entry(name.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(JobEvent::Reserved);
         State { map }
     }
