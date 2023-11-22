@@ -1,6 +1,7 @@
 use crate::ci::config::JobDesc;
 use crate::ci::display::FinalDisplayMode;
 use crate::ci::display::Running as RunningDisplay;
+use crate::ci::job::container_configuration::DockerContainer;
 use crate::config::{Loader, Payload};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -107,14 +108,18 @@ pub struct Version1 {
 impl Loader for Version1 {
     fn load(&self, payload: &mut Payload) {
         for (name, full_desc) in self.jobs.clone() {
+            let image = full_desc.image.map(|image| {
+                DockerContainer::new(&image, &"$USER_ID:$GROUP_ID", &"$PWD", &[&"$PWD:$PWD:rw"])
+            });
             payload.ci.jobs.push(JobDesc {
                 name,
                 script: full_desc.script,
-                image: full_desc.image,
+                image,
                 group: full_desc.group.iter().cloned().collect::<Vec<String>>(),
                 skip_if: full_desc.skip_if,
             });
         }
+
         if let Some(groups) = &self.groups {
             payload.ci.groups = groups.clone();
         }

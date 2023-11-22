@@ -5,7 +5,7 @@ use crate::ci::job::Job;
 pub struct JobDesc {
     pub name: String,
     pub script: Vec<String>,
-    pub image: Option<String>,
+    pub image: Option<DockerContainer>,
     pub group: Vec<String>,
     pub skip_if: Option<String>,
 }
@@ -22,12 +22,7 @@ impl From<JobDesc> for Job {
             Some(image) => Job::new(
                 desc.name,
                 desc.script,
-                ContainerConfiguration::Container(DockerContainer::new(
-                    &image,
-                    &"$USER_ID:$GROUP_ID",
-                    &"$PWD",
-                    &[&"$PWD:$PWD:rw"],
-                )),
+                ContainerConfiguration::Container(image),
                 desc.group.first().cloned(),
                 desc.skip_if,
             ),
