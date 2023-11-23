@@ -3,13 +3,88 @@ use crate::ci::display::FinalDisplayMode;
 use crate::ci::display::Running as RunningDisplay;
 use crate::ci::job::container_configuration::DockerContainer;
 use crate::config::{Loader, Payload};
-use serde::Deserialize;
+use serde::de::{MapAccess, Visitor};
+use serde::{de, Deserialize, Deserializer};
 use std::collections::HashMap;
+use std::fmt;
+use std::marker::PhantomData;
+use std::str::FromStr;
+
+#[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
+struct ContainerReference {
+    image: String,
+    env: Vec<String>,
+    volumes: Vec<String>,
+    user: String,
+    workdir: String,
+}
+
+impl FromStr for ContainerReference {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self {
+            image: s.to_string(),
+            env: Default::default(),
+            volumes: vec!["$PWD:$PWD:rw".to_string()],
+            user: "$USER_ID:$GROUP_ID".to_string(),
+            workdir: "$PWD".to_string(),
+        })
+    }
+}
+
+fn string_or_struct<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+where
+    T: Deserialize<'de> + FromStr<Err = ()>,
+    D: Deserializer<'de>,
+{
+    // This is a Visitor that forwards string types to T's `FromStr` impl and
+    // forwards map types to T's `Deserialize` impl. The `PhantomData` is to
+    // keep the compiler from complaining about T being an unused generic type
+    // parameter. We need T in order to know the Value type for the Visitor
+    // impl.
+    struct StringOrStruct<T>(PhantomData<fn() -> T>);
+
+    impl<'de, T> Visitor<'de> for StringOrStruct<T>
+    where
+        T: Deserialize<'de> + FromStr<Err = ()>,
+    {
+        type Value = T;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("string or map")
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<T, E>
+        where
+            E: de::Error,
+        {
+            Ok(FromStr::from_str(value).unwrap())
+        }
+
+        fn visit_map<M>(self, map: M) -> Result<T, M::Error>
+        where
+            M: MapAccess<'de>,
+        {
+            // `MapAccessDeserializer` is a wrapper that turns a `MapAccess`
+            // into a `Deserializer`, allowing it to be used as the input to T's
+            // `Deserialize` implementation. T then deserializes itself using
+            // the entries from the map visitor.
+            Deserialize::deserialize(de::value::MapAccessDeserializer::new(map))
+        }
+    }
+
+    deserializer.deserialize_any(StringOrStruct(PhantomData))
+}
+
+#[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
+struct ContainerWrapper(#[serde(deserialize_with = "string_or_struct")] ContainerReference);
 
 #[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct FullJobDesc {
     script: Vec<String>,
-    image: Option<String>,
+    #[serde(rename = "image")]
+    container_reference: Option<ContainerWrapper>,
     group: Option<String>,
     skip_if: Option<String>,
 }
@@ -108,9 +183,18 @@ pub struct Version1 {
 impl Loader for Version1 {
     fn load(&self, payload: &mut Payload) {
         for (name, full_desc) in self.jobs.clone() {
-            let image = full_desc.image.map(|image| {
-                DockerContainer::new(&image, &"$USER_ID:$GROUP_ID", &"$PWD", &[&"$PWD:$PWD:rw"])
-            });
+            let image =
+                full_desc
+                    .container_reference
+                    .map(|container_reference: ContainerWrapper| {
+                        DockerContainer::new(
+                            &container_reference.0.image,
+                            &container_reference.0.user,
+                            &container_reference.0.workdir,
+                            &container_reference.0.volumes,
+                            &container_reference.0.env,
+                        )
+                    });
             payload.ci.jobs.push(JobDesc {
                 name,
                 script: full_desc.script,

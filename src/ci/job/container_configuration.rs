@@ -52,10 +52,11 @@ impl DockerContainer {
         user: &impl ToString,
         workdir: &impl ToString,
         volumes: &[impl ToString],
+        env: &[impl ToString],
     ) -> Self {
         Self {
             image: image.to_string(),
-            env: vec![],
+            env: env.iter().map(ToString::to_string).collect(),
             workdir: workdir.to_string(),
             user: user.to_string(),
             volumes: volumes.iter().map(ToString::to_string).collect(),
