@@ -11,7 +11,7 @@ use crate::ci::job::schedule::schedule;
 use crate::ci::job::Job;
 use crate::ci::job::{Output, ProgressConsumer};
 use crate::config::{Config, Payload};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
 use std::sync::mpsc::Sender;
@@ -124,19 +124,6 @@ impl Ci {
 pub struct DebugJobStarter {}
 
 impl CommandRunner for DebugJobStarter {
-    fn precondition(&self, args: &str) -> Output {
-        print!("\nTesting precondition: {args}");
-        let out = mute(args);
-        println!(
-            "{}",
-            if out.succeeded() {
-                "skipped"
-            } else {
-                "executed"
-            }
-        );
-        out
-    }
     fn run(&self, args: &str) -> Output {
         std::env::var("SHELL").unwrap_or_else(|_| String::from("/bin/bash"));
         println!("Command: {args}");
@@ -177,16 +164,6 @@ impl SystemFacade for DebugJobStarter {
             std::env::set_var(key, vals.join("\n"));
         }
     }
-
-    fn read_env(&self, key: &str, default: Option<&str>) -> Result<String> {
-        if let Ok(env) = std::env::var(key) {
-            Ok(env)
-        } else if let Some(env) = default {
-            Ok(env.to_string())
-        } else {
-            Err(anyhow!("no env value for {}", key))
-        }
-    }
 }
 
 pub struct ParrallelJobStarter {
@@ -212,9 +189,6 @@ impl ProgressConsumer for Sender<JobProgress> {
 }
 
 impl CommandRunner for ParrallelJobStarter {
-    fn precondition(&self, args: &str) -> Output {
-        self.run(args)
-    }
     fn run(&self, args: &str) -> Output {
         CommandJobRunner {}.run(args)
     }
@@ -246,16 +220,6 @@ impl SystemFacade for ParrallelJobStarter {
             std::env::set_var(key, vals.join("\n"));
         }
     }
-
-    fn read_env(&self, key: &str, default: Option<&str>) -> Result<String> {
-        if let Ok(env) = std::env::var(key) {
-            Ok(env)
-        } else if let Some(env) = default {
-            Ok(env.to_string())
-        } else {
-            Err(anyhow!("no env value for {}", key))
-        }
-    }
 }
 
 fn mute(args: &str) -> Output {
@@ -277,9 +241,6 @@ fn mute(args: &str) -> Output {
 pub struct CommandJobRunner;
 
 impl CommandRunner for CommandJobRunner {
-    fn precondition(&self, args: &str) -> Output {
-        self.run(args)
-    }
     fn run(&self, args: &str) -> Output {
         mute(args)
     }

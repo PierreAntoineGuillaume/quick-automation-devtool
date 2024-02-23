@@ -1,6 +1,6 @@
 [package]
 name = "qad"
-version = "2.2.0"
+version = "2.2.1"
 edition = "2021"
 description = """
 Quick Automation Devtool (qad) is your companion for doing more, quicker,
@@ -16,32 +16,32 @@ repository = "https://gitlab.com/pag-station/quick-automation-devtool"
 [package.metadata.deb]
 section = "devel"
 assets = [
-  ["target/release/qad", "usr/bin/", "755"],
-  ["LICENSE", "usr/share/doc/qad/", "644"],
-  ["README.md", "usr/share/doc/qad/README", "644"],
-  ["/tmp/qad.bash", "usr/share/bash-completion/completions/qad", "644"],
+    ["target/release/qad", "usr/bin/", "755"],
+    ["LICENSE", "usr/share/doc/qad/", "644"],
+    ["README.md", "usr/share/doc/qad/README", "644"],
+    ["/tmp/qad.bash", "usr/share/bash-completion/completions/qad", "644"],
 ]
 [package.metadata.generate-rpm]
 assets = [
-  { source = "target/release/qad", dest = "/usr/bin/qad", mode = "755" },
-  { source = "LICENSE", dest = "/usr/share/doc/qad/LICENSE", mode = "644", doc = true },
-  { source = "README.md", dest = "/usr/share/doc/qad/README.md", mode = "644", doc = true },
-  { source = "/tmp/qad.bash", dest = "/usr/share/bash-completion/completions/qad", mode = "644" },
+    { source = "target/release/qad", dest = "/usr/bin/qad", mode = "755" },
+    { source = "LICENSE", dest = "/usr/share/doc/qad/LICENSE", mode = "644", doc = true },
+    { source = "README.md", dest = "/usr/share/doc/qad/README.md", mode = "644", doc = true },
+    { source = "/tmp/qad.bash", dest = "/usr/share/bash-completion/completions/qad", mode = "644" },
 ]
 
 [dependencies]
-ansi-to-tui = { package = "ansi-to-tui-forked", version = "3.0.0-ratatui" }
-anyhow = "1.0"
-argh = "0.1"
-atty = "0.2"
-crossterm = "0.26.1"
+ansi-to-tui = "4"
+anyhow = "1"
+argh = "0"
+atty = "0"
+crossterm = "0"
 const_format = "0"
-indexmap = "2.0.0"
-regex = "1.5"
+indexmap = "2"
+regex = "1"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
-terminal_size = "0.2"
-tui = { package = "ratatui", version = "0.21.0"}
+terminal_size = "0"
+tui = { package = "ratatui", version = "0" }
 
 [features]
 app = []

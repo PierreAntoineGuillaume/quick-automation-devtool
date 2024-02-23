@@ -25,7 +25,6 @@ pub fn parse_env_into_map<T: Into<String>>(env_string: T) -> HashMap<String, Vec
                     map.insert(
                         key.to_string(),
                         env_string[last_symbol_start..last_new_line]
-                            .to_string()
                             .split('\n')
                             .map(ToString::to_string)
                             .collect(),
@@ -45,7 +44,6 @@ pub fn parse_env_into_map<T: Into<String>>(env_string: T) -> HashMap<String, Vec
         map.insert(
             key,
             env_string[last_symbol_start..pos]
-                .to_string()
                 .split('\n')
                 .map(ToString::to_string)
                 .collect(),

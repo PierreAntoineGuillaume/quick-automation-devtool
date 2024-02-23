@@ -1,6 +1,4 @@
 use super::*;
-use crate::ci::job::ports::CommandRunner;
-use crate::ci::job::Job;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 
@@ -35,9 +33,6 @@ impl Display for JobTester {
 }
 
 impl CommandRunner for JobTester {
-    fn precondition(&self, args: &str) -> Output {
-        self.run(args)
-    }
     fn run(&self, args: &str) -> Output {
         self.inputs.borrow_mut().push(JobInput {
             args: Some(args.to_string()),
