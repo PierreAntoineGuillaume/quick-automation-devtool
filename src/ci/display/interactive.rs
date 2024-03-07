@@ -103,37 +103,33 @@ impl From<&Progress> for JobResult {
 struct App<'a> {
     items: StatefulList<(JobResult, String)>,
     tracker: &'a JobProgressTracker,
-    result: (bool, StatefulText),
+    result: Option<StatefulText>,
 }
 
 impl<'a> App<'a> {
     pub fn previous(&mut self) {
-        if self.result.0 {
-            self.result.1.previous();
-        } else {
-            self.items.previous();
-            self.result = (false, StatefulText::with_text(self.selected_text()));
+        match &mut self.result {
+            None => self.items.previous(),
+            Some(res) => res.previous(),
         }
     }
     pub fn next(&mut self) {
-        if self.result.0 {
-            self.result.1.next();
-        } else {
-            self.items.next();
-            self.result = (false, StatefulText::with_text(self.selected_text()));
+        match &mut self.result {
+            None => self.items.next(),
+            Some(res) => res.next(),
         }
     }
 
     pub fn prepare(&mut self) {
-        self.result = (false, StatefulText::with_text(self.selected_text()));
+        self.result = None;
     }
 
     pub fn select(&mut self) {
-        self.result = (true, self.result.1.clone());
+        self.result = Some(StatefulText::with_text(self.selected_text()));
     }
 
     pub fn unselect(&mut self) {
-        self.result = (false, self.result.1.clone());
+        self.result = None;
     }
 
     fn selected_text(&self) -> String {
@@ -179,7 +175,7 @@ impl<'a> From<&'a JobProgressTracker> for App<'a> {
         Self {
             items: StatefulList::with_items(items),
             tracker,
-            result: (false, StatefulText::with_text(String::new())),
+            result: None,
         }
     }
 }
@@ -262,25 +258,37 @@ fn ui(f: &mut Frame, app: &mut App) {
     let items = List::new(items)
         .block(Block::default().borders(Borders::ALL).title("jobs"))
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
-        .highlight_symbol(match &app.result.0 {
-            false => ">  ",
-            true => ">> ",
-        });
+        .highlight_symbol(if app.result.is_some() { ">> " } else { ">  " });
 
     // We can now render the item list
     f.render_stateful_widget(items, app_chunks[0], &mut app.items.state);
 
-    let text = try_cleanup(&app.result.1.text);
+    if let Some(ref stateful_text) = app.result {
+        let text = try_cleanup(&stateful_text.text);
 
-    let exp = match text.into_text() {
-        Ok(res) => Paragraph::new(res),
-        _ => Paragraph::new(text),
-    };
+        let exp = match text.into_text() {
+            Ok(res) => Paragraph::new(res),
+            _ => Paragraph::new(text),
+        };
 
-    f.render_widget(
-        exp.wrap(Wrap { trim: false })
-            .scroll((app.result.1.scroll, 0))
-            .block(Block::default().borders(Borders::ALL).title("result")),
-        app_chunks[1],
-    );
+        f.render_widget(
+            exp.wrap(Wrap { trim: false })
+                .scroll((stateful_text.scroll, 0))
+                .block(Block::default().borders(Borders::ALL).title("result")),
+            app_chunks[1],
+        );
+    } else {
+        let text = try_cleanup(&app.selected_text());
+
+        let exp = match text.into_text() {
+            Ok(res) => Paragraph::new(res),
+            _ => Paragraph::new(text),
+        };
+
+        f.render_widget(
+            exp.wrap(Wrap { trim: false })
+                .block(Block::default().borders(Borders::ALL).title("result")),
+            app_chunks[1],
+        );
+    }
 }
