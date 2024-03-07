@@ -103,33 +103,33 @@ impl From<&Progress> for JobResult {
 struct App<'a> {
     items: StatefulList<(JobResult, String)>,
     tracker: &'a JobProgressTracker,
-    result: Option<StatefulText>,
+    right_panel: Option<StatefulText>,
 }
 
 impl<'a> App<'a> {
     pub fn previous(&mut self) {
-        match &mut self.result {
+        match &mut self.right_panel {
             None => self.items.previous(),
             Some(res) => res.previous(),
         }
     }
     pub fn next(&mut self) {
-        match &mut self.result {
+        match &mut self.right_panel {
             None => self.items.next(),
             Some(res) => res.next(),
         }
     }
 
     pub fn prepare(&mut self) {
-        self.result = None;
+        self.right_panel = None;
     }
 
     pub fn select(&mut self) {
-        self.result = Some(StatefulText::with_text(self.selected_text()));
+        self.right_panel = Some(StatefulText::with_text(self.selected_text()));
     }
 
     pub fn unselect(&mut self) {
-        self.result = None;
+        self.right_panel = None;
     }
 
     fn selected_text(&self) -> String {
@@ -175,7 +175,7 @@ impl<'a> From<&'a JobProgressTracker> for App<'a> {
         Self {
             items: StatefulList::with_items(items),
             tracker,
-            result: None,
+            right_panel: None,
         }
     }
 }
@@ -258,12 +258,16 @@ fn ui(f: &mut Frame, app: &mut App) {
     let items = List::new(items)
         .block(Block::default().borders(Borders::ALL).title("jobs"))
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
-        .highlight_symbol(if app.result.is_some() { ">> " } else { ">  " });
+        .highlight_symbol(if app.right_panel.is_some() {
+            ">> "
+        } else {
+            ">  "
+        });
 
     // We can now render the item list
     f.render_stateful_widget(items, app_chunks[0], &mut app.items.state);
 
-    if let Some(ref stateful_text) = app.result {
+    if let Some(ref stateful_text) = app.right_panel {
         let text = try_cleanup(&stateful_text.text);
 
         let exp = match text.into_text() {
