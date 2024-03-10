@@ -1,6 +1,6 @@
 [package]
 name = "qad"
-version = "2.2.1"
+version = "2.2.2"
 edition = "2021"
 description = """
 Quick Automation Devtool (qad) is your companion for doing more, quicker,

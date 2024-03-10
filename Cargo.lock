@@ -382,7 +382,7 @@ dependencies = [
 
 [[package]]
 name = "qad"
-version = "2.2.1"
+version = "2.2.2"
 dependencies = [
  "ansi-to-tui",
  "anyhow",
