@@ -258,11 +258,7 @@ fn ui(f: &mut Frame, app: &mut App) {
     let items = List::new(items)
         .block(Block::default().borders(Borders::ALL).title("jobs"))
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
-        .highlight_symbol(if app.right_panel.is_some() {
-            ">> "
-        } else {
-            ">  "
-        });
+        .highlight_symbol(app.right_panel.as_ref().map_or(">  ", |_| ">> "));
 
     // We can now render the item list
     f.render_stateful_widget(items, app_chunks[0], &mut app.items.state);
