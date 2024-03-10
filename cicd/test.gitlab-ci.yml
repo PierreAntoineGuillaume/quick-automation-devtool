@@ -28,7 +28,7 @@
 
 lint-commits:
   image: node
-  cache: []
+  cache: [ ]
   rules:
     - *rule_in_mr
   script:
@@ -41,6 +41,8 @@ clippy:
     - *rule_no_draft
     - *rust_in_mr
     - *rust_no_mr
+  before_script:
+    - cargo-clippy --version || rustup component add clippy --toolchain=nightly
   script:
     - cargo clippy --tests --color=always
 
@@ -50,6 +52,8 @@ fmt:
     - *rule_no_draft
     - *rust_in_mr
     - *rust_no_mr
+  before_script:
+    - cargo-fmt --version || rustup component add rustfmt --toolchain=nightly
   script:
     - cargo fmt --check
 
