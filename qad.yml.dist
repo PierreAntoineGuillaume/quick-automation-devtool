@@ -1,17 +1,21 @@
 version: "1.0"
 jobs:
+  "image-build":
+    script: [ "docker build --pull cicd -t rustlang/rust:nightly-local" ]
+    skip_if: "docker images --format '{{.Repository}}:{{.Tag}}' | grep 'rustlang/rust:nightly-local'"
+    group: build
   fmt:
     script: [ cargo fmt ]
-    image: rustlang/rust:nightly
+    image: rustlang/rust:nightly-local
     group: fmt
   clippy:
     script: [ cargo clippy --tests --color always --all-features ]
-    image: rustlang/rust:nightly
+    image: rustlang/rust:nightly-local
     group: test
     skip_if: test $HAS_RUST != true
   tests:
     script: [ cargo test --color always --all-features ]
-    image: rustlang/rust:nightly
+    image: rustlang/rust:nightly-local
     group: test
     skip_if: test $HAS_RUST != true
   unit:
