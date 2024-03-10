@@ -2,16 +2,16 @@ version: "1.0"
 jobs:
   fmt:
     script: [ cargo fmt ]
-    docker: rustlang/rust:nightly
+    image: rustlang/rust:nightly
     group: fmt
   clippy:
     script: [ cargo clippy --tests --color always --all-features ]
-    docker: rustlang/rust:nightly
+    image: rustlang/rust:nightly
     group: test
     skip_if: test $HAS_RUST != true
   tests:
     script: [ cargo test --color always --all-features ]
-    docker: rustlang/rust:nightly
+    image: rustlang/rust:nightly
     group: test
     skip_if: test $HAS_RUST != true
   unit:
@@ -22,6 +22,7 @@ jobs:
     script: [ printf "%s\n" "CHANGED_FILES=$CHANGED_FILES" "HAS_RUST=$HAS_RUST" "HAS_BASH=$HAS_BASH" ]
     group: skip
 groups:
+  - build
   - fmt
   - test
 display:
@@ -32,7 +33,7 @@ display:
   spinner:
     frames: [ "⣇", "⣦", "⣴", "⣸", "⢹", "⠻", "⠟", "⡏" ]
     per_frames: 70
-env:  |
+env: |
   LAST_COMMON_COMMIT=$(git merge-base "origin/main" "$(git branch --show-current)")
   CHANGED_FILES=$(cat <(git diff --name-only --diff-filter=DRAM "$LAST_COMMON_COMMIT") <(git ls-files -o --exclude-standard))
   HAS_RUST=$(awk '/.rs$/ { rc=1 } END { if (rc) print "true"; else print "false";  }' <<<$CHANGED_FILES)
