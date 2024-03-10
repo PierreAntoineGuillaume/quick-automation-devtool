@@ -204,8 +204,8 @@ impl Loader for Version1 {
             });
         }
 
-        if let Some(groups) = &self.groups {
-            payload.ci.groups = groups.clone();
+        if let Some(ref groups) = self.groups {
+            payload.ci.groups.clone_from(groups);
         }
 
         if let Some(constraint) = &self.constraints {
@@ -252,10 +252,10 @@ impl Loader for Version1 {
             }
         }
 
-        if let Some(files) = &self.extra_files {
-            payload.extra_files = files.clone();
+        if let Some(ref files) = self.extra_files {
+            payload.extra_files.clone_from(files);
         }
 
-        payload.env = self.env.clone();
+        payload.env.clone_from(&self.env);
     }
 }

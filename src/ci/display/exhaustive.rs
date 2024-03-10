@@ -25,7 +25,7 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
             for progress in &progress_collector.progresses {
                 match progress {
                     Progress::Cancelled => {
-                        icon = self.config.cancelled.clone();
+                        icon.clone_from(&self.config.cancelled);
                     }
                     Progress::Skipped => string.push_str("  job was skipped\n"),
                     Progress::Partial(instruction, job_output) => match job_output {
@@ -52,10 +52,10 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
                     },
                     Progress::Terminated(bool) => {
                         let emoji: &str = if *bool {
-                            icon = self.config.ok.clone();
+                            icon.clone_from(&self.config.ok);
                             &self.config.ok
                         } else {
-                            icon = self.config.ko.clone();
+                            icon.clone_from(&self.config.ko);
                             &self.config.ko
                         };
                         writeln!(
