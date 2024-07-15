@@ -82,6 +82,14 @@ pub struct JobProgressTracker {
 }
 
 impl JobProgressTracker {
+    pub fn find_longest_jobname_size(&self) -> usize {
+        self.states
+            .iter()
+            .map(|(name, _)| name.len())
+            .max()
+            .unwrap()
+    }
+
     pub fn new() -> Self {
         Self {
             start_time: SystemTime::now(),

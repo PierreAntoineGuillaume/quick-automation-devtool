@@ -15,12 +15,7 @@ pub struct Display<'a> {
 
 impl<'a> UserFacade for Display<'a> {
     fn set_up(&mut self, tracker: &JobProgressTracker) {
-        self.max_job_name_len = tracker
-            .states
-            .iter()
-            .map(|(name, _)| name.len())
-            .max()
-            .unwrap();
+        self.max_job_name_len = tracker.find_longest_jobname_size();
     }
 
     fn run(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
