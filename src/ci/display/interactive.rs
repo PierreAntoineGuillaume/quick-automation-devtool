@@ -19,9 +19,9 @@ use std::{
 use crate::ci::display::tui::stateful_list::StatefulList;
 use crate::ci::display::tui::stateful_text::StatefulText;
 use crate::ci::job::{Output, Progress};
-use tui::style::Color;
-use tui::widgets::{Paragraph, Wrap};
-use tui::{
+use ratatui::style::Color;
+use ratatui::widgets::{Paragraph, Wrap};
+use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     style::{Modifier, Style},
