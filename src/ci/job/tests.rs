@@ -1,45 +1,4 @@
 use super::*;
-use std::cell::RefCell;
-use std::fmt::{Display, Formatter};
-
-#[derive(Default)]
-struct JobInput {
-    args: Option<String>,
-}
-
-#[derive(Default)]
-struct JobTester {
-    inputs: RefCell<Vec<JobInput>>,
-}
-
-impl Display for JobInput {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.args.clone().unwrap_or_default())?;
-        write!(f, "(")?;
-        if let Some(arg) = &self.args {
-            write!(f, "{arg}")?;
-        }
-        write!(f, ")")
-    }
-}
-
-impl Display for JobTester {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for job in self.inputs.borrow().iter() {
-            writeln!(f, "{job}")?;
-        }
-        Ok(())
-    }
-}
-
-impl CommandRunner for JobTester {
-    fn run(&self, args: &str) -> Output {
-        self.inputs.borrow_mut().push(JobInput {
-            args: Some(args.to_string()),
-        });
-        Output::ProcessError(String::default())
-    }
-}
 
 pub type ScheduleType = (Vec<Job>, Vec<(String, String)>, Vec<String>);
 

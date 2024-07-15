@@ -112,7 +112,7 @@ impl Job {
         consumer.consume(JobProgress::new(&self.name, Progress::Terminated(success)));
     }
 
-    pub fn long(
+    pub const fn long(
         name: String,
         instructions: Vec<String>,
         group: Option<String>,
@@ -127,7 +127,7 @@ impl Job {
         }
     }
 
-    pub fn new(
+    pub const fn new(
         name: String,
         instructions: Vec<String>,
         container: ContainerConfiguration,

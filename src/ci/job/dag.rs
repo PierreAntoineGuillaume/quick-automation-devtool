@@ -134,7 +134,7 @@ pub struct JobWatcher {
 }
 
 impl JobWatcher {
-    pub fn new(
+    pub const fn new(
         job: Job,
         state: JobState,
         blocks_job: Vec<String>,
