@@ -26,7 +26,9 @@ impl<'a> UserFacade for Display<'a> {
     fn run(&mut self, tracker: &JobProgressTracker, elapsed: usize) {
         self.term.clear();
         for (job_name, progress_collector) in &tracker.states {
-            self.display(job_name, progress_collector);
+            let result = self.display(job_name, progress_collector);
+            self.term.write(&result);
+            self.term.newline();
         }
         self.spin.tick(elapsed);
     }
@@ -41,17 +43,15 @@ impl<'a> UserFacade for Display<'a> {
 }
 
 impl<'a> Display<'a> {
-    fn display(&mut self, job_name: &str, collector: &ProgressCollector) {
+    fn display(&self, job_name: &str, collector: &ProgressCollector) -> String {
         let progress = collector.last();
-
-        self.term
-            .write(&format!("{:1$}", job_name, self.max_job_name_len));
+        let mut str = format!("{:1$}", job_name, self.max_job_name_len);
         match progress {
             Progress::Available => {
-                self.term.write("not started yet");
+                str.push_str("not started yet");
             }
             Progress::Terminated(state) => {
-                self.term.write(&format!(
+                str.push_str(&format!(
                     " {}",
                     if *state {
                         &self.config.ok
@@ -61,35 +61,34 @@ impl<'a> Display<'a> {
                 ));
             }
             Progress::Partial(_, _) => {
-                self.term.write(&format!(" {}", self.spin));
+                str.push_str(&format!(" {}", self.spin));
             }
             Progress::Skipped => {
-                self.term
-                    .write(&format!(" {} job was skipped", self.config.ok));
+                str.push_str(&format!(" {} job was skipped", self.config.ok));
             }
             Progress::Blocked(blocked_by) => {
-                self.term.write(" blocked by ");
+                str.push_str(" blocked by ");
                 let mut len = blocked_by.len();
                 for job in blocked_by {
-                    self.term.write(job);
+                    str.push_str(job);
                     len -= 1;
                     if len > 0 {
-                        self.term.write(", ");
+                        str.push_str(", ");
                     }
                 }
             }
             Progress::Cancelled => {
-                self.term.write(&format!(" {}", self.config.cancelled));
+                str.push_str(&format!(" {}", self.config.cancelled));
             }
             Progress::Started(command) => {
-                self.term.write(&format!(" {command} {}", self.spin));
+                str.push_str(&format!(" {command} {}", self.spin));
             }
         }
-        self.term.newline();
+        str
     }
 
     pub fn new(config: &'a CiDisplayConfig, write: &'a mut dyn Write) -> Self {
-        Display {
+        Self {
             term: TermWrapper::new(write),
             spin: Spinner::new(&config.spinner.0, config.spinner.1),
             config,

@@ -82,7 +82,7 @@ impl<'a> Display<'a> {
     }
 
     pub fn new(config: &'a CiDisplayConfig, write: &'a mut dyn Write) -> Self {
-        Display {
+        Self {
             term: TermWrapper::new(write),
             spin: Spinner::new(&config.spinner.0, config.spinner.1),
             config,
