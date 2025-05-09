@@ -17,7 +17,7 @@ impl<'a> FullFinalDisplay<'a> {
     }
 }
 
-impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
+impl FinalCiDisplay for FullFinalDisplay<'_> {
     fn finish(&mut self, tracker: &JobProgressTracker) {
         for (job_name, progress_collector) in &tracker.states {
             let mut string = String::new();
@@ -92,7 +92,7 @@ impl<'a> FinalCiDisplay for FullFinalDisplay<'a> {
     }
 }
 
-impl<'a> FullFinalDisplay<'a> {
+impl FullFinalDisplay<'_> {
     /// I'd rather have no info over a system error when reporting time
     fn elapsed(tracker: &JobProgressTracker) -> Option<f64> {
         let time = tracker.end_time.or_else(|| Some(SystemTime::now()))?;

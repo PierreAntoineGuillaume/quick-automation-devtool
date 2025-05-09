@@ -106,7 +106,7 @@ struct App<'a> {
     right_panel: Option<StatefulText>,
 }
 
-impl<'a> App<'a> {
+impl App<'_> {
     pub fn previous(&mut self) {
         match &mut self.right_panel {
             None => self.items.previous(),
@@ -239,7 +239,7 @@ fn ui(f: &mut Frame, app: &mut App) {
     let app_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
-        .split(f.size());
+        .split(f.area());
 
     // Iterate through all elements in the `items` app and append some debug text to it.
     let items: Vec<ListItem> = app

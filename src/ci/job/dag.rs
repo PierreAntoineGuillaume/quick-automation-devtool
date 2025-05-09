@@ -117,7 +117,7 @@ impl JobList {
         self.vec.retain(|contained| contained != name);
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.vec.is_empty()
     }
 

@@ -13,7 +13,7 @@ impl<'a> Spinner<'a> {
         self.frames[self.ticks].as_str()
     }
 
-    pub fn new(frames: &'a Vec<String>, per_frame: usize) -> Self {
+    pub const fn new(frames: &'a Vec<String>, per_frame: usize) -> Self {
         Spinner {
             frames,
             ticks: 0,
@@ -23,7 +23,7 @@ impl<'a> Spinner<'a> {
         }
     }
 
-    pub fn tick(&mut self, frames: usize) {
+    pub const fn tick(&mut self, frames: usize) {
         let up = self.current_frame + frames >= self.per_frame;
         self.ticks = if up {
             (self.ticks + 1) % self.roll
@@ -34,13 +34,13 @@ impl<'a> Spinner<'a> {
     }
 }
 
-impl<'a> Display for Spinner<'a> {
+impl Display for Spinner<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.current())
     }
 }
 
-impl<'a> Clone for Spinner<'a> {
+impl Clone for Spinner<'_> {
     fn clone(&self) -> Self {
         Spinner {
             ticks: self.ticks,

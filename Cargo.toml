@@ -30,7 +30,7 @@ assets = [
 ]
 
 [dependencies]
-ansi-to-tui = "5.0.0-rc.1"
+ansi-to-tui = "7.0.0"
 anyhow = "1"
 argh = "0"
 atty = "0"
@@ -41,7 +41,7 @@ regex = "1"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 terminal_size = "0"
-ratatui = "0.27"
+ratatui = "0.29.0"
 
 [features]
 app = []

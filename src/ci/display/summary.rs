@@ -12,7 +12,7 @@ pub struct Display<'a> {
     max_job_name_len: usize,
 }
 
-impl<'a> UserFacade for Display<'a> {
+impl UserFacade for Display<'_> {
     fn set_up(&mut self, tracker: &JobProgressTracker) {
         self.max_job_name_len = tracker.find_longest_jobname_size();
     }

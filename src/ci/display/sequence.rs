@@ -4,7 +4,7 @@ use crate::ci::display::CiDisplayConfig;
 use crate::ci::job::inspection::{JobProgressTracker, ProgressCollector};
 use crate::ci::job::ports::UserFacade;
 use crate::ci::job::Progress;
-use std::io::Write;
+use std::fmt::Write;
 
 pub struct Display<'a> {
     spin: Spinner<'a>,
@@ -13,7 +13,7 @@ pub struct Display<'a> {
     max_job_name_len: usize,
 }
 
-impl<'a> UserFacade for Display<'a> {
+impl UserFacade for Display<'_> {
     fn set_up(&mut self, tracker: &JobProgressTracker) {
         self.max_job_name_len = tracker.find_longest_jobname_size();
     }
@@ -40,29 +40,34 @@ impl<'a> UserFacade for Display<'a> {
 impl<'a> Display<'a> {
     fn display(&self, job_name: &str, collector: &ProgressCollector) -> String {
         let progress = collector.last();
-        let mut str = format!("{:1$}", job_name, self.max_job_name_len);
+        let mut str = String::new();
+
+        write!(str, "{:1$}", job_name, self.max_job_name_len).expect("Can't write");
+
         match progress {
             Progress::Available => {
                 str.push_str("not started yet");
             }
             Progress::Terminated(state) => {
-                str.push_str(&format!(
+                write!(
+                    str,
                     " {}",
                     if *state {
                         &self.config.ok
                     } else {
                         &self.config.ko
                     }
-                ));
+                )
+                .expect("Can't write");
             }
             Progress::Partial(_, _) => {
-                str.push_str(&format!(" {}", self.spin));
+                write!(str, " {}", self.spin).expect("Can't write");
             }
             Progress::Skipped => {
-                str.push_str(&format!(" {} job was skipped", self.config.ok));
+                write!(str, " {} job was skipped", self.config.ok).expect("Can't write");
             }
             Progress::Blocked(blocked_by) => {
-                str.push_str(" blocked by ");
+                write!(str, " blocked by ").expect("Can't write");
                 let mut len = blocked_by.len();
                 for job in blocked_by {
                     str.push_str(job);
@@ -73,16 +78,16 @@ impl<'a> Display<'a> {
                 }
             }
             Progress::Cancelled => {
-                str.push_str(&format!(" {}", self.config.cancelled));
+                write!(str, " {}", self.config.cancelled).expect("Can't write");
             }
             Progress::Started(command) => {
-                str.push_str(&format!(" {command} {}", self.spin));
+                write!(str, " {command} {}", self.spin).expect("Can't write");
             }
         }
         str
     }
 
-    pub fn new(config: &'a CiDisplayConfig, write: &'a mut dyn Write) -> Self {
+    pub fn new(config: &'a CiDisplayConfig, write: &'a mut dyn std::io::Write) -> Self {
         Self {
             term: TermWrapper::new(write),
             spin: Spinner::new(&config.spinner.0, config.spinner.1),
